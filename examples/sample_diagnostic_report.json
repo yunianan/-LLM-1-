@@ -1,0 +1,46 @@
+{
+  "layer_id": "L3",
+  "timestamp": "2026-07-28T14:52:00Z",
+  "diagnosis": {
+    "primary": {
+      "disorder": "MDD",
+      "confidence": 0.87,
+      "severity": "moderate",
+      "dsm5_criteria_met": ["A1", "A2", "A3", "A4", "A5"]
+    },
+    "secondary": [
+      {"disorder": "Insomnia Disorder", "confidence": 0.65, "evidence": "ISI=14接近重度阈值，入睡困难+早醒"}
+    ],
+    "ruled_out": [
+      {"disorder": "Bipolar II", "reason": "MDQ=3<7阈值，无轻躁狂/躁狂发作史", "evidence_ref": "MDQ筛查指南"},
+      {"disorder": "PTSD", "reason": "PCL-5 skipped per L1 safety flag", "evidence_ref": "L1 SafetyPassport"}
+    ]
+  },
+  "verifier_score": 0.87,
+  "verifier_routing": "pass",
+  "recommended_therapy": {
+    "primary": "CBT",
+    "addon": ["CBT-I"],
+    "contraindications": ["避免深度创伤暴露（per L1敏感话题标记）", "不推荐EMDR（无PTSD证据）"]
+  },
+  "severity_level": 1,
+  "clinical_notes_for_L4": "患者核心认知模式推断为负性自动化思维（'我什么都做不好'）+回避行为（不愿出门、不愿社交）。L4治疗焦点：(1)行为激活——打破回避循环，重建日常活动节奏；(2)认知重构——识别和挑战负性自动化思维；(3)睡眠卫生+CBT-I技术（刺激控制+睡眠限制）。需温和监测自杀意念变化，若从被动转为主动，立即升级至L1安全协议。",
+  "summary": "初步印象为中度MDD（置信度0.87，Verifier=0.87），共病失眠障碍（置信度0.65）。排除双相II型（MDQ=3）和PTSD（PCL-5跳过+临床怀疑度低）。推荐CBT联合CBT-I。",
+  "structured_labels": {
+    "therapy_routing": {
+      "primary": "CBT",
+      "addon": ["CBT-I"],
+      "l4_substage_priority": ["behavioral_activation", "cognitive_restructuring", "sleep_hygiene"]
+    },
+    "wording_constraint": "使用'初步印象'措辞，禁止'确诊'",
+    "risk_monitoring": ["passive_si_to_active_si_escalation"]
+  },
+  "evidence_refs": [
+    {"type": "DSM-5", "disorder": "MDD", "criteria_met": "A1-A5 (5/9 >= 5)", "source_doc": "DSM-5_TR_zh_v1.0"},
+    {"type": "scale", "disorder": "MDD", "source": "PHQ-9", "threshold": ">=15中重度"},
+    {"type": "guideline", "therapy": "CBT_for_MDD", "source": "APA_2019; NICE_NG222"}
+  ],
+  "confidence": 0.87,
+  "flags": ["passive_si_monitor", "trauma_sensitive", "insomnia_comorbid"],
+  "instruction_to_next": "CBT对话应聚焦行为激活和认知重构，避免涉及创伤暴露练习。L4-L2需温和反馈诊断，征求患者确认。L4-L3按行为激活→认知重构→睡眠卫生顺序推进。"
+}
