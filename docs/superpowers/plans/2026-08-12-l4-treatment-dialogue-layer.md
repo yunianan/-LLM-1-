@@ -1245,7 +1245,8 @@ def test_assemble_prompt_fix_instruction_appended_at_end():
                            fix_instruction="删除确定性措辞，改为初步印象")
     user_text = msgs[1].content
     assert "删除确定性措辞，改为初步印象" in user_text
-    assert user_text.strip().endswith("删除确定性措辞，改为初步印象")
+    # 重写要求块位于"当前消息"之后（所有内容之后）
+    assert user_text.index("删除确定性措辞，改为初步印象") > user_text.index("用户：hi")
 
 
 def test_responder_parses_json():
@@ -1704,11 +1705,25 @@ def test_validate_hook_fails_without_reviewer_fail():
 
 
 def test_initial_fix_injected():
-    backend = MockBackend(responses={"删除确定性措辞": GOOD}, default=BAD)
+    backend = MockBackend(
+        responses={"删除确定性措辞": '{"reply": "初步印象是情绪困扰，你感觉呢？", "stage_complete": false, "reason": "rewritten"}'},
+        default=BAD,
+    )
     orch = _make_orchestrator(backend, MockReviewer())
-    out = _run(orch)
+
+    def build_ctx(reply):
+        return build_l5_context(reply, "L4-L3", "CBT", SAFETY, ANCHOR)
+
+    # 不传 initial_fix：命中 default=BAD
+    out_no_fix = orch.run(TURN, [], "我这周又加班到凌晨，感觉撑不住了", build_ctx)
+    assert "你得了中度抑郁" in out_no_fix.reply
+
+    # 传 initial_fix：首次生成即注入"删除确定性措辞"，命中 responses 键
+    out = orch.run(TURN, [], "我这周又加班到凌晨，感觉撑不住了", build_ctx,
+                   initial_fix="删除确定性措辞，改为初步印象")
     assert out.fallback_used is False
-    assert "删除确定性措辞" in backend._responses  # 由 initial_fix 触发匹配
+    assert out.attempts == 1
+    assert "初步印象是情绪困扰" in out.reply
 ```
 
 - [ ] **Step 2: 运行测试确认失败**
