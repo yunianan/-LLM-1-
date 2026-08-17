@@ -17,9 +17,10 @@ class RewriteRequest(BaseModel):
     fix_instruction: str
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(settings: Settings | None = None,
+               service: L4Service | None = None) -> FastAPI:
     app = FastAPI(title="L4 治疗对话层", version="0.1.0")
-    service = L4Service(settings or Settings())
+    service = service or L4Service(settings or Settings())
 
     @app.get("/healthz")
     def healthz() -> dict[str, str]:
@@ -45,7 +46,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             turn=req.turn,
         )
         try:
-            return service.handle_turn(turn_req, initial_fix=req.fix_instruction)
+            return service.handle_turn(turn_req, initial_fix=req.fix_instruction,
+                                       persist=False)
         except KeyError:
             raise HTTPException(status_code=404, detail=f"会话不存在: {req.session_id}")
 

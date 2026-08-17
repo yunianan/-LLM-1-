@@ -93,7 +93,8 @@ class L4Service:
         self.store.create(data)
         return session_id
 
-    def handle_turn(self, req: TurnRequest, initial_fix: str | None = None) -> TurnOutcome:
+    def handle_turn(self, req: TurnRequest, initial_fix: str | None = None,
+                    persist: bool = True) -> TurnOutcome:
         sd = self.store.get(req.session_id)
         anchor = sd.anchor or DiagnosticAnchor()
         substage = sd.machine.resolve(req.turn.force_substage)
@@ -108,7 +109,8 @@ class L4Service:
             return build_l5_context(reply, substage, anchor.therapy_type, sd.safety, anchor)
 
         def validate(reply: str) -> list[str]:
-            return self._validate(reply, req.turn, sd.therapy_options)
+            return self._validate(reply, req.turn, sd.therapy_options,
+                                  sd.boundary.absolute_bans)
 
         outcome = orchestrator.run(
             req.turn, sd.history, req.user_message,
@@ -125,12 +127,13 @@ class L4Service:
             flags=flags,
         )
 
-        sd.history.append(ConversationTurn(role="user", content=req.user_message))
-        sd.history.append(ConversationTurn(role="assistant", content=outcome.reply))
-        sd.l3_history.append(req.turn)
-        if not outcome.fallback_used:
-            sd.machine.advance(stage_complete=outcome.stage_complete,
-                               force=req.turn.force_substage)
+        if persist:
+            sd.history.append(ConversationTurn(role="user", content=req.user_message))
+            sd.history.append(ConversationTurn(role="assistant", content=outcome.reply))
+            sd.l3_history.append(req.turn)
+            if not outcome.fallback_used:
+                sd.machine.advance(stage_complete=outcome.stage_complete,
+                                   force=req.turn.force_substage)
 
         return TurnOutcome(
             session_id=req.session_id,
@@ -144,12 +147,23 @@ class L4Service:
 
     @staticmethod
     def _validate(reply: str, turn: TurnInstruction,
-                  therapy_options: list[str]) -> list[str]:
-        """V4 本地自校验：禁止词 + V4-3 疗法一致性（启发式）。"""
+                  therapy_options: list[str],
+                  absolute_bans: list[str] | None = None) -> list[str]:
+        """V4 本地自校验：禁止词 + 绝对禁令 + V4-3 疗法一致性（启发式）。"""
         violations: list[str] = []
         for word in turn.forbidden:
             if word and word in reply:
                 violations.append(f"回复包含禁止词：{word}")
+        for ban in absolute_bans or []:
+            if not ban:
+                continue
+            target = ban
+            for prefix in ("请勿", "禁止", "不要"):
+                if target.startswith(prefix):
+                    target = target[len(prefix):]
+                    break
+            if target and target in reply:
+                violations.append(f"回复违反绝对禁令：{ban}")
         allowed = set(therapy_options)
         for kw in THERAPY_KEYWORDS:
             if kw in reply and kw not in allowed and kw != "CBT":

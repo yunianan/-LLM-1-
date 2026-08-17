@@ -126,3 +126,49 @@ def test_handle_turn_initial_fix():
         initial_fix="删除确定性措辞，改为初步印象",
     )
     assert "初步印象" in out.reply
+
+
+def test_absolute_bans_trigger_rewrite():
+    backend = MockBackend(
+        responses={
+            "请修正": '{"reply": "我们先把目标放在睡个好觉上，你觉得呢？", "stage_complete": false, "reason": ""}'
+        },
+        default='{"reply": "你的情况可以考虑开药治疗。", "stage_complete": false, "reason": ""}',
+    )
+    service = L4Service(Settings(_env_file=None), backend=backend, reviewer=MockReviewer())
+    sid = _new_session(service)
+    out = service.handle_turn(TurnRequest(
+        session_id=sid,
+        user_message="最近压力很大",
+        turn=TurnInstruction(goal="建立共情", technique="反映"),
+    ))
+    assert out.fallback_used is False
+    assert "开药" not in out.reply
+    assert "本地校验未通过" in out.review_history[0].fail_reason
+
+
+def test_handle_turn_persist_false_keeps_history_and_stage():
+    backend = MockBackend(default='{"reply": "好的，我们继续。", "stage_complete": true, "reason": ""}')
+    service = L4Service(Settings(_env_file=None), backend=backend, reviewer=MockReviewer())
+    sid = _new_session(service)
+    service.handle_turn(TurnRequest(
+        session_id=sid,
+        user_message="我最近压力很大，晚上总是睡不好。",
+        turn=TurnInstruction(goal="建立共情", technique="反映",
+                             force_substage="L4-L1"),
+    ))
+    sd = service.store.get(sid)
+    assert len(sd.history) == 2
+    assert len(sd.l3_history) == 1
+    assert sd.machine.current == "L4-L1"
+
+    service.handle_turn(
+        TurnRequest(session_id=sid, user_message="重写",
+                    turn=TurnInstruction(goal="g", technique="t")),
+        initial_fix="删除确定性措辞，改为初步印象",
+        persist=False,
+    )
+    sd = service.store.get(sid)
+    assert len(sd.history) == 2
+    assert len(sd.l3_history) == 1
+    assert sd.machine.current == "L4-L1"

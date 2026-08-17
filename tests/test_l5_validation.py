@@ -18,6 +18,14 @@ def test_validate_therapy_consistency_v43():
     assert v2 == []
 
 
+def test_validate_absolute_bans():
+    service = L4Service()
+    v = service._validate("可以考虑开药治疗", _turn(), ["CBT"], ["禁止开药"])
+    assert any("开药" in x for x in v)
+    v2 = service._validate("我们先聊聊睡眠习惯", _turn(), ["CBT"], ["禁止开药"])
+    assert v2 == []
+
+
 def test_therapy_keywords_covered():
     assert "EMDR" in THERAPY_KEYWORDS
     assert "CBT-I" in THERAPY_KEYWORDS
