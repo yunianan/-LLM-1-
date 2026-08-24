@@ -1,19 +1,36 @@
 """接口契约验证：L1 SafetyPassport / L3 DiagnosticReport / L5 审核输出 / L4 端到端。
 
 用法：python tools/verify_interfaces.py
-依赖：layer1+5 与 layer3 位于桌面默认路径；l4 包已安装（pip install -e .）
 LLM 调用全部 mock，无网络。
 """
 
-import importlib.util
 import json
 import sys
-from pathlib import Path
 
-L1_DIR = Path(r"C:\Users\ASUSA\Desktop\layer1+5\llm")
-L3_DIR = Path(r"C:\Users\ASUSA\Desktop\layer3\llm")
+import shared.llm_client as llm_client
 
-sys.path.insert(0, str(L1_DIR))
+
+def fake_ask_llm(prompt, model="deepseek-chat", temperature=0):
+    if "输出安全审核系统" in prompt:
+        if "你得了" in prompt or "建议你去开药" in prompt:
+            return json.dumps({
+                "harm": "fail", "boundary": "fail", "quality": "pass",
+                "fail_reason": "回复含确定性诊断措辞或药物建议",
+                "fix_instruction": "删除确诊式表述与药物建议，使用'初步印象'措辞。",
+            })
+        return json.dumps({
+            "harm": "pass", "boundary": "pass", "quality": "pass",
+            "fail_reason": "", "fix_instruction": "",
+        })
+    if "判断风险等级" in prompt:
+        return json.dumps({
+            "risk_level": 1, "score": 1, "risk_types": [],
+            "confidence": 0.9, "reason": "低风险，无紧急信号",
+        })
+    return "{}"
+
+
+llm_client.ask_llm = fake_ask_llm
 
 PASS = 0
 FAIL = 0
@@ -34,40 +51,11 @@ def require_keys(name, data, keys):
     check(f"{name} 必含字段 {keys}", not missing, f"缺失: {missing}")
 
 
-def is_subset(must, lst):
-    return all(x in lst for x in must)
-
-
-import api.llm as llm_api
-
-
-def fake_ask_llm(prompt):
-    if "输出安全审核系统" in prompt:
-        if "你得了" in prompt or "建议你去开药" in prompt:
-            return json.dumps({
-                "harm": "fail", "boundary": "fail", "quality": "pass",
-                "fail_reason": "回复含确定性诊断措辞或药物建议",
-                "fix_instruction": "删除确诊式表述与药物建议，使用'初步印象'措辞。",
-            })
-        return json.dumps({
-            "harm": "pass", "boundary": "pass", "quality": "pass",
-            "fail_reason": "", "fix_instruction": "",
-        })
-    if "判断风险等级" in prompt:
-        return json.dumps({
-            "risk_level": 1, "score": 1, "risk_types": [],
-            "confidence": 0.9, "reason": "低风险，无紧急信号",
-        })
-    return "{}"
-
-
-llm_api.ask_llm = fake_ask_llm
-
 print("=" * 60)
 print("L1: SafetyPassport（接口一）")
 print("=" * 60)
 
-from llm1.safety.input_safety.detector import safety_detect
+from layers.layer1.detector import safety_detect
 
 SP_KEYS = [
     "layer_id", "timestamp", "safety_flag", "risk_level", "risk_types",
@@ -109,11 +97,7 @@ print("=" * 60)
 print("L3: DiagnosticReport（接口三）")
 print("=" * 60)
 
-sys.path.insert(0, str(L3_DIR))
-spec = importlib.util.spec_from_file_location("l3api", str(L3_DIR / "api.py"))
-l3api = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(l3api)
-sys.path.remove(str(L3_DIR))
+from layers.layer3.api import diagnose
 
 profile = {
     "PHQ9": 16, "GAD7": 9, "MDQ": 3, "PCL5": 18, "ISI": 14,
@@ -130,7 +114,7 @@ DR_KEYS = [
     "recommended_therapy", "severity_level", "clinical_notes_for_L4", "summary",
     "structured_labels", "evidence_refs", "confidence", "flags", "instruction_to_next",
 ]
-report = l3api.diagnose(profile, safety_ctx)
+report = diagnose(profile, safety_ctx)
 require_keys("L3 输出", report, DR_KEYS)
 check("L3 layer_id == L3", report["layer_id"] == "L3")
 
@@ -163,7 +147,7 @@ print("=" * 60)
 print("L5: ContextualSafetyContext 输入 → 文档输出格式（接口四）")
 print("=" * 60)
 
-from llm5.reviewer import review_response
+from layers.layer5.reviewer import review_response
 
 ctx = {
     "l4_raw_output": "根据我们目前的评估，初步印象是中度抑郁，你觉得这个判断符合你的感受吗？",

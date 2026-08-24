@@ -1,69 +1,63 @@
-# Layer 4 治疗对话层（Treatment Dialogue Layer）
+# 心理诊疗 LLM — 五层认知架构
 
-五层认知架构（安全评估 → MI评估 → 诊断推理 → **治疗对话** → 输出安全审核）的第四层。
-本层接收 L3 诊断层下发的 L1-L4 治疗指令，将其"翻译"为自然、温暖、专业的治疗对话，
-不做任何临床推理（临床推理与语言生成分离）。
-
-## 模块结构
+五层认知架构（临床推理与语言生成分离）的统一实现仓库：
 
 ```
-l4/
-├── config.py         # 配置（环境变量前缀 L4_）
-├── schemas/          # 层间数据契约（L1-L4 指令 / DiagnosticReport / L5Context / 摘要 / 审核）
-├── llm/              # LLM 端口与适配器（OpenAI 兼容 / Mock / 本地模型占位）
-├── session/          # L4-L1→L4-L4 子层状态机与会话历史
-├── generation/       # prompt 四段式组装、回复生成、结构化摘要
-├── review/           # 审核端口、Mock 审核器、回环A（≤3 轮重写+兜底）
-├── service.py        # L4 门面：一轮完整处理
-├── api/server.py     # FastAPI 服务
-└── cli/demo.py       # CLI 演示
+L1 安全评估 → L2 MI评估 → L3 诊断推理(CLINICR) → L4 治疗对话 → L5 输出安全审核
 ```
+
+## 仓库结构
+
+```
+├── layers/                  # 各层实现（L2 待接入）
+│   ├── layer1/              # L1 安全评估层（关键词+LLM语义+越狱检测 → 风险融合）
+│   ├── layer3/              # L3 诊断推理层（CLINICR三步 + 疗法选择 + L1-L4指令生成）
+│   └── layer5/              # L5 输出安全审核层（上下文规则生成 + 一次调用三检）
+├── l4/                      # L4 治疗对话层（状态机/回环A/prompt组装/FastAPI）
+├── shared/                  # 公共模块
+│   ├── llm_client.py        # DeepSeek 客户端（DEEPSEEK_API_KEY 环境变量）
+│   ├── prompts/             # 共享 prompt 模板
+│   └── schemas/             # 层间契约 TypedDict（SafetyPassport 等）
+├── examples/                # 演示脚本 demo_l1.py / demo_l3.py / demo_l5.py
+├── tools/
+│   └── verify_interfaces.py # 层间接口契约验证（35 项检查，含端到端）
+├── tests/                   # L4 单元测试（54 个）
+└── docs/                    # 设计文档与实现计划
+```
+
+## 层间接口（严格按架构文档）
+
+| 接口 | 格式 | 位置 |
+|---|---|---|
+| 接口一 L1→L2 | SafetyPassport（13 字段） | `layers/layer1/risk_fusion.py` |
+| 接口二 L2→L3 | ClinicalIntake | 待 L2 接入 |
+| 接口三 L3→L4 | DiagnosticReport（结构化诊断+疗法+证据链） | `layers/layer3/api.py` |
+| 接口四 L4+L3→L5 | ContextualSafetyContext → L5 审核输出 | `layers/layer5/reviewer.py`、`l4/schemas/l5_context.py` |
+
+L4 的 Pydantic schema（`l4/schemas/`）是各接口的权威契约；`l4/review/l5_adapter.py` 将真实 L5 包装为 Reviewer 协议，回环A（≤3 轮重写+兜底）在 L4 内编排。
 
 ## 快速开始（无需 API 密钥）
 
 ```bash
 pip install -e ".[dev]"
-pytest                       # 跑全部单测（Mock 实现，无网络）
-python -m l4.cli.demo --scripted   # 脚本化演示四阶段对话
-python -m l4.cli.demo              # 交互式演示
-uvicorn l4.api.server:app --port 8000   # 启动服务
+pytest                                    # L4 单测 54 个
+python tools/verify_interfaces.py         # 三层接口契约 + 端到端 35 项
+python examples/demo_l3.py                # L3 诊断演示（无网络）
 ```
 
-## 接入真实 LLM（DeepSeek）
+## 接入真实 DeepSeek
 
 ```bash
-set L4_LLM_PROVIDER=openai_compat
-set L4_LLM_BASE_URL=https://api.deepseek.com
-set L4_LLM_API_KEY=sk-xxxx
-set L4_LLM_MODEL=deepseek-chat
-set L4_REVIEW_MODE=mock        # 真实 L5 就绪后替换为 l5_endpoint 或注入 reviewer
-uvicorn l4.api.server:app --port 8000
+set DEEPSEEK_API_KEY=sk-xxxx
+python examples/demo_l1.py "我最近压力很大"          # L1 演示（调真实 API）
+python examples/demo_l5.py                            # L1+L5 演示
 ```
 
-## API
+L4 服务：`uvicorn l4.api.server:app --port 8000`（配 `L4_LLM_PROVIDER=openai_compat` 等环境变量）。
 
-| 方法 | 路径 | 说明 |
-|---|---|---|
-| GET | `/healthz` | 健康检查 |
-| POST | `/v1/l4/session` | 创建会话（role + DiagnosticReport + boundary + safety） |
-| POST | `/v1/l4/turn` | 一轮处理（session_id + L3 指令 + 用户消息） |
-| POST | `/v1/l4/rewrite` | 外部回环A 入口（携带 fix_instruction 重写） |
+## 已实现的关键机制
 
-## 接口契约
-
-- 输入：接口三 `DiagnosticReport`（L3→L4），见 `examples/sample_diagnostic_report.json`
-- 输出：接口四 `ContextualSafetyContext`（L4+L3→L5）+ 结构化临床摘要（`StructuredSummary`，含 `evidence_refs` 证据链）
-- 回环A：L5 fail → 注入 `fix_instruction` 重写，最多 3 轮，超限输出安全兜底回复并标记 `loop_A_fallback` + `manual_review_required`
-
-## 接入本地训练模型
-
-本地模型训练完成后，实现 `l4/llm/local.py`（vLLM/transformers），保持 `LLMBackend.chat()` 签名不变，
-并设置 `L4_LLM_PROVIDER=local`，L4 其余代码零改动。
-
-## 测试
-
-```bash
-pytest -v
-```
-
-单测全部使用 MockBackend + MockReviewer，无网络依赖。
+- 回环A（L5 打回 → L4 重写 ≤3 轮 → 安全兜底 + `manual_review_required`）
+- L4 子层状态机 L4-L1→L4-L4（L3 指令可覆盖，回退打标记）
+- V4 本地自校验（禁止词/绝对禁令/疗法一致性）
+- 证据链 evidence_refs（支撑端到端逆溯检验）

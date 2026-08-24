@@ -3,9 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "l4-treatment-dialogue"
-version = "0.1.0"
-description = "五层认知架构 - 第四层治疗对话层（Treatment Dialogue Layer）"
+name = "psychotherapy-llm"
+version = "0.2.0"
+description = "五层认知架构心理诊疗LLM（L1安全评估/L3诊断推理/L4治疗对话/L5输出审核 + 统一接口契约）"
 requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2.12",
@@ -22,7 +22,7 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["l4*"]
+include = ["l4*", "layers*", "shared*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

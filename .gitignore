@@ -219,3 +219,10 @@ __marimo__/
 
 # SDD plan workspaces
 .superpowers/
+
+# Visual Studio / PyCharm artifacts
+.vs/
+*.pyproj
+*.sln
+diagnosis_output.json
+
