@@ -1,0 +1,569 @@
+from __future__ import annotations
+
+from concurrent.futures import ThreadPoolExecutor
+import os
+from typing import Any
+
+from ..llm import (
+    ALLOWED_EVIDENCE_REFS_KEY,
+    APICLINICRReasoner,
+    CLINICRModelUnavailable,
+    CLINICRReasoner,
+)
+from .schemas import (
+    CandidateGeneration,
+    DiagnosticCandidate,
+    EliminativeAssessment,
+    SUPPORTED_DISORDERS,
+)
+from .verifier import IndependentVerifier
+
+
+MIN_PRIMARY_CANDIDATE_CONFIDENCE = 0.5
+
+
+def _step2_max_workers() -> int:
+    raw = (os.getenv("L3_STEP2_MAX_WORKERS") or "3").strip()
+    try:
+        workers = int(raw)
+    except ValueError as exc:
+        raise ValueError("L3_STEP2_MAX_WORKERS 必须是整数") from exc
+    if not 1 <= workers <= 5:
+        raise ValueError("L3_STEP2_MAX_WORKERS 必须在 1 到 5 之间")
+    return workers
+
+DISORDER_SEVERITY_SCALE = {
+    "MDD": "PHQ9",
+    "GAD": "GAD7",
+    "PTSD": "PCL5",
+    "OCD": "Y_BOCS",
+    "Insomnia": "ISI",
+    "Bipolar": "MDQ",
+}
+
+SEVERITY_THRESHOLDS = {
+    "PHQ9": (
+        (0, 4, "normal"),
+        (5, 9, "mild"),
+        (10, 14, "moderate"),
+        (15, 19, "moderate_severe"),
+        (20, 27, "severe"),
+    ),
+    "GAD7": (
+        (0, 4, "normal"),
+        (5, 9, "mild"),
+        (10, 14, "moderate"),
+        (15, 21, "severe"),
+    ),
+}
+
+
+class CLINICR:
+    """严格执行候选生成、逐候选排除、排名第一候选独立终验。"""
+
+    def __init__(
+        self,
+        reasoner: CLINICRReasoner | None = None,
+        verifier: IndependentVerifier | None = None,
+    ) -> None:
+        self.reasoner = reasoner or APICLINICRReasoner()
+        self.verifier = verifier or IndependentVerifier()
+
+    def run(
+        self,
+        profile: dict[str, Any],
+        safety_context: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        known_refs = self._known_evidence_refs(profile)
+        # 允许列表由规则从画像生成，覆盖任何同名输入，不能由患者或模型自行指定。
+        model_profile = {
+            **profile,
+            ALLOWED_EVIDENCE_REFS_KEY: sorted(known_refs),
+        }
+
+        # Step 1: LLM同时考虑10种障碍并生成3-5个候选。
+        generation = self.reasoner.generate_candidates(model_profile)
+        candidates = self._validate_generation(generation, known_refs)
+
+        # Step 2: LLM逐候选核对DSM-5/ICD-11标准。
+        def evaluate(candidate: DiagnosticCandidate) -> EliminativeAssessment:
+            assessment = self.reasoner.evaluate_candidate(model_profile, candidate)
+            self._validate_eliminative(candidate, assessment, known_refs)
+            return assessment
+
+        # 各候选互不依赖；map 保留候选排名顺序，Verifier 仍在全部核对后运行。
+        with ThreadPoolExecutor(
+            max_workers=min(_step2_max_workers(), len(candidates)),
+            thread_name_prefix="clinicr-step2",
+        ) as executor:
+            assessments = list(executor.map(evaluate, candidates))
+
+        severity = self._get_severity(profile)
+        severity_level = self._get_severity_level(severity)
+        candidate_by_disorder = {item.disorder: item for item in candidates}
+        assessment_by_disorder = {item.disorder: item for item in assessments}
+
+        eligible = [
+            candidate
+            for candidate in candidates
+            if assessment_by_disorder[candidate.disorder].conclusion
+            == "meets_criteria"
+        ]
+        eligible.sort(key=lambda item: item.confidence, reverse=True)
+
+        under_observation = [
+            self._observation_payload(candidate_by_disorder[item.disorder], item)
+            for item in assessments
+            if item.conclusion == "watch"
+        ]
+        ruled_out = [
+            self._ruled_out_payload(item)
+            for item in assessments
+            if item.conclusion == "ruled_out"
+        ]
+
+        if not eligible:
+            missing = self._collect_missing(assessments)
+            if not missing:
+                missing = [{
+                    "field": "diagnostic_evidence",
+                    "purpose": "当前候选均未满足核心标准，需要补充可区分诊断的证据",
+                    "suggested_question": "请继续了解症状的具体表现、持续时间和功能影响。",
+                }]
+            return self._result(
+                candidates=candidates,
+                assessments=assessments,
+                primary=None,
+                provisional_primary=None,
+                secondary=[],
+                under_observation=under_observation,
+                ruled_out=ruled_out,
+                severity=severity,
+                severity_level=severity_level,
+                verifier={
+                    "score": 0.0,
+                    "decision": "rejected",
+                    "routing": "return_to_l2",
+                    "checks": [],
+                    "fail_reasons": ["没有候选诊断通过逐步排除验证"],
+                    "missing_dimensions": missing,
+                },
+                safety_context=safety_context,
+            )
+
+        top_candidate = eligible[0]
+        top_assessment = assessment_by_disorder[top_candidate.disorder]
+        provisional_primary = self._primary_payload(
+            top_candidate, top_assessment, severity
+        )
+
+        differential_context = [
+            {
+                "disorder": item.disorder,
+                "conclusion": item.conclusion,
+                "conclusion_reason": item.conclusion_reason,
+                "criteria_detail": [
+                    detail.model_dump(mode="json")
+                    for detail in item.criteria_detail
+                ],
+            }
+            for item in assessments
+            if item.disorder != top_candidate.disorder
+        ]
+
+        # Step 3: 独立Verifier不接收候选置信度，只评估推理质量。
+        verifier = self.verifier.verify(
+            top_candidate,
+            top_assessment,
+            model_profile,
+            differential_context,
+        )
+        self._validate_verifier_refs(verifier, known_refs)
+
+        if top_candidate.confidence < MIN_PRIMARY_CANDIDATE_CONFIDENCE:
+            verifier = {
+                **verifier,
+                "decision": "rejected",
+                "routing": "return_to_l2",
+                "fail_reasons": list(dict.fromkeys(
+                    verifier["fail_reasons"]
+                    + [
+                        "排名第一候选的初步置信度低于进入治疗匹配的最低门槛0.5"
+                    ]
+                )),
+                "missing_dimensions": self._ensure_missing(
+                    verifier["missing_dimensions"]
+                ),
+            }
+
+        primary = (
+            provisional_primary
+            if verifier["routing"] in {"pass", "conditional"}
+            else None
+        )
+        secondary = [
+            self._secondary_payload(
+                candidate,
+                assessment_by_disorder[candidate.disorder],
+            )
+            for candidate in eligible[1:]
+            if candidate.confidence >= MIN_PRIMARY_CANDIDATE_CONFIDENCE
+        ]
+
+        return self._result(
+            candidates=candidates,
+            assessments=assessments,
+            primary=primary,
+            provisional_primary=provisional_primary,
+            secondary=secondary,
+            under_observation=under_observation,
+            ruled_out=ruled_out,
+            severity=severity,
+            severity_level=severity_level,
+            verifier=verifier,
+            safety_context=safety_context,
+        )
+
+    @staticmethod
+    def _validate_generation(
+        generation: CandidateGeneration,
+        known_refs: set[str],
+    ) -> list[DiagnosticCandidate]:
+        considered = generation.considered_disorders
+        if len(set(considered)) != 10 or set(considered) != set(SUPPORTED_DISORDERS):
+            raise CLINICRModelUnavailable(
+                "CLINICR Step 1没有完整且唯一地考虑规定的10种障碍"
+            )
+        disorders = [item.disorder for item in generation.candidates]
+        if len(disorders) != len(set(disorders)):
+            raise CLINICRModelUnavailable("CLINICR Step 1生成了重复候选")
+        for candidate in generation.candidates:
+            CLINICR._assert_known_refs(
+                candidate.evidence_refs,
+                known_refs,
+                f"Step 1候选{candidate.disorder}",
+            )
+        return sorted(
+            generation.candidates,
+            key=lambda item: item.confidence,
+            reverse=True,
+        )
+
+    @staticmethod
+    def _validate_eliminative(
+        candidate: DiagnosticCandidate,
+        assessment: EliminativeAssessment,
+        known_refs: set[str],
+    ) -> None:
+        if assessment.disorder != candidate.disorder:
+            raise CLINICRModelUnavailable(
+                f"Step 2返回诊断{assessment.disorder}与候选{candidate.disorder}不一致"
+            )
+        codes = [item.code for item in assessment.criteria_detail]
+        if len(codes) != len(set(codes)):
+            raise CLINICRModelUnavailable(
+                f"Step 2候选{candidate.disorder}包含重复诊断条目"
+            )
+        for item in assessment.criteria_detail:
+            if item.status in {"met", "not_met"} and not item.evidence_refs:
+                raise CLINICRModelUnavailable(
+                    f"Step 2候选{candidate.disorder}的{item.code}缺少判定证据"
+                )
+            CLINICR._assert_known_refs(
+                item.evidence_refs,
+                known_refs,
+                f"Step 2候选{candidate.disorder}的{item.code}",
+            )
+        if (
+            any(item.status == "pending" for item in assessment.criteria_detail)
+            and not assessment.missing_dimensions
+        ):
+            raise CLINICRModelUnavailable(
+                f"Step 2候选{candidate.disorder}含待确认条目但没有给出L2追问"
+            )
+        if assessment.disorder == "MDD" and assessment.conclusion == "meets_criteria":
+            met = {
+                item.code
+                for item in assessment.criteria_detail
+                if item.status == "met"
+            }
+            if len(met) < 5 or not ({"A1", "A2"} & met):
+                raise CLINICRModelUnavailable(
+                    "Step 2将不满足MDD数量门槛或核心条目的候选标为满足标准"
+                )
+
+    @staticmethod
+    def _validate_verifier_refs(
+        verifier: dict[str, Any], known_refs: set[str]
+    ) -> None:
+        for check in verifier["checks"]:
+            CLINICR._assert_known_refs(
+                check["evidence_refs"],
+                known_refs,
+                f"Step 3终验维度{check['check_id']}",
+            )
+
+    @staticmethod
+    def _assert_known_refs(
+        refs: list[str], known_refs: set[str], context: str
+    ) -> None:
+        unknown = [ref for ref in refs if ref not in known_refs]
+        if unknown:
+            raise CLINICRModelUnavailable(
+                f"{context}引用了患者画像中不存在的证据：{unknown}"
+            )
+
+    @staticmethod
+    def _known_evidence_refs(profile: dict[str, Any]) -> set[str]:
+        refs: set[str] = set()
+        scale_keys = {
+            "PHQ9", "GAD7", "PCL5", "Y_BOCS", "ISI", "MDQ",
+            "ADNM", "RRS", "AAQ_II", "PHQ15",
+        }
+        for key in scale_keys:
+            if key in profile and profile[key] is not None:
+                refs.add(f"{key}={profile[key]}")
+            items = profile.get(f"{key}_items")
+            if isinstance(items, dict):
+                for item, score in items.items():
+                    refs.add(f"{key}_{item}={score}")
+
+        for collection in (
+            "key_symptoms_extracted",
+            "emotions",
+            "cognitive_patterns",
+            "key_narratives",
+            "functional_impairments",
+        ):
+            for item in profile.get(collection) or []:
+                if isinstance(item, dict):
+                    refs.update(str(ref) for ref in item.get("sources") or [] if ref)
+
+        for node in profile.get("evidence_nodes") or []:
+            if isinstance(node, dict) and node.get("evidence_id"):
+                refs.add(str(node["evidence_id"]))
+        return refs
+
+    @staticmethod
+    def _primary_payload(
+        candidate: DiagnosticCandidate,
+        assessment: EliminativeAssessment,
+        severity: dict[str, str],
+    ) -> dict[str, Any]:
+        detail = [CLINICR._criterion_payload(item) for item in assessment.criteria_detail]
+        met = [item["code"] for item in detail if item["status"] == "met"]
+        scale = DISORDER_SEVERITY_SCALE.get(candidate.disorder)
+        return {
+            "disorder": candidate.disorder,
+            "confidence": candidate.confidence,
+            "severity": severity.get(scale, "unknown"),
+            "evidence": candidate.core_evidence_summary,
+            "dsm5_criteria_met": met,
+            "dsm5_criteria_detail": detail,
+        }
+
+    @staticmethod
+    def _secondary_payload(
+        candidate: DiagnosticCandidate,
+        assessment: EliminativeAssessment,
+    ) -> dict[str, Any]:
+        return {
+            "disorder": candidate.disorder,
+            "confidence": candidate.confidence,
+            "evidence": assessment.conclusion_reason,
+        }
+
+    @staticmethod
+    def _observation_payload(
+        candidate: DiagnosticCandidate,
+        assessment: EliminativeAssessment,
+    ) -> dict[str, Any]:
+        return {
+            "disorder": candidate.disorder,
+            "confidence": candidate.confidence,
+            "reason": assessment.conclusion_reason,
+            "missing_dimensions": [
+                item.model_dump(mode="json") for item in assessment.missing_dimensions
+            ],
+        }
+
+    @staticmethod
+    def _ruled_out_payload(assessment: EliminativeAssessment) -> dict[str, Any]:
+        refs = [
+            ref
+            for item in assessment.criteria_detail
+            if item.status == "not_met"
+            for ref in item.evidence_refs
+        ]
+        return {
+            "disorder": assessment.disorder,
+            "reason": assessment.conclusion_reason,
+            "evidence_ref": ", ".join(dict.fromkeys(refs)),
+        }
+
+    @staticmethod
+    def _criterion_payload(item: Any) -> dict[str, Any]:
+        status = "unknown" if item.status == "pending" else item.status
+        return {
+            "code": item.code,
+            "name": item.name,
+            "status": status,
+            "met": item.status == "met",
+            "evidence_refs": item.evidence_refs,
+        }
+
+    @staticmethod
+    def _collect_missing(
+        assessments: list[EliminativeAssessment],
+    ) -> list[dict[str, str]]:
+        items = [
+            item.model_dump(mode="json")
+            for assessment in assessments
+            for item in assessment.missing_dimensions
+        ]
+        return CLINICR._dedupe_missing(items)
+
+    @staticmethod
+    def _ensure_missing(items: list[dict[str, str]]) -> list[dict[str, str]]:
+        if items:
+            return items
+        return [{
+            "field": "diagnostic_evidence",
+            "purpose": "提高候选诊断的初步支持度",
+            "suggested_question": "请继续了解核心症状的具体表现、持续时间和功能影响。",
+        }]
+
+    @staticmethod
+    def _dedupe_missing(items: list[dict[str, str]]) -> list[dict[str, str]]:
+        result: list[dict[str, str]] = []
+        seen: set[str] = set()
+        for item in items:
+            if item["field"] in seen:
+                continue
+            seen.add(item["field"])
+            result.append(item)
+        return result
+
+    @staticmethod
+    def _get_severity(profile: dict[str, Any]) -> dict[str, str]:
+        result: dict[str, str] = {}
+        for scale, thresholds in SEVERITY_THRESHOLDS.items():
+            score = profile.get(scale)
+            if score is None:
+                result[scale] = "unknown"
+                continue
+            result[scale] = next(
+                (level for low, high, level in thresholds if low <= score <= high),
+                "unknown",
+            )
+        return result
+
+    @staticmethod
+    def _get_severity_level(severity: dict[str, str]) -> int:
+        if any(value == "severe" for value in severity.values()):
+            return 3
+        if any(value in {"moderate", "moderate_severe"} for value in severity.values()):
+            return 2
+        return 1
+
+    @staticmethod
+    def _result(
+        *,
+        candidates: list[DiagnosticCandidate],
+        assessments: list[EliminativeAssessment],
+        primary: dict[str, Any] | None,
+        provisional_primary: dict[str, Any] | None,
+        secondary: list[dict[str, Any]],
+        under_observation: list[dict[str, Any]],
+        ruled_out: list[dict[str, Any]],
+        severity: dict[str, str],
+        severity_level: int,
+        verifier: dict[str, Any],
+        safety_context: dict[str, Any] | None,
+    ) -> dict[str, Any]:
+        evidence_refs: list[dict[str, Any]] = []
+        for candidate in candidates:
+            evidence_refs.append({
+                "type": "CLINICR-step1",
+                "disorder": candidate.disorder,
+                "source": "L2 ClinicalIntake",
+                "threshold": (
+                    f"symptom_match={candidate.symptom_match.matched}/"
+                    f"{candidate.symptom_match.total}; confidence={candidate.confidence}"
+                ),
+                "evidence_refs": candidate.evidence_refs,
+            })
+        for assessment in assessments:
+            for criterion in assessment.criteria_detail:
+                evidence_refs.append({
+                    "type": "DSM-5-criterion",
+                    "disorder": assessment.disorder,
+                    "criterion_code": criterion.code,
+                    "criterion_name": criterion.name,
+                    "status": (
+                        "unknown" if criterion.status == "pending" else criterion.status
+                    ),
+                    "evidence_refs": criterion.evidence_refs,
+                    "source_doc": "DSM-5/ICD-11",
+                })
+        if provisional_primary:
+            evidence_refs.append({
+                "type": "CLINICR-step3",
+                "disorder": provisional_primary["disorder"],
+                "source": "Reward Model Verifier",
+                "threshold": (
+                    f"score={verifier['score']}; route={verifier['routing']}"
+                ),
+                "evidence_refs": [
+                    ref
+                    for check in verifier["checks"]
+                    for ref in check["evidence_refs"]
+                ],
+            })
+
+        flags = list((safety_context or {}).get("flags", []))
+        routing_flag = {
+            "conditional": "provisional_diagnosis_needs_more_information",
+            "return_to_l2": "insufficient_diagnostic_evidence",
+        }.get(verifier["routing"])
+        if routing_flag:
+            flags.append(routing_flag)
+
+        if primary:
+            summary = (
+                f"CLINICR三步推理得到{primary['disorder']}，"
+                f"候选置信度={primary['confidence']}，"
+                f"Verifier={verifier['score']}（{verifier['decision']}）。"
+            )
+        else:
+            summary = (
+                "CLINICR终验未达到进入疗法匹配的最低要求，"
+                "返回L2补充指定信息。"
+            )
+
+        return {
+            "diagnosis": {
+                "primary": primary,
+                "secondary": secondary,
+                "under_observation": under_observation,
+                "ruled_out": ruled_out,
+            },
+            "provisional_diagnosis": provisional_primary,
+            "candidate_confidence": (
+                provisional_primary["confidence"] if provisional_primary else 0.0
+            ),
+            "verifier_score": verifier["score"],
+            "verifier_decision": verifier["decision"],
+            "verifier_routing": verifier["routing"],
+            "verifier_checks": verifier["checks"],
+            "verifier_fail_reasons": verifier["fail_reasons"],
+            "missing_dimensions": verifier["missing_dimensions"],
+            "severity": severity,
+            "severity_level": severity_level,
+            "candidates": [item.model_dump(mode="json") for item in candidates],
+            "checked": [item.model_dump(mode="json") for item in assessments],
+            "evidence_refs": evidence_refs,
+            "confidence": verifier["score"],
+            "flags": list(dict.fromkeys(flags)),
+            "summary": summary,
+        }

@@ -11,6 +11,7 @@ from layers.layer4.schemas.instructions import (
     TurnInstruction,
 )
 from layers.layer4.session.state_machine import SubstageMachine
+from shared.schemas.treatment_instructions import TreatmentInstructions, TreatmentTurnRecord
 
 
 class ConversationTurn(BaseModel):
@@ -23,6 +24,8 @@ class SessionData(BaseModel):
     machine: SubstageMachine = SubstageMachine()
     history: list[ConversationTurn] = []
     l3_history: list[TurnInstruction] = []
+    fallback_history: list[bool] = []
+    manual_review_required: bool = False
     role: RoleInstruction = RoleInstruction(identity="", style="")
     anchor: DiagnosticAnchor | None = None
     boundary: BoundaryInstruction = BoundaryInstruction()
@@ -32,6 +35,17 @@ class SessionData(BaseModel):
 
     def get_messages(self) -> list[Message]:
         return [Message(role=t.role, content=t.content) for t in self.history]
+
+    def instructions(self) -> TreatmentInstructions:
+        return TreatmentInstructions(L1=self.role, L2=self.anchor, L4=self.boundary)
+
+    def treatment_records(self) -> list[TreatmentTurnRecord]:
+        return [TreatmentTurnRecord(
+            instruction=turn,
+            user_message=self.history[2 * index].content,
+            reply=self.history[2 * index + 1].content,
+            fallback_used=self.fallback_history[index],
+        ) for index, turn in enumerate(self.l3_history)]
 
 
 class SessionStore:

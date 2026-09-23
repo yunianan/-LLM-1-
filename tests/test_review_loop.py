@@ -12,6 +12,7 @@ from layers.layer4.schemas.instructions import (
     TurnInstruction,
 )
 from layers.layer4.session.history import ConversationTurn
+from shared.schemas.treatment_instructions import TreatmentInstructions
 
 ROLE = RoleInstruction(identity="CBT治疗师", style="温暖")
 ANCHOR = DiagnosticAnchor(primary="MDD", confidence=0.87, therapy_type="CBT")
@@ -19,6 +20,7 @@ BOUNDARY = BoundaryInstruction()
 SAFETY = SafetyPassport()
 
 TURN = TurnInstruction(goal="探索自动化思维", technique="苏格拉底式提问")
+INSTRUCTIONS = TreatmentInstructions(L1=ROLE, L2=ANCHOR, L3=TURN, L4=BOUNDARY)
 
 GOOD = '{"reply": "听起来这周很辛苦，是什么让你觉得自己必须这么做？", "stage_complete": true, "reason": "ok"}'
 BAD = '{"reply": "你得了中度抑郁，建议你试试加大安眠药剂量。", "stage_complete": false, "reason": "bad"}'
@@ -31,7 +33,7 @@ def _make_orchestrator(mock_backend, mock_reviewer=None, max_attempts=3):
 
 def _run(orchestrator, user_message="我这周又加班到凌晨，感觉撑不住了", validate=None):
     def build_ctx(reply):
-        return build_l5_context(reply, "L4-L3", "CBT", SAFETY, ANCHOR)
+        return build_l5_context(reply, "L4-L3", SAFETY, INSTRUCTIONS, user_message, [])
     return orchestrator.run(TURN, [], user_message, build_ctx, validate)
 
 
@@ -101,7 +103,7 @@ def test_initial_fix_injected():
     orch = _make_orchestrator(backend, MockReviewer())
 
     def build_ctx(reply):
-        return build_l5_context(reply, "L4-L3", "CBT", SAFETY, ANCHOR)
+        return build_l5_context(reply, "L4-L3", SAFETY, INSTRUCTIONS, "我这周又加班到凌晨，感觉撑不住了", [])
 
     # 不传 initial_fix：命中 default=BAD
     out_no_fix = orch.run(TURN, [], "我这周又加班到凌晨，感觉撑不住了", build_ctx)

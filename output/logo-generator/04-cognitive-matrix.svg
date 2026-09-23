@@ -1,0 +1,15 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">认知矩阵</title>
+  <desc id="desc">克制的点阵构成抽象脑区，留白形成对话与判断符号。</desc>
+  <defs>
+    <circle id="d" r="4" fill="currentColor"/>
+  </defs>
+  <g>
+    <use href="#d" x="34" y="24"/><use href="#d" x="48" y="20"/><use href="#d" x="62" y="24"/>
+    <use href="#d" x="25" y="36"/><use href="#d" x="40" y="35"/><use href="#d" x="69" y="36"/>
+    <use href="#d" x="22" y="51"/><use href="#d" x="37" y="50"/><use href="#d" x="67" y="51"/><use href="#d" x="80" y="48"/>
+    <use href="#d" x="27" y="66"/><use href="#d" x="43" y="66"/><use href="#d" x="59" y="66"/><use href="#d" x="74" y="62"/>
+    <use href="#d" x="40" y="79"/><use href="#d" x="56" y="79"/>
+  </g>
+  <path d="M45 47h18a8 8 0 0 1 8 8v8H58l-8 7v-7h-5a8 8 0 0 1-8-8 8 8 0 0 1 8-8Z" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"/>
+</svg>

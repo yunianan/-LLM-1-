@@ -1,6 +1,6 @@
 import uuid
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from layers.layer4.config import Settings
 from layers.layer4.generation.responder import Responder
@@ -16,9 +16,7 @@ from layers.layer4.review.l5_adapter import L5Reviewer
 from layers.layer4.review.orchestrator import ReviewOrchestrator
 from layers.layer4.review.reviewer import Reviewer
 from layers.layer4.schemas.instructions import (
-    BoundaryInstruction,
     DiagnosticAnchor,
-    RoleInstruction,
     SafetyPassport,
     Substage,
     TurnInstruction,
@@ -29,6 +27,8 @@ from layers.layer4.schemas.review import ReviewResult
 from layers.layer4.schemas.summary import StructuredSummary
 from layers.layer4.session.history import ConversationTurn, SessionData, SessionStore
 from layers.layer4.validation import L3ToL4Gate
+from shared.schemas.treatment_instructions import TreatmentInstructions
+from shared.treatment_instruction_guard import validate_turn_instructions
 
 THERAPY_KEYWORDS = {
     "EMDR": "EMDR", "CPT": "CPT", "IPSRT": "IPSRT", "ERP": "ERP",
@@ -38,10 +38,9 @@ THERAPY_KEYWORDS = {
 
 
 class SessionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     session_id: str | None = None
-    role: RoleInstruction
     report: DiagnosticReport
-    boundary: BoundaryInstruction = BoundaryInstruction()
     safety: SafetyPassport = SafetyPassport()
 
 
@@ -89,14 +88,14 @@ class L4Service:
     def create_session(self, req: SessionRequest) -> str:
         L3ToL4Gate().assert_valid(req.report)
         session_id = req.session_id or uuid.uuid4().hex
-        anchor = req.report.to_anchor()
-        therapy_options = [t for t in [req.report.recommended_therapy.primary]
-                           + list(req.report.recommended_therapy.addon) if t]
+        bundle = TreatmentInstructions.model_validate(req.report.instructions)
+        anchor = bundle.L2
+        therapy_options = [t for t in [anchor.therapy_type] + list(anchor.plugins) if t]
         data = SessionData(
             session_id=session_id,
-            role=req.role,
+            role=bundle.L1,
             anchor=anchor,
-            boundary=req.boundary,
+            boundary=bundle.L4,
             safety=req.safety,
             therapy_options=therapy_options,
         )
@@ -106,6 +105,22 @@ class L4Service:
     def handle_turn(self, req: TurnRequest, initial_fix: str | None = None,
                     persist: bool = True) -> TurnOutcome:
         sd = self.store.get(req.session_id)
+        if sd.manual_review_required:
+            raise ValueError("当前会话需要人工复核，自动生成和重写已暂停")
+        records = sd.treatment_records()
+        # 外部回环 A 重写同一轮，不允许借重写替换已经批准的治疗决策。
+        if not persist and records and req.turn.turn_number == len(records):
+            if req.turn != records[-1].instruction or req.user_message != records[-1].user_message:
+                raise ValueError("重写必须沿用原轮次的患者消息和 L3 指令")
+            records = records[:-1]
+        instructions = sd.instructions().model_copy(update={"L3": req.turn}, deep=True)
+        # 使用进入本轮前的快照；同轮外部重写需排除本轮已存的消息对。
+        history = [item.model_copy(deep=True) for item in sd.history[:2 * len(records)]]
+        validate_turn_instructions(
+            instructions,
+            session_id=req.session_id, user_message=req.user_message, records=records,
+            safety=sd.safety.model_dump(mode="json"),
+        )
         anchor = sd.anchor or DiagnosticAnchor()
         substage = sd.machine.resolve(req.turn.force_substage)
 
@@ -116,24 +131,26 @@ class L4Service:
         )
 
         def build_ctx(reply: str) -> L5Context:
-            return build_l5_context(reply, substage, anchor.therapy_type, sd.safety, anchor)
+            return build_l5_context(reply, substage, sd.safety, instructions,
+                                    req.user_message, history)
 
         def validate(reply: str) -> list[str]:
             return self._validate(reply, req.turn, sd.therapy_options,
                                   sd.boundary.absolute_bans)
 
         outcome = orchestrator.run(
-            req.turn, sd.history, req.user_message,
+            req.turn, history, req.user_message,
             build_ctx, validate, initial_fix=initial_fix,
         )
 
         flags: list[str] = list(sd.machine.flags)
         if outcome.fallback_used:
             flags.extend(["loop_A_fallback", "manual_review_required"])
+            sd.manual_review_required = True
 
         summary = build_summary(
             req.turn, substage, outcome.reply,
-            build_evidence_refs(req.turn, sd.history, sd.safety),
+            build_evidence_refs(req.turn, history, sd.safety),
             flags=flags,
         )
 
@@ -141,9 +158,9 @@ class L4Service:
             sd.history.append(ConversationTurn(role="user", content=req.user_message))
             sd.history.append(ConversationTurn(role="assistant", content=outcome.reply))
             sd.l3_history.append(req.turn)
+            sd.fallback_history.append(outcome.fallback_used)
             if not outcome.fallback_used:
-                sd.machine.advance(stage_complete=outcome.stage_complete,
-                                   force=req.turn.force_substage)
+                sd.machine.advance(force=req.turn.force_substage)
 
         return TurnOutcome(
             session_id=req.session_id,
@@ -175,6 +192,11 @@ class L4Service:
             if target and target in reply:
                 violations.append(f"回复违反绝对禁令：{ban}")
         allowed = set(therapy_options)
+        allowed.update(
+            keyword
+            for keyword in THERAPY_KEYWORDS
+            if any(keyword in option for option in therapy_options)
+        )
         for kw in THERAPY_KEYWORDS:
             if kw in reply and kw not in allowed and kw != "CBT":
                 violations.append(f"回复提及未授权疗法：{kw}")

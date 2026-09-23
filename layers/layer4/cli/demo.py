@@ -3,7 +3,7 @@
 用法：
     python -m layers.layer4.cli.demo            # 交互式（需 stdin 终端）
     python -m layers.layer4.cli.demo --scripted # 脚本化演示，自动走完 L4-L1 → L4-L4
-默认使用 MockBackend + MockReviewer，无需 API 密钥。
+脚本演示使用受控指令与 MockBackend；交互模式使用 L3 指令 API 和 L4 生产配置。
 """
 
 import argparse
@@ -13,19 +13,13 @@ from pathlib import Path
 
 from layers.layer4.config import Settings
 from layers.layer4.schemas.instructions import (
-    BoundaryInstruction,
-    RoleInstruction,
     SafetyPassport,
     TurnInstruction,
 )
 from layers.layer4.schemas.l3_report import DiagnosticReport
 from layers.layer4.service import L4Service, SessionRequest, TurnRequest
+from layers.layer3.instructions.turn_planner import TurnInstructionPlanner
 
-ROLE = RoleInstruction(identity="你是一名受过CBT训练的心理治疗师", style="温暖、共情、结构化")
-BOUNDARY = BoundaryInstruction(
-    absolute_bans=["禁止开药", "禁止诊断新疾病", "禁止预测未来"],
-    safety_trigger="用户表达自杀意图→立即触发安全协议",
-)
 SAFETY = SafetyPassport(risk_level=1, sensitive_topics=[], flags=["monitor_suicidal_ideation"])
 
 SCRIPTED_TURNS = [
@@ -62,12 +56,29 @@ SCRIPTED_TURNS = [
 
 
 def _load_report() -> DiagnosticReport:
-    path = Path(__file__).resolve().parents[2] / "examples" / "sample_diagnostic_report.json"
+    path = Path(__file__).resolve().parents[3] / "examples" / "sample_diagnostic_report.json"
     return DiagnosticReport.model_validate(json.loads(path.read_text(encoding="utf-8")))
 
 
 def _print_turn(service: L4Service, session_id: str, user_message: str,
                 turn: TurnInstruction) -> None:
+    if not turn.turn_number:
+        # 仅脚本演示：由显式脚本提供 L3 指令，不声称进行了真实模型评估。
+        sd = service.store.get(session_id)
+        code = {"L4-L1": "reflection", "L4-L2": "feedback", "L4-L3": "thought_identification", "L4-L4": "review"}[turn.force_substage]
+        number = len(sd.l3_history) + 1
+        turn_values = turn.model_dump()
+        turn_values.update({
+            "session_id": session_id, "turn_number": number, "source_message": user_message,
+            "technique_code": code, "technique": sd.anchor.allowed_techniques[code],
+            "forbidden": list(dict.fromkeys(sd.boundary.absolute_bans + turn.forbidden)),
+            "plugin_guidance": None,
+            "link_previous": sd.history[-2].content if sd.history else "",
+            "rationale": "受控演示脚本给定的阶段和目标",
+            "previous_goal_met": number > 1, "patient_ready": number > 1,
+            "evidence": [{"source_id": f"turn:{number}:user", "quote": user_message}],
+        })
+        turn = TurnInstruction.model_validate(turn_values)
     out = service.handle_turn(TurnRequest(
         session_id=session_id, user_message=user_message, turn=turn))
     print(f"\n用户：{user_message}")
@@ -81,9 +92,9 @@ def _print_turn(service: L4Service, session_id: str, user_message: str,
 
 
 def run_scripted() -> None:
-    service = L4Service(Settings(_env_file=None, review_mode="mock"))
+    service = L4Service(Settings(_env_file=None, llm_provider="mock", review_mode="mock"))
     session_id = service.create_session(SessionRequest(
-        role=ROLE, report=_load_report(), boundary=BOUNDARY, safety=SAFETY))
+        report=_load_report(), safety=SAFETY))
     print("== L4 治疗对话层 脚本化演示（MockBackend + MockReviewer）==")
     print(f"诊断锚点: {service.store.get(session_id).anchor.primary}")
     for message, turn in SCRIPTED_TURNS:
@@ -92,11 +103,11 @@ def run_scripted() -> None:
 
 
 def run_interactive() -> None:
-    service = L4Service(Settings(_env_file=None, review_mode="mock"))
+    service = L4Service()
     session_id = service.create_session(SessionRequest(
-        role=ROLE, report=_load_report(), boundary=BOUNDARY, safety=SAFETY))
-    print("== L4 交互式演示：输入消息，Ctrl+C 退出 ==")
-    stage_idx = 0
+        report=_load_report(), safety=SAFETY))
+    print("== L3 指令 → L4 API 集成演示（测试画像，非完整 L1 安全入口）：Ctrl+C 退出 ==")
+    planner = TurnInstructionPlanner()
     while True:
         try:
             message = input("用户：").strip()
@@ -105,12 +116,11 @@ def run_interactive() -> None:
             break
         if not message:
             continue
-        force = SCRIPTED_TURNS[stage_idx][1].force_substage if stage_idx < len(SCRIPTED_TURNS) else None
-        stage_idx = min(stage_idx + 1, len(SCRIPTED_TURNS) - 1)
-        turn = TurnInstruction(
-            goal="跟随患者推进治疗", technique="反映+开放式提问",
-            forbidden=["建议", "确诊"],
-            force_substage=force,
+        sd = service.store.get(session_id)
+        turn = planner.plan(
+            session_id=session_id, instructions=sd.instructions(),
+            records=sd.treatment_records(), user_message=message,
+            safety=sd.safety.model_dump(mode="json"),
         )
         _print_turn(service, session_id, message, turn)
 

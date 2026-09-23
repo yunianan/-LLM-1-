@@ -14,6 +14,7 @@ from layers.layer4.schemas.instructions import (
 )
 from layers.layer4.schemas.l3_report import DiagnosticReport, MissingDimension
 from layers.layer4.service import L4Service, SessionRequest, TurnRequest
+from tests.instruction_test_double import controlled_turn
 
 EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
 
@@ -35,8 +36,19 @@ def _report() -> DiagnosticReport:
 
 def _new_session(service: L4Service, session_id: str | None = None) -> str:
     return service.create_session(
-        SessionRequest(session_id=session_id, role=ROLE, report=_report(),
-                       boundary=BOUNDARY, safety=SAFETY)
+        SessionRequest(session_id=session_id, report=_report(), safety=SAFETY)
+    )
+
+
+def _request(service, *, session_id, user_message, turn):
+    if not service.store.exists(session_id):
+        return TurnRequest(session_id=session_id, user_message=user_message, turn=turn)
+    overrides = {"goal": turn.goal, "forbidden": turn.forbidden}
+    if turn.force_substage:
+        overrides["stage"] = turn.force_substage
+    return TurnRequest(
+        session_id=session_id, user_message=user_message,
+        turn=controlled_turn(service, session_id, user_message, **overrides),
     )
 
 
@@ -60,7 +72,7 @@ def test_create_session_blocks_report_that_must_return_to_l2():
 
     with pytest.raises(ValueError, match="return_to_l2"):
         service.create_session(SessionRequest(
-            role=ROLE, report=report, boundary=BOUNDARY, safety=SAFETY
+            report=report, safety=SAFETY
         ))
 
 
@@ -70,14 +82,14 @@ def test_create_session_blocks_report_that_requires_manual_review():
 
     with pytest.raises(ValueError, match="manual_review"):
         service.create_session(SessionRequest(
-            role=ROLE, report=report, boundary=BOUNDARY, safety=SAFETY
+            report=report, safety=SAFETY
         ))
 
 
 def test_turn_end_to_end():
     service = _service()
     sid = _new_session(service)
-    out = service.handle_turn(TurnRequest(
+    out = service.handle_turn(_request(service,
         session_id=sid,
         user_message="我最近工作压力很大，晚上总是睡不好。",
         turn=TurnInstruction(goal="建立共情，确认当前状态", technique="开放式提问+反映",
@@ -97,7 +109,7 @@ def test_turn_end_to_end():
 def test_turn_unknown_session_raises():
     service = _service()
     with pytest.raises(KeyError):
-        service.handle_turn(TurnRequest(
+        service.handle_turn(_request(service,
             session_id="nope", user_message="hi",
             turn=TurnInstruction(goal="g", technique="t"),
         ))
@@ -112,7 +124,7 @@ def test_forbidden_word_triggers_rewrite():
     )
     service = L4Service(Settings(_env_file=None), backend=backend, reviewer=MockReviewer())
     sid = _new_session(service)
-    out = service.handle_turn(TurnRequest(
+    out = service.handle_turn(_request(service,
         session_id=sid,
         user_message="最近压力很大",
         turn=TurnInstruction(goal="建立共情", technique="反映",
@@ -128,7 +140,7 @@ def test_fallback_marks_flags():
     service = L4Service(Settings(_env_file=None), backend=backend,
                         reviewer=MockReviewer(always_fail=True))
     sid = _new_session(service)
-    out = service.handle_turn(TurnRequest(
+    out = service.handle_turn(_request(service,
         session_id=sid,
         user_message="我感觉很糟",
         turn=TurnInstruction(goal="g", technique="t"),
@@ -147,7 +159,7 @@ def test_handle_turn_initial_fix():
     service = L4Service(Settings(_env_file=None), backend=backend, reviewer=MockReviewer())
     sid = _new_session(service)
     out = service.handle_turn(
-        TurnRequest(session_id=sid, user_message="hi",
+        _request(service,session_id=sid, user_message="hi",
                     turn=TurnInstruction(goal="g", technique="t")),
         initial_fix="删除确定性措辞，改为初步印象",
     )
@@ -163,7 +175,7 @@ def test_absolute_bans_trigger_rewrite():
     )
     service = L4Service(Settings(_env_file=None), backend=backend, reviewer=MockReviewer())
     sid = _new_session(service)
-    out = service.handle_turn(TurnRequest(
+    out = service.handle_turn(_request(service,
         session_id=sid,
         user_message="最近压力很大",
         turn=TurnInstruction(goal="建立共情", technique="反映"),
@@ -177,7 +189,7 @@ def test_handle_turn_persist_false_keeps_history_and_stage():
     backend = MockBackend(default='{"reply": "好的，我们继续。", "stage_complete": true, "reason": ""}')
     service = L4Service(Settings(_env_file=None), backend=backend, reviewer=MockReviewer())
     sid = _new_session(service)
-    service.handle_turn(TurnRequest(
+    service.handle_turn(_request(service,
         session_id=sid,
         user_message="我最近压力很大，晚上总是睡不好。",
         turn=TurnInstruction(goal="建立共情", technique="反映",
@@ -189,7 +201,7 @@ def test_handle_turn_persist_false_keeps_history_and_stage():
     assert sd.machine.current == "L4-L1"
 
     service.handle_turn(
-        TurnRequest(session_id=sid, user_message="重写",
+        _request(service,session_id=sid, user_message="重写",
                     turn=TurnInstruction(goal="g", technique="t")),
         initial_fix="删除确定性措辞，改为初步印象",
         persist=False,

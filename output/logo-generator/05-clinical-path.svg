@@ -1,0 +1,18 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">临床路径</title>
+  <desc id="desc">六条有序路径汇入同一核验点，表达多源证据约束下的临床辅助推理。</desc>
+  <defs>
+    <clipPath id="disc"><circle cx="50" cy="50" r="34"/></clipPath>
+  </defs>
+  <g clip-path="url(#disc)" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+    <path d="M10 29h33q10 0 10 10v22q0 10 10 10h28"/>
+    <path d="M10 37h27q9 0 9 9v12q0 9 9 9h36" opacity=".82"/>
+    <path d="M10 45h28q7 0 7 7t7 7h39" opacity=".66"/>
+    <path d="M10 53h25q8 0 8 8t8 8h40" opacity=".5"/>
+    <path d="M10 61h21q9 0 9 9t9 9h42" opacity=".34"/>
+    <path d="M10 69h16q10 0 10 10v8" opacity=".2"/>
+  </g>
+  <circle cx="50" cy="50" r="34" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <circle cx="68" cy="59" r="10" fill="currentColor"/>
+  <path d="m63 59 4 4 7-9" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

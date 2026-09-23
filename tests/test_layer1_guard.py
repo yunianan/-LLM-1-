@@ -2,114 +2,64 @@ from copy import deepcopy
 
 import pytest
 
-from layers.layer1 import detector
 from layers.layer1.guard import L1ExitGuard, L1GuardError
 from layers.layer1.policy_executor import execute_safety_policy
 
 
-def _passport(**overrides):
+def _passport(path="normal", *, instruction="允许进入L2。", flags=None):
     passport = {
-        "layer_id": "L1",
-        "safety_flag": "pass",
-        "risk_level": 1,
-        "risk_types": [],
-        "crisis_flag": False,
-        "sensitive_topics": [],
-        "structured_labels": {"scale_skip_list": []},
-        "flags": [],
-        "instruction_to_next": "",
+        "decision_path": path,
+        "instruction_to_next": instruction,
+        "flags": flags or [],
     }
-    passport.update(overrides)
     passport["execution"] = execute_safety_policy(passport)
     return passport
 
 
-def test_block_decision_executes_crisis_route_and_prevents_l2():
-    passport = _passport(
-        safety_flag="block",
-        risk_level=3,
-        crisis_flag=True,
-        flags=["crisis_intervention"],
-    )
-
+def test_only_normal_path_can_call_l2():
+    passport = _passport("normal")
     result = L1ExitGuard().assert_valid(passport)
-
-    assert result["status"] == "pass"
-    assert result["can_call_l2"] is False
-    assert passport["execution"]["terminal"] is True
-    assert passport["execution"]["crisis_response_generated"] is True
-    assert "do_not_call_l2" in passport["execution"]["applied_controls"]
-
-
-def test_warn_decision_executes_trauma_and_scale_controls():
-    passport = _passport(
-        safety_flag="warn",
-        risk_level=2,
-        sensitive_topics=["trauma"],
-        flags=["avoid_trauma_probing", "monitor_suicidal_ideation"],
-        structured_labels={"scale_skip_list": ["PCL-5"]},
-    )
-
-    result = L1ExitGuard().assert_valid(passport)
-
     assert result["can_call_l2"] is True
-    assert set(result["verified_controls"]) == {
-        "avoid_trauma_probing",
-        "monitor_suicidal_ideation",
-        "skip_scale:PCL-5",
-    }
+    assert passport["execution"]["consume_message"] is False
 
 
-def test_guard_rejects_block_decision_that_was_not_executed():
-    passport = _passport(safety_flag="block", risk_level=3, crisis_flag=True)
+@pytest.mark.parametrize(
+    "path,route",
+    [
+        ("safety_assessment", "l1"),
+        ("safety_pause", "safety"),
+        ("clinical_crisis", "safety"),
+        ("security_reject", "security"),
+    ],
+)
+def test_non_normal_paths_consume_message_and_block_l2(path, route):
+    passport = _passport(path, instruction="患者可见的下一步说明")
+    result = L1ExitGuard().assert_valid(passport)
+    assert passport["execution"]["route"] == route
+    assert passport["execution"]["consume_message"] is True
+    assert result["can_call_l2"] is False
+
+
+def test_guard_rejects_assessment_message_forged_as_l2_input():
+    passport = _passport("safety_assessment", instruction="请回答ASQ问题")
     tampered = deepcopy(passport)
-    tampered["execution"] = {
-        "route": "l2",
-        "terminal": False,
-        "crisis_response_generated": False,
-        "applied_controls": [],
-    }
-
+    tampered["execution"]["route"] = "l2"
+    tampered["execution"]["consume_message"] = False
     result = L1ExitGuard().verify(tampered)
-
     assert result["status"] == "fail"
     assert result["can_call_l2"] is False
-    assert any("终止常规流程" in item for item in result["violations"])
     with pytest.raises(L1GuardError):
         L1ExitGuard().assert_valid(tampered)
 
 
-def test_guard_rejects_inconsistent_crisis_fields():
-    passport = _passport(safety_flag="pass", risk_level=3, crisis_flag=False)
-
+def test_safety_pause_requires_patient_visible_transition_support():
+    passport = _passport("safety_pause", instruction="")
     result = L1ExitGuard().verify(passport)
-
     assert result["status"] == "fail"
-    assert result["can_call_l2"] is False
+    assert any("支持" in item for item in result["violations"])
 
 
-def test_safety_detect_runs_executor_then_guard(monkeypatch):
-    monkeypatch.setattr(detector, "keyword_detect", lambda text: {
-        "rule_score": 2,
-        "risk_types": ["trauma"],
-        "sensitive_topics": ["trauma"],
-        "evidence_refs": [],
-    })
-    monkeypatch.setattr(detector, "llm_classify", lambda text: {
-        "llm_score": 1,
-        "risk_types": [],
-        "confidence": 0.9,
-        "evidence_refs": [],
-    })
-    monkeypatch.setattr(detector, "jailbreak_detect", lambda text: {
-        "jailbreak_level": 0,
-        "jailbreak_flag": False,
-        "evidence_refs": [],
-    })
-
-    result = detector.safety_detect("测试")
-
-    assert result["execution"]["route"] == "l2"
-    assert "skip_scale:PCL-5" in result["execution"]["applied_controls"]
-    assert result["guard"]["status"] == "pass"
-    assert result["guard"]["can_call_l2"] is True
+def test_guard_rejects_terminal_ui_shutdown():
+    passport = _passport("clinical_crisis", instruction="支持与紧急行动")
+    passport["execution"]["terminal"] = True
+    assert L1ExitGuard().verify(passport)["status"] == "fail"

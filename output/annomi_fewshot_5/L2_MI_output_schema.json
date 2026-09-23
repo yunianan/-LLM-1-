@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "L2 MI response with auditable decision summary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["decision_summary", "reply"],
+  "properties": {
+    "decision_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stage",
+        "patient_focus",
+        "evidence",
+        "missing_information",
+        "response_goal",
+        "selected_techniques",
+        "scale_action",
+        "reason"
+      ],
+      "properties": {
+        "stage": {
+          "enum": ["engaging", "focusing", "evoking", "planning"]
+        },
+        "patient_focus": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "evidence": {
+          "type": "array",
+          "maxItems": 2,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "missing_information": {
+          "type": "array",
+          "maxItems": 2,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "response_goal": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "selected_techniques": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "open_question",
+              "affirmation",
+              "reflection",
+              "complex_reflection",
+              "summary"
+            ]
+          }
+        },
+        "scale_action": {
+          "enum": ["do_not_offer", "offer_consent", "ask_required_item"]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        }
+      }
+    },
+    "reply": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

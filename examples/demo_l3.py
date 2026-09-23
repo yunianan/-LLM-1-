@@ -2,9 +2,9 @@
 
 import json
 
-from layers.layer3.clinicr import CLINICR
-from layers.layer3.therapy_selector import TherapySelector
-from layers.layer3.instruction_generator import InstructionGenerator
+from layers.layer3.diagnosis.clinicr import CLINICR
+from layers.layer3.therapy.therapy_selector import TherapySelector
+from layers.layer3.instructions.instruction_generator import InstructionGenerator
 from layers.layer3.api import build_report
 
 

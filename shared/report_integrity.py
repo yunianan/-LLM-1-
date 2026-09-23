@@ -8,6 +8,10 @@ REQUIRED_L3_CHECKS = {
     "V3-PRIMARY-NOT-RULED-OUT",
     "V3-CRITERIA-EVIDENCE",
     "V3-THERAPY-MATCH",
+    "V3-PLUGIN-ROUTING",
+    "V3-THERAPY-ADJUSTMENT",
+    "V3-CONTRAINDICATION-OVERRIDE",
+    "V3-TREATMENT-INSTRUCTIONS",
 }
 
 
@@ -44,6 +48,7 @@ def l3_report_fingerprint(report: Any) -> str:
         "verifier_score": source.get("verifier_score", 0.0),
         "verifier_routing": source.get("verifier_routing", ""),
         "recommended_therapy": source.get("recommended_therapy"),
+        "instructions": source.get("instructions"),
     }
     encoded = json.dumps(
         _compact(payload), ensure_ascii=False, sort_keys=True, separators=(",", ":")

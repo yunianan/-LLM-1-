@@ -28,7 +28,10 @@ def create_app(settings: Settings | None = None,
 
     @app.post("/v1/l4/session", response_model=SessionCreated)
     def create_session(req: SessionRequest) -> SessionCreated:
-        return SessionCreated(session_id=service.create_session(req))
+        try:
+            return SessionCreated(session_id=service.create_session(req))
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     @app.post("/v1/l4/turn", response_model=TurnOutcome)
     def handle_turn(req: TurnRequest) -> TurnOutcome:
@@ -36,6 +39,8 @@ def create_app(settings: Settings | None = None,
             return service.handle_turn(req)
         except KeyError:
             raise HTTPException(status_code=404, detail=f"会话不存在: {req.session_id}")
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     @app.post("/v1/l4/rewrite", response_model=TurnOutcome)
     def rewrite(req: RewriteRequest) -> TurnOutcome:
@@ -50,6 +55,8 @@ def create_app(settings: Settings | None = None,
                                        persist=False)
         except KeyError:
             raise HTTPException(status_code=404, detail=f"会话不存在: {req.session_id}")
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     return app
 

@@ -1,3 +1,5 @@
+import json
+
 from layers.layer4.llm.base import Message
 from layers.layer4.schemas.instructions import (
     BoundaryInstruction,
@@ -24,17 +26,35 @@ def assemble_prompt(
     fix_instruction: str | None = None,
 ) -> list[Message]:
     """四段式组装 prompt（文档第 6 节）：系统(L1+L2+L4) / 本轮(L3+插件) / 上下文 / 当前。"""
+    plugin_trigger_text = "；".join(
+        f"{item.get('plugin', '')}: {', '.join(item.get('conditions', []))}"
+        for item in anchor.plugin_triggers
+    ) or "无"
+    adjustment_text = "；".join(
+        anchor.strategy_adjustments.get("instructions", [])
+    ) or "无"
     system_parts = [_SYSTEM_INTRO]
-    system_parts.append(f"【角色定义】(L1)\n{role.identity}\n风格：{role.style}")
+    system_parts.append(f"【角色定义】(L1)\n{role.identity}\n风格：{role.style}\n边界：{'；'.join(role.boundaries)}")
     system_parts.append(
         "【诊断锚点】(L2)\n"
         f"主诊断：{anchor.primary}\n"
+        f"基础疗法：{anchor.therapy_type}\n"
+        f"诊断与鉴别排除详情：{json.dumps(anchor.diagnosis_details, ensure_ascii=False)}\n"
+        f"量表：{json.dumps(anchor.scale_scores, ensure_ascii=False)}\n"
         f"共病：{', '.join(anchor.comorbidities) if anchor.comorbidities else '无'}\n"
         f"已排除：{', '.join(anchor.excluded) if anchor.excluded else '无'}\n"
         f"核心信念：{', '.join(anchor.core_beliefs) if anchor.core_beliefs else '无'}\n"
+        f"认知模式（未标注为核心信念时勿推断）：{json.dumps(anchor.cognitive_patterns, ensure_ascii=False)}\n"
+        f"触发情境与关键叙述（原始依据）：{json.dumps(anchor.triggering_situations, ensure_ascii=False)}\n"
+        f"关键叙述（不可一律视为触发情境）：{json.dumps(anchor.key_narratives, ensure_ascii=False)}\n"
+        f"患者目标：{'；'.join(anchor.patient_goals)}\n"
         f"已激活插件：{', '.join(anchor.plugins) if anchor.plugins else '无'}\n"
+        f"插件触发依据：{plugin_trigger_text}\n"
+        f"治疗方案微调：{adjustment_text}\n"
+        f"禁忌与转介：{'；'.join(anchor.contraindications) if anchor.contraindications else '无'}\n"
         f"候选诊断支持度：{anchor.candidate_confidence}\n"
-        f"独立终验证据质量：{anchor.verifier_score}"
+        f"独立终验证据质量（CLINICR）：{anchor.verifier_score}\n"
+        f"终验判定：{anchor.verifier_decision}；反馈措辞：{anchor.wording_constraint}"
     )
     bans = "\n".join(f"- {b}" for b in boundary.absolute_bans) or "- 无"
     system_parts.append(
@@ -44,7 +64,8 @@ def assemble_prompt(
     )
     system_parts.append(
         '【输出格式】请只输出一个 JSON 对象，不要包含任何其他文字，格式：\n'
-        '{"reply": "治疗师回复正文", "stage_complete": true或false, "reason": "本轮目标是否达成的依据"}'
+        '{"reply": "治疗师回复正文"}\n'
+        '只执行本轮指令，不判断阶段是否完成，不自行推进治疗。对患者平滑衔接，不播报内部阶段。'
     )
 
     user_parts = [

@@ -1,0 +1,15 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">循证闭环</title>
+  <desc id="desc">三个阶段环绕对话核心，象征评估、诊断、治疗与反馈闭环。</desc>
+  <g fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round">
+    <path d="M50 17A33 33 0 0 1 79 34"/>
+    <path d="M83 45A33 33 0 0 1 65 78"/>
+    <path d="M53 83A33 33 0 0 1 18 55"/>
+  </g>
+  <g fill="currentColor">
+    <circle cx="50" cy="17" r="5"/>
+    <circle cx="83" cy="45" r="5"/>
+    <circle cx="53" cy="83" r="5"/>
+    <path d="M34 34h32a8 8 0 0 1 8 8v16a8 8 0 0 1-8 8H53l-9 8v-8H34a8 8 0 0 1-8-8V42a8 8 0 0 1 8-8Zm8 15 6 6 11-13 4 3-15 18-10-10Z"/>
+  </g>
+</svg>

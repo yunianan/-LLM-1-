@@ -13,6 +13,9 @@ from layers.layer4.schemas.instructions import (
     TurnInstruction,
 )
 from layers.layer4.service import L4Service
+from layers.layer3.instructions.turn_planner import TurnInstructionPlanner
+from shared.schemas.treatment_instructions import TreatmentInstructions
+from tests.instruction_test_double import ControlledTreatmentModel
 
 EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
 
@@ -21,16 +24,26 @@ BOUNDARY = BoundaryInstruction(absolute_bans=["禁止开药"])
 
 
 def _client():
-    return TestClient(create_app(Settings(_env_file=None, review_mode="mock")))
+    return TestClient(create_app(Settings(
+        _env_file=None,
+        llm_provider="mock",
+        review_mode="mock",
+    )))
 
 
 def _session_payload(session_id=None):
     report = json.loads((EXAMPLES / "sample_diagnostic_report.json").read_text(encoding="utf-8"))
-    payload = {"role": ROLE.model_dump(), "report": report,
-               "boundary": BOUNDARY.model_dump()}
+    payload = {"report": report}
     if session_id:
         payload["session_id"] = session_id
     return payload
+
+
+def _turn(session_id, message):
+    bundle = TreatmentInstructions.model_validate(_session_payload()["report"]["instructions"])
+    return TurnInstructionPlanner(ControlledTreatmentModel()).plan(
+        session_id=session_id, instructions=bundle, records=[], user_message=message, safety={},
+    )
 
 
 def test_healthz():
@@ -45,8 +58,7 @@ def test_create_session_and_turn_flow():
     assert resp.status_code == 200
     assert resp.json()["session_id"] == "s-api"
 
-    turn = TurnInstruction(goal="建立共情", technique="开放式提问",
-                           force_substage="L4-L1")
+    turn = _turn("s-api", "我最近压力很大，睡不好。")
     resp = client.post("/v1/l4/turn", json={
         "session_id": "s-api",
         "user_message": "我最近压力很大，睡不好。",
@@ -64,7 +76,7 @@ def test_turn_unknown_session_404():
     resp = _client().post("/v1/l4/turn", json={
         "session_id": "nope",
         "user_message": "hi",
-        "turn": TurnInstruction(goal="g", technique="t").model_dump(),
+        "turn": _turn("nope", "hi").model_dump(),
     })
     assert resp.status_code == 404
 
@@ -75,7 +87,7 @@ def test_rewrite_endpoint():
     resp = client.post("/v1/l4/rewrite", json={
         "session_id": "s-rw",
         "user_message": "hi",
-        "turn": TurnInstruction(goal="g", technique="t").model_dump(),
+        "turn": _turn("s-rw", "hi").model_dump(),
         "fix_instruction": "删除确定性措辞，改为初步印象",
     })
     assert resp.status_code == 200
@@ -91,15 +103,14 @@ def test_rewrite_does_not_persist_history_or_advance_state():
     resp = client.post("/v1/l4/turn", json={
         "session_id": "s-rw2",
         "user_message": "我最近压力很大，晚上总是睡不好。",
-        "turn": TurnInstruction(goal="建立共情", technique="反映",
-                                force_substage="L4-L1").model_dump(),
+        "turn": _turn("s-rw2", "我最近压力很大，晚上总是睡不好。").model_dump(),
     })
     assert resp.status_code == 200
 
     resp = client.post("/v1/l4/rewrite", json={
         "session_id": "s-rw2",
         "user_message": "我最近压力很大，晚上总是睡不好。",
-        "turn": TurnInstruction(goal="g", technique="t").model_dump(),
+        "turn": _turn("s-rw2", "我最近压力很大，晚上总是睡不好。").model_dump(),
         "fix_instruction": "删除确定性措辞，改为初步印象",
     })
     assert resp.status_code == 200

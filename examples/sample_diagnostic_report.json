@@ -6,21 +6,80 @@
       "disorder": "MDD",
       "confidence": 0.87,
       "severity": "moderate",
-      "dsm5_criteria_met": ["A1", "A2", "A3", "A4", "A5"],
+      "dsm5_criteria_met": [
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A5"
+      ],
       "dsm5_criteria_detail": [
-        {"code": "A1", "name": "心境抑郁", "status": "met", "met": true, "evidence_refs": ["PHQ9_item2=3"]},
-        {"code": "A2", "name": "兴趣减退", "status": "met", "met": true, "evidence_refs": ["PHQ9_item1=3"]},
-        {"code": "A3", "name": "食欲/体重改变", "status": "met", "met": true, "evidence_refs": ["PHQ9_item5=2"]},
-        {"code": "A4", "name": "睡眠障碍", "status": "met", "met": true, "evidence_refs": ["PHQ9_item3=3", "patient_utterance_sleep"]},
-        {"code": "A5", "name": "精神运动性改变", "status": "met", "met": true, "evidence_refs": ["PHQ9_item8=2"]}
+        {
+          "code": "A1",
+          "name": "心境抑郁",
+          "status": "met",
+          "met": true,
+          "evidence_refs": [
+            "PHQ9_item2=3"
+          ]
+        },
+        {
+          "code": "A2",
+          "name": "兴趣减退",
+          "status": "met",
+          "met": true,
+          "evidence_refs": [
+            "PHQ9_item1=3"
+          ]
+        },
+        {
+          "code": "A3",
+          "name": "食欲/体重改变",
+          "status": "met",
+          "met": true,
+          "evidence_refs": [
+            "PHQ9_item5=2"
+          ]
+        },
+        {
+          "code": "A4",
+          "name": "睡眠障碍",
+          "status": "met",
+          "met": true,
+          "evidence_refs": [
+            "PHQ9_item3=3",
+            "patient_utterance_sleep"
+          ]
+        },
+        {
+          "code": "A5",
+          "name": "精神运动性改变",
+          "status": "met",
+          "met": true,
+          "evidence_refs": [
+            "PHQ9_item8=2"
+          ]
+        }
       ]
     },
     "secondary": [
-      {"disorder": "Insomnia Disorder", "confidence": 0.65, "evidence": "ISI=14接近重度阈值，入睡困难+早醒"}
+      {
+        "disorder": "Insomnia Disorder",
+        "confidence": 0.65,
+        "evidence": "ISI=14接近重度阈值，入睡困难+早醒"
+      }
     ],
     "ruled_out": [
-      {"disorder": "Bipolar II", "reason": "MDQ=3<7阈值，无轻躁狂/躁狂发作史", "evidence_ref": "MDQ筛查指南"},
-      {"disorder": "PTSD", "reason": "PCL-5 skipped per L1 safety flag", "evidence_ref": "L1 SafetyPassport"}
+      {
+        "disorder": "Bipolar II",
+        "reason": "MDQ=3<7阈值，无轻躁狂/躁狂发作史",
+        "evidence_ref": "MDQ筛查指南"
+      },
+      {
+        "disorder": "PTSD",
+        "reason": "PCL-5 skipped per L1 safety flag",
+        "evidence_ref": "L1 SafetyPassport"
+      }
     ]
   },
   "verifier_score": 0.87,
@@ -28,8 +87,46 @@
   "verifier_routing": "pass",
   "recommended_therapy": {
     "primary": "CBT",
-    "addon": ["CBT-I"],
-    "contraindications": ["避免深度创伤暴露（per L1敏感话题标记）", "不推荐EMDR（无PTSD证据）"]
+    "addon": [
+      "CBT-I"
+    ],
+    "plugin_triggers": [
+      {
+        "plugin": "CBT-I",
+        "priority": "high",
+        "conditions": [
+          "ISI=16≥15",
+          "chronic_months=4≥3",
+          "insomnia_chief_complaint=true"
+        ]
+      }
+    ],
+    "strategy_adjustments": {
+      "severity_band": "moderate",
+      "motivation_band": "intermediate",
+      "motivation_total": 10,
+      "technical_density": "standard",
+      "supportive_response": "standard",
+      "safety_monitoring": "standard",
+      "intervention_focus": [
+        "standard_cbt_seven_steps",
+        "activated_plugins"
+      ],
+      "challenge_interventions": "standard_timing",
+      "exposure_policy": "standard",
+      "care_priority": "psychotherapy",
+      "care_priorities": [
+        "psychotherapy"
+      ],
+      "instructions": [
+        "使用标准CBT七步流程并整合已激活插件"
+      ],
+      "suppressed_plugins": []
+    },
+    "contraindications": [
+      "避免深度创伤暴露（per L1敏感话题标记）",
+      "不推荐EMDR（无PTSD证据）"
+    ]
   },
   "severity_level": 1,
   "clinical_notes_for_L4": "患者核心认知模式推断为负性自动化思维（'我什么都做不好'）+回避行为（不愿出门、不愿社交）。L4治疗焦点：(1)行为激活——打破回避循环，重建日常活动节奏；(2)认知重构——识别和挑战负性自动化思维；(3)睡眠卫生+CBT-I技术（刺激控制+睡眠限制）。需温和监测自杀意念变化，若从被动转为主动，立即升级至L1安全协议。",
@@ -37,30 +134,310 @@
   "structured_labels": {
     "therapy_routing": {
       "primary": "CBT",
-      "addon": ["CBT-I"],
-      "l4_substage_priority": ["behavioral_activation", "cognitive_restructuring", "sleep_hygiene"]
+      "addon": [
+        "CBT-I"
+      ],
+      "plugin_triggers": [
+        {
+          "plugin": "CBT-I",
+          "priority": "high",
+          "conditions": [
+            "ISI=16≥15",
+            "chronic_months=4≥3",
+            "insomnia_chief_complaint=true"
+          ]
+        }
+      ],
+      "strategy_adjustments": {
+        "severity_band": "moderate",
+        "motivation_band": "intermediate",
+        "motivation_total": 10,
+        "technical_density": "standard",
+        "supportive_response": "standard",
+        "safety_monitoring": "standard",
+        "intervention_focus": [
+          "standard_cbt_seven_steps",
+          "activated_plugins"
+        ],
+        "challenge_interventions": "standard_timing",
+        "exposure_policy": "standard",
+        "care_priority": "psychotherapy",
+        "care_priorities": [
+          "psychotherapy"
+        ],
+        "instructions": [
+          "使用标准CBT七步流程并整合已激活插件"
+        ],
+        "suppressed_plugins": []
+      },
+      "l4_substage_priority": [
+        "behavioral_activation",
+        "cognitive_restructuring",
+        "sleep_hygiene"
+      ]
     },
     "wording_constraint": "使用'初步印象'措辞，禁止'确诊'",
-    "risk_monitoring": ["passive_si_to_active_si_escalation"]
+    "risk_monitoring": [
+      "passive_si_to_active_si_escalation"
+    ]
   },
   "evidence_refs": [
-    {"type": "DSM-5", "disorder": "MDD", "criteria_met": "A1-A5 (5/9 >= 5)", "source_doc": "DSM-5_TR_zh_v1.0"},
-    {"type": "scale", "disorder": "MDD", "source": "PHQ-9", "threshold": ">=15中重度"},
-    {"type": "guideline", "therapy": "CBT_for_MDD", "source": "APA_2019; NICE_NG222"}
+    {
+      "type": "DSM-5",
+      "disorder": "MDD",
+      "criteria_met": "A1-A5 (5/9 >= 5)",
+      "source_doc": "DSM-5_TR_zh_v1.0"
+    },
+    {
+      "type": "scale",
+      "disorder": "MDD",
+      "source": "PHQ-9",
+      "threshold": ">=15中重度"
+    },
+    {
+      "type": "guideline",
+      "therapy": "CBT_for_MDD",
+      "source": "APA_2019; NICE_NG222"
+    }
   ],
   "confidence": 0.87,
-  "flags": ["passive_si_monitor", "trauma_sensitive", "insomnia_comorbid"],
+  "flags": [
+    "passive_si_monitor",
+    "trauma_sensitive",
+    "insomnia_comorbid"
+  ],
   "instruction_to_next": "CBT对话应聚焦行为激活和认知重构，避免涉及创伤暴露练习。L4-L2需温和反馈诊断，征求患者确认。L4-L3按行为激活→认知重构→睡眠卫生顺序推进。",
   "l3_validation": {
     "passed": true,
     "route": "allow_l4",
     "checks": [
-      {"rule_id": "V3-CANDIDATE-CONFIDENCE", "status": "pass", "detail": "candidate confidence meets threshold"},
-      {"rule_id": "V3-PRIMARY-NOT-RULED-OUT", "status": "pass", "detail": "primary is not ruled out"},
-      {"rule_id": "V3-CRITERIA-EVIDENCE", "status": "pass", "detail": "all met criteria have evidence"},
-      {"rule_id": "V3-THERAPY-MATCH", "status": "pass", "detail": "therapy matches diagnosis"}
+      {
+        "rule_id": "V3-TREATMENT-INSTRUCTIONS",
+        "status": "pass",
+        "detail": "会话指令与诊断、疗法一致"
+      },
+      {
+        "rule_id": "V3-CANDIDATE-CONFIDENCE",
+        "status": "pass",
+        "detail": "候选诊断支持度=0.87，最低门槛=0.5"
+      },
+      {
+        "rule_id": "V3-PRIMARY-NOT-RULED-OUT",
+        "status": "pass",
+        "detail": "主诊断=MDD，排除诊断=['BIPOLAR', 'PTSD']"
+      },
+      {
+        "rule_id": "V3-CRITERIA-EVIDENCE",
+        "status": "pass",
+        "detail": "缺少逐条证据的DSM条目=[]"
+      },
+      {
+        "rule_id": "V3-THERAPY-MATCH",
+        "status": "pass",
+        "detail": "主诊断=MDD，疗法=CBT，允许值=['CBT', 'CBT+BA']"
+      },
+      {
+        "rule_id": "V3-PLUGIN-ROUTING",
+        "status": "pass",
+        "detail": "插件=['CBT-I']，触发记录=['CBT-I']，最多允许2个且必须逐项携带触发依据"
+      },
+      {
+        "rule_id": "V3-THERAPY-ADJUSTMENT",
+        "status": "pass",
+        "detail": "Step 3必须输出严重程度分组和可供L4执行的微调指令"
+      },
+      {
+        "rule_id": "V3-CONTRAINDICATION-OVERRIDE",
+        "status": "pass",
+        "detail": "暴露禁用=False，暴露插件=[]，成瘾优先=False"
+      }
     ],
-    "payload_hash": "c8adf7bb24f0b4dc64873ed3454c308ec2d431898e6b99167e2e1f410672141b",
+    "payload_hash": "5bcbbcd53d4e08c9e558396a0fd3b2b79684b583205d94c809421262ec3bf1a8",
     "policy_version": "L3_OUTPUT_V1"
+  },
+  "verifier_decision": "confirmed",
+  "instructions": {
+    "L1": {
+      "identity": "你是一名受过 CBT 训练的心理治疗师",
+      "style": "温暖、共情、协作、结构化；平滑衔接，不播报阶段名称",
+      "boundaries": [
+        "开药",
+        "确诊",
+        "诊断新疾病",
+        "预测未来",
+        "替代医生",
+        "谈论其他患者",
+        "保证治愈"
+      ]
+    },
+    "L2": {
+      "primary": "MDD",
+      "comorbidities": [
+        "Insomnia Disorder"
+      ],
+      "excluded": [
+        "Bipolar II",
+        "PTSD"
+      ],
+      "core_beliefs": [],
+      "plugins": [
+        "CBT-I"
+      ],
+      "plugin_triggers": [
+        {
+          "plugin": "CBT-I",
+          "priority": "high",
+          "conditions": [
+            "ISI=16≥15",
+            "chronic_months=4≥3",
+            "insomnia_chief_complaint=true"
+          ]
+        }
+      ],
+      "strategy_adjustments": {
+        "severity_band": "moderate",
+        "motivation_band": "intermediate",
+        "motivation_total": 10,
+        "technical_density": "standard",
+        "supportive_response": "standard",
+        "safety_monitoring": "standard",
+        "intervention_focus": [
+          "standard_cbt_seven_steps",
+          "activated_plugins"
+        ],
+        "challenge_interventions": "standard_timing",
+        "exposure_policy": "standard",
+        "care_priority": "psychotherapy",
+        "care_priorities": [
+          "psychotherapy"
+        ],
+        "instructions": [
+          "使用标准CBT七步流程并整合已激活插件"
+        ],
+        "suppressed_plugins": []
+      },
+      "contraindications": [
+        "避免深度创伤暴露（per L1敏感话题标记）",
+        "不推荐EMDR（无PTSD证据）"
+      ],
+      "confidence": 0.87,
+      "candidate_confidence": 0.87,
+      "verifier_score": 0.87,
+      "therapy_type": "CBT",
+      "verifier_decision": "confirmed",
+      "diagnosis_details": {
+        "primary": {
+          "disorder": "MDD",
+          "confidence": 0.87,
+          "severity": "moderate",
+          "dsm5_criteria_met": [
+            "A1",
+            "A2",
+            "A3",
+            "A4",
+            "A5"
+          ],
+          "dsm5_criteria_detail": [
+            {
+              "code": "A1",
+              "name": "心境抑郁",
+              "status": "met",
+              "met": true,
+              "evidence_refs": [
+                "PHQ9_item2=3"
+              ]
+            },
+            {
+              "code": "A2",
+              "name": "兴趣减退",
+              "status": "met",
+              "met": true,
+              "evidence_refs": [
+                "PHQ9_item1=3"
+              ]
+            },
+            {
+              "code": "A3",
+              "name": "食欲/体重改变",
+              "status": "met",
+              "met": true,
+              "evidence_refs": [
+                "PHQ9_item5=2"
+              ]
+            },
+            {
+              "code": "A4",
+              "name": "睡眠障碍",
+              "status": "met",
+              "met": true,
+              "evidence_refs": [
+                "PHQ9_item3=3",
+                "patient_utterance_sleep"
+              ]
+            },
+            {
+              "code": "A5",
+              "name": "精神运动性改变",
+              "status": "met",
+              "met": true,
+              "evidence_refs": [
+                "PHQ9_item8=2"
+              ]
+            }
+          ]
+        },
+        "secondary": [
+          {
+            "disorder": "Insomnia Disorder",
+            "confidence": 0.65,
+            "evidence": "ISI=14接近重度阈值，入睡困难+早醒"
+          }
+        ],
+        "ruled_out": [
+          {
+            "disorder": "Bipolar II",
+            "reason": "MDQ=3<7阈值，无轻躁狂/躁狂发作史",
+            "evidence_ref": "MDQ筛查指南"
+          },
+          {
+            "disorder": "PTSD",
+            "reason": "PCL-5 skipped per L1 safety flag",
+            "evidence_ref": "L1 SafetyPassport"
+          }
+        ]
+      },
+      "scale_scores": {},
+      "cognitive_patterns": [],
+      "triggering_situations": [],
+      "patient_goals": [],
+      "allowed_techniques": {
+        "reflection": "开放式提问与共情反映",
+        "feedback": "温和反馈与共同确认",
+        "mi_evoking": "MI 唤出改变动机",
+        "stabilization": "支持性稳定化",
+        "review": "回顾进展与巩固",
+        "thought_identification": "识别自动化思维",
+        "cognitive_restructuring": "苏格拉底式提问与认知重构",
+        "behavioral_activation": "行为激活",
+        "behavioral_experiment": "行为实验",
+        "sleep_hygiene": "睡眠卫生",
+        "stimulus_control": "刺激控制",
+        "sleep_restriction": "睡眠限制"
+      },
+      "wording_constraint": "使用初步印象措辞，禁止确诊"
+    },
+    "L3": null,
+    "L4": {
+      "absolute_bans": [
+        "开药",
+        "确诊",
+        "诊断新疾病",
+        "预测未来",
+        "替代医生",
+        "谈论其他患者",
+        "保证治愈"
+      ],
+      "safety_trigger": "表达主动自伤、自杀或伤人意图时立即停止普通治疗并触发 L1 安全协议；不得自行解除 L1 限制"
+    }
   }
 }

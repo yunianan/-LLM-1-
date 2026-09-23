@@ -15,6 +15,7 @@ from layers.layer4.schemas.l3_report import DiagnosticReport
 from layers.layer4.schemas.l5_context import DiagnosisContext, L5Context, RiskContext
 from layers.layer4.schemas.review import ReviewResult
 from layers.layer4.schemas.summary import EvidenceRef, StructuredSummary
+from shared.schemas.treatment_instructions import TreatmentInstructions
 
 EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
 
@@ -53,13 +54,21 @@ def test_review_result_passed():
 
 
 def test_l5_context_substage_enum():
+    instructions = TreatmentInstructions(
+        L1=RoleInstruction(identity="CBT治疗师", style="温暖"),
+        L2=DiagnosticAnchor(primary="MDD", therapy_type="CBT"),
+        L3=TurnInstruction(goal="探索困扰", technique="反映"),
+        L4=BoundaryInstruction(),
+    )
     ctx = L5Context(l4_raw_output="你好", l4_substage="L4-L3",
+                    user_message="我很难过", history=[], instructions=instructions,
                     therapy_type="CBT",
                     diagnosis_context=DiagnosisContext(primary="MDD"),
                     risk_context=RiskContext())
     assert ctx.l4_substage == "L4-L3"
     with pytest.raises(ValidationError):
         L5Context(l4_raw_output="你好", l4_substage="L4-L9",
+                  user_message="我很难过", history=[], instructions=instructions,
                   therapy_type="CBT",
                   diagnosis_context=DiagnosisContext(),
                   risk_context=RiskContext())
@@ -86,5 +95,6 @@ def test_diagnostic_report_parses_sample_and_ignores_extra():
     anchor = report.to_anchor()
     assert anchor.therapy_type == "CBT"
     assert "CBT-I" in anchor.plugins
+    assert anchor.contraindications == report.recommended_therapy.contraindications
     assert "Insomnia Disorder" in anchor.comorbidities
     assert "Bipolar II" in anchor.excluded

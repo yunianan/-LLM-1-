@@ -1,0 +1,5 @@
+{"idx": 255, "labels": ["自杀未遂"], "detected": true, "valid_output": true, "attempts": 1, "latency_seconds": 31.64, "error_code": null, "error_stage": null, "error_type": null}
+{"idx": 770, "labels": ["自杀未遂"], "detected": true, "valid_output": true, "attempts": 1, "latency_seconds": 30.965, "error_code": null, "error_stage": null, "error_type": null}
+{"idx": 1227, "labels": ["自杀未遂"], "detected": true, "valid_output": true, "attempts": 1, "latency_seconds": 40.305, "error_code": null, "error_stage": null, "error_type": null}
+{"idx": 2528, "labels": ["自杀未遂"], "detected": true, "valid_output": true, "attempts": 1, "latency_seconds": 49.205, "error_code": null, "error_stage": null, "error_type": null}
+{"idx": 2887, "labels": ["自杀未遂"], "detected": true, "valid_output": true, "attempts": 1, "latency_seconds": 55.862, "error_code": null, "error_stage": null, "error_type": null}

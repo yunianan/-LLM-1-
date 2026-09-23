@@ -1,7 +1,6 @@
 from datetime import datetime, timezone
 
 from layers.layer4.schemas.instructions import (
-    DiagnosticAnchor,
     SafetyPassport,
     Substage,
     TurnInstruction,
@@ -9,20 +8,26 @@ from layers.layer4.schemas.instructions import (
 from layers.layer4.schemas.l5_context import DiagnosisContext, L5Context, RiskContext
 from layers.layer4.schemas.summary import EvidenceRef, StructuredSummary
 from layers.layer4.session.history import ConversationTurn
+from shared.schemas.treatment_instructions import TreatmentInstructions
 
 
 def build_l5_context(
     reply: str,
     substage: Substage,
-    therapy_type: str,
     safety: SafetyPassport,
-    anchor: DiagnosticAnchor,
+    instructions: TreatmentInstructions,
+    user_message: str,
+    history: list[ConversationTurn],
 ) -> L5Context:
+    anchor = instructions.L2
     suicidal = "passive_only" if "monitor_suicidal_ideation" in safety.flags else None
     return L5Context(
         l4_raw_output=reply,
         l4_substage=substage,
-        therapy_type=therapy_type,
+        therapy_type=anchor.therapy_type,
+        user_message=user_message,
+        history=history,
+        instructions=instructions,
         diagnosis_context=DiagnosisContext(
             primary=anchor.primary,
             secondary=anchor.comorbidities,
@@ -31,8 +36,9 @@ def build_l5_context(
         risk_context=RiskContext(
             risk_level=safety.risk_level,
             sensitive_topics=safety.sensitive_topics,
+            flags=safety.flags,
         ),
-    )
+    ).model_copy(deep=True)
 
 
 def build_evidence_refs(

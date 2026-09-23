@@ -1,31 +1,20 @@
-from layers.layer3.clinicr import CLINICR
+import threading
+import time
+
+import pytest
+
 from layers.layer3.api import diagnose
+from layers.layer3.llm import ALLOWED_EVIDENCE_REFS_KEY, CLINICRModelUnavailable
+from layers.layer3.diagnosis.schemas import SUPPORTED_DISORDERS
 from layers.layer4.schemas.l3_report import DiagnosticReport
+from tests.l3_test_double import (
+    ControlledCLINICRReasoner,
+    controlled_clinicr,
+)
 
 
-def test_phq9_total_score_does_not_prove_individual_dsm5_criteria():
-    """量表总分只能用于筛查/严重度，不能证明任何 DSM-5 单项症状。"""
-    profile = {
-        "PHQ9": 20,
-        # 故意不提供 PHQ-9 单题结果、患者原话、持续时间或功能损害证据。
-    }
-
-    result = CLINICR().run(profile)
-    primary = result["diagnosis"]["primary"]
-
-    assert primary is None
-    assert result["verifier_routing"] == "return_to_l2"
-    assert result["verifier_score"] == 0.0
-    assert "insufficient_diagnostic_evidence" in result["flags"]
-    missing_fields = {item["field"] for item in result["missing_dimensions"]}
-    assert "phq9_items.item1" in missing_fields
-    assert "phq9_items.item2" in missing_fields
-    assert "symptom_duration_days" in missing_fields
-    assert "functional_impairment" in missing_fields
-
-
-def test_mdd_criteria_are_derived_from_items_and_patient_evidence():
-    profile = {
+def _profile() -> dict:
+    return {
         "PHQ9": 16,
         "PHQ9_items": {
             "item1": 3,
@@ -38,50 +27,6 @@ def test_mdd_criteria_are_derived_from_items_and_patient_evidence():
             "item8": 0,
             "item9": 0,
         },
-        "symptom_duration_days": 21,
-        "functional_impairment": True,
-        "mania_or_hypomania_history": False,
-        "substance_or_medical_cause": False,
-        "differential_diagnoses_assessed": ["Bipolar", "AdjustmentDisorder"],
-        "evidence_conflicts": [],
-    }
-
-    result = CLINICR().run(profile)
-    primary = result["diagnosis"]["primary"]
-
-    assert primary is not None
-    assert primary["dsm5_criteria_met"] == ["A1", "A2", "A4", "A6", "A7"]
-    assert result["verifier_routing"] == "pass"
-    assert result["verifier_score"] == 1.0
-
-    details = {item["code"]: item for item in primary["dsm5_criteria_detail"]}
-    assert set(details) == {f"A{i}" for i in range(1, 10)}
-    for code in primary["dsm5_criteria_met"]:
-        assert details[code]["status"] == "met"
-        assert details[code]["evidence_refs"]
-    assert details["A1"]["evidence_refs"] == ["PHQ9_item2=3"]
-    assert details["A2"]["evidence_refs"] == ["PHQ9_item1=3"]
-
-
-def test_diagnose_returns_actionable_l2_feedback_when_evidence_is_missing():
-    report = diagnose({"PHQ9": 20})
-
-    assert report["diagnosis"]["primary"] is None
-    assert report["verifier_routing"] == "return_to_l2"
-    assert report["recommended_therapy"]["primary"] == ""
-    assert report["instructions"]["L2"]["action"] == "collect_missing_dimensions"
-    assert report["missing_dimensions"]
-    assert all(item["suggested_question"] for item in report["missing_dimensions"])
-    assert report["provisional_diagnosis"]["dsm5_criteria_detail"]
-
-
-def test_dsm_criterion_evidence_survives_l3_to_l4_schema_parsing():
-    report = diagnose({
-        "PHQ9": 16,
-        "PHQ9_items": {
-            "item1": 3, "item2": 3, "item3": 2, "item4": 2, "item5": 0,
-            "item6": 2, "item7": 0, "item8": 0, "item9": 0,
-        },
         "key_symptoms_extracted": [{
             "symptom": "depressed_mood",
             "sources": ["patient_utterance_L008"],
@@ -90,27 +35,223 @@ def test_dsm_criterion_evidence_survives_l3_to_l4_schema_parsing():
         "functional_impairment": True,
         "mania_or_hypomania_history": False,
         "substance_or_medical_cause": False,
+        "psychotic_symptoms": False,
         "differential_diagnoses_assessed": ["Bipolar", "AdjustmentDisorder"],
         "evidence_conflicts": [],
-    })
-
-    parsed = DiagnosticReport.model_validate(report)
-    primary = parsed.diagnosis.primary
-    assert primary is not None
-    assert parsed.candidate_confidence == 0.75
-    assert parsed.verifier_score == 1.0
-    anchor = parsed.to_anchor()
-    assert anchor.candidate_confidence == 0.75
-    assert anchor.verifier_score == 1.0
-    details = {item.code: item for item in primary.dsm5_criteria_detail}
-    assert details["A1"].evidence_refs == ["PHQ9_item2=3", "patient_utterance_L008"]
-
-    criterion_refs = {
-        item.criterion_code: item
-        for item in parsed.evidence_refs
-        if item.type == "DSM-5-criterion"
+        "evidence_nodes": [
+            {
+                "evidence_id": f"ev-{field}",
+                "target_path": f"diagnostic_context.{field}",
+            }
+            for field in (
+                "symptom_duration_days",
+                "functional_impairment",
+                "mania_or_hypomania_history",
+                "substance_or_medical_cause",
+                "psychotic_symptoms",
+            )
+        ],
     }
-    assert criterion_refs["A1"].status == "met"
-    assert criterion_refs["A1"].evidence_refs == [
-        "PHQ9_item2=3", "patient_utterance_L008"
+
+
+def test_step1_considers_exactly_ten_disorders_and_generates_three_to_five():
+    engine, reasoner, verifier = controlled_clinicr()
+
+    result = engine.run(_profile())
+
+    assert set(reasoner.generate_calls[0].keys()) >= {"PHQ9", "PHQ9_items"}
+    assert set(reasoner.generate_calls[0][ALLOWED_EVIDENCE_REFS_KEY]) >= {
+        "PHQ9=16", "PHQ9_item2=3", "patient_utterance_L008"
+    }
+    assert 3 <= len(result["candidates"]) <= 5
+    assert set(SUPPORTED_DISORDERS) == set(
+        reasoner.generate_candidates(_profile()).considered_disorders
+    )
+    assert reasoner.evaluate_calls == [
+        "MDD", "GAD", "AdjustmentDisorder", "Bipolar"
     ]
+    assert len(verifier.calls) == 1
+
+
+def test_allowed_evidence_refs_are_rule_generated_not_accepted_from_input():
+    engine, reasoner, _ = controlled_clinicr()
+    profile = _profile() | {ALLOWED_EVIDENCE_REFS_KEY: ["invented_ref"]}
+
+    engine.run(profile)
+
+    observed = reasoner.generate_calls[0][ALLOWED_EVIDENCE_REFS_KEY]
+    assert "invented_ref" not in observed
+    assert "PHQ9=16" in observed
+
+
+def test_step2_candidates_are_evaluated_concurrently_and_keep_rank_order(monkeypatch):
+    class ConcurrentReasoner(ControlledCLINICRReasoner):
+        def __init__(self):
+            super().__init__()
+            self.active = 0
+            self.peak = 0
+            self.lock = threading.Lock()
+
+        def evaluate_candidate(self, profile, candidate):
+            with self.lock:
+                self.active += 1
+                self.peak = max(self.peak, self.active)
+            try:
+                time.sleep(0.03)
+                return super().evaluate_candidate(profile, candidate)
+            finally:
+                with self.lock:
+                    self.active -= 1
+
+    engine, _, verifier = controlled_clinicr()
+    reasoner = ConcurrentReasoner()
+    engine.reasoner = reasoner
+    monkeypatch.setenv("L3_STEP2_MAX_WORKERS", "4")
+
+    result = engine.run(_profile())
+
+    assert reasoner.peak > 1
+    assert [item["disorder"] for item in result["checked"]] == [
+        "MDD", "GAD", "AdjustmentDisorder", "Bipolar"
+    ]
+    assert len(verifier.calls) == 1
+
+
+def test_step2_preserves_low_confidence_differentials_and_binds_dsm_evidence():
+    engine, _, _ = controlled_clinicr()
+
+    result = engine.run(_profile())
+
+    primary = result["diagnosis"]["primary"]
+    assert primary["disorder"] == "MDD"
+    assert primary["dsm5_criteria_met"] == ["A1", "A2", "A4", "A6", "A7"]
+    detail = {item["code"]: item for item in primary["dsm5_criteria_detail"]}
+    assert detail["A1"]["evidence_refs"] == ["PHQ9_item2=3"]
+    assert detail["A2"]["evidence_refs"] == ["PHQ9_item1=3"]
+
+    candidate_confidences = {
+        item["disorder"]: item["confidence"] for item in result["candidates"]
+    }
+    assert candidate_confidences["AdjustmentDisorder"] == 0.35
+    assert candidate_confidences["Bipolar"] == 0.15
+    assert {item["disorder"] for item in result["diagnosis"]["under_observation"]} == {
+        "GAD", "AdjustmentDisorder"
+    }
+    assert {item["disorder"] for item in result["diagnosis"]["ruled_out"]} == {
+        "Bipolar"
+    }
+
+
+def test_no_candidate_reaches_verifier_when_step2_only_returns_watch_or_excluded():
+    engine, reasoner, verifier = controlled_clinicr()
+
+    result = engine.run({"PHQ9": 20})
+
+    assert len(reasoner.evaluate_calls) == 4
+    assert verifier.calls == []
+    assert result["diagnosis"]["primary"] is None
+    assert result["verifier_decision"] == "rejected"
+    assert result["verifier_routing"] == "return_to_l2"
+    assert result["missing_dimensions"]
+
+
+@pytest.mark.parametrize(
+    ("score", "routing", "decision", "has_primary"),
+    [
+        (0.80, "pass", "confirmed", True),
+        (0.79, "conditional", "provisional", True),
+        (0.50, "conditional", "provisional", True),
+        (0.49, "return_to_l2", "rejected", False),
+    ],
+)
+def test_step3_thresholds_control_routing(score, routing, decision, has_primary):
+    engine, _, _ = controlled_clinicr(score=score)
+
+    result = engine.run(_profile())
+
+    assert result["verifier_score"] == score
+    assert result["verifier_routing"] == routing
+    assert result["verifier_decision"] == decision
+    assert (result["diagnosis"]["primary"] is not None) is has_primary
+    if routing != "pass":
+        assert result["missing_dimensions"]
+
+
+def test_unknown_model_evidence_is_rejected_before_diagnosis():
+    class HallucinatingReasoner(ControlledCLINICRReasoner):
+        def generate_candidates(self, profile):
+            output = super().generate_candidates(profile)
+            output.candidates[0].evidence_refs = ["invented_patient_fact"]
+            return output
+
+    engine, _, verifier_model = controlled_clinicr()
+    engine.reasoner = HallucinatingReasoner()
+
+    with pytest.raises(CLINICRModelUnavailable, match="不存在的证据"):
+        engine.run(_profile())
+    assert verifier_model.calls == []
+
+
+def test_diagnose_runs_clinicr_before_therapy_and_preserves_three_step_result():
+    engine, _, verifier = controlled_clinicr(score=0.87)
+
+    raw = diagnose(_profile(), clinicr=engine)
+    report = DiagnosticReport.model_validate(raw)
+
+    assert report.diagnosis.primary is not None
+    assert report.diagnosis.primary.disorder == "MDD"
+    assert report.candidate_confidence == 0.75
+    assert report.verifier_score == 0.87
+    assert report.verifier_decision == "confirmed"
+    assert report.verifier_routing == "pass"
+    assert report.recommended_therapy.primary == "CBT+BA"
+    assert report.l3_validation is not None and report.l3_validation.passed
+    assert len(verifier.calls) == 1
+
+
+def test_l3_shared_input_contract_returns_to_l2_before_calling_model():
+    class MustNotRun:
+        def run(self, profile, safety_context=None):
+            raise AssertionError("输入契约不完整时不得调用CLINICR模型")
+
+    report = diagnose(
+        {
+            "PHQ9": 17,
+            "symptom_duration_days": 42,
+            "functional_impairment": True,
+            "evidence_nodes": [
+                {
+                    "evidence_id": "duration",
+                    "target_path": "diagnostic_context.symptom_duration_days",
+                },
+                {
+                    "evidence_id": "function",
+                    "target_path": "diagnostic_context.functional_impairment",
+                },
+            ],
+        },
+        clinicr=MustNotRun(),
+    )
+
+    assert report["verifier_routing"] == "return_to_l2"
+    assert report["instructions"]["L2"]["action"] == "collect_missing_dimensions"
+    assert {item["field"] for item in report["missing_dimensions"]} == {
+        "mania_or_hypomania_history",
+        "substance_or_medical_cause",
+        "psychotic_symptoms",
+    }
+    assert report["diagnosis"]["primary"] is None
+    assert report["l3_validation"]["passed"] is False
+    assert report["l3_validation"]["route"] == "reject"
+
+
+def test_low_verifier_score_returns_actionable_feedback_to_l2():
+    engine, _, _ = controlled_clinicr(score=0.49)
+
+    report = diagnose(_profile(), clinicr=engine)
+
+    assert report["diagnosis"]["primary"] is None
+    assert report["verifier_routing"] == "return_to_l2"
+    assert report["instructions"]["L2"]["action"] == "collect_missing_dimensions"
+    assert report["verifier_fail_reasons"]
+    assert report["missing_dimensions"]

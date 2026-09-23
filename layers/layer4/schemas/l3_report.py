@@ -1,8 +1,9 @@
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
 from layers.layer4.schemas.instructions import DiagnosticAnchor
+from shared.schemas.treatment_instructions import TreatmentInstructions
 
 
 class DSMCriterionEvidence(BaseModel):
@@ -34,21 +35,33 @@ class RuledOutDiagnosis(BaseModel):
     evidence_ref: str = ""
 
 
+class UnderObservationDiagnosis(BaseModel):
+    disorder: str
+    confidence: float = 0.0
+    reason: str = ""
+    missing_dimensions: list[dict] = Field(default_factory=list)
+
+
 class Diagnosis(BaseModel):
     primary: PrimaryDiagnosis | None = None
     secondary: list[SecondaryDiagnosis] = []
+    under_observation: list[UnderObservationDiagnosis] = Field(default_factory=list)
     ruled_out: list[RuledOutDiagnosis] = []
 
 
 class RecommendedTherapy(BaseModel):
     primary: str = ""
     addon: list[str] = []
+    plugin_triggers: list[dict[str, Any]] = Field(default_factory=list)
+    strategy_adjustments: dict[str, Any] = Field(default_factory=dict)
     contraindications: list[str] = []
 
 
 class TherapyRouting(BaseModel):
     primary: str = ""
     addon: list[str] = []
+    plugin_triggers: list[dict[str, Any]] = Field(default_factory=list)
+    strategy_adjustments: dict[str, Any] = Field(default_factory=dict)
     l4_substage_priority: list[str] = []
 
 
@@ -109,6 +122,7 @@ class DiagnosticReport(BaseModel):
     diagnosis: Diagnosis = Diagnosis()
     provisional_diagnosis: PrimaryDiagnosis | None = None
     verifier_score: float = 0.0
+    verifier_decision: str = ""
     candidate_confidence: float = 0.0
     verifier_routing: str = ""
     verifier_checks: list[VerifierCheck] = Field(default_factory=list)
@@ -124,19 +138,7 @@ class DiagnosticReport(BaseModel):
     instruction_to_next: str = ""
     missing_dimensions: list[MissingDimension] = []
     l3_validation: L3ValidationReceipt | None = None
+    instructions: dict[str, Any] = Field(default_factory=dict)
 
     def to_anchor(self) -> DiagnosticAnchor:
-        primary = self.diagnosis.primary
-        return DiagnosticAnchor(
-            primary=primary.disorder if primary else "",
-            comorbidities=[s.disorder for s in self.diagnosis.secondary],
-            excluded=[r.disorder for r in self.diagnosis.ruled_out],
-            core_beliefs=[],
-            plugins=list(self.recommended_therapy.addon),
-            confidence=primary.confidence if primary else 0.0,
-            candidate_confidence=(
-                self.candidate_confidence or (primary.confidence if primary else 0.0)
-            ),
-            verifier_score=self.verifier_score,
-            therapy_type=self.recommended_therapy.primary,
-        )
+        return TreatmentInstructions.model_validate(self.instructions).L2

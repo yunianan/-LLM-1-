@@ -1,0 +1,46 @@
+{
+  "evaluated_at": "2026-09-18T09:36:09.971866+00:00",
+  "definition": "PsySUICIDE test split; five suicide-positive labels only",
+  "total_positive_samples": 5,
+  "true_positive": 5,
+  "false_negative": 0,
+  "end_to_end_recall": 1.0,
+  "valid_output_count": 5,
+  "valid_output_rate": 1.0,
+  "semantic_recall_among_valid_outputs": 1.0,
+  "error_counts": {},
+  "mean_latency_seconds": 41.595,
+  "per_label": {
+    "主动自杀意图": {
+      "support": 0,
+      "true_positive": 0,
+      "false_negative": 0,
+      "recall": null
+    },
+    "自杀准备行为": {
+      "support": 0,
+      "true_positive": 0,
+      "false_negative": 0,
+      "recall": null
+    },
+    "自杀未遂": {
+      "support": 5,
+      "true_positive": 5,
+      "false_negative": 0,
+      "recall": 1.0
+    },
+    "自杀计划": {
+      "support": 0,
+      "true_positive": 0,
+      "false_negative": 0,
+      "recall": null
+    },
+    "被动自杀意图": {
+      "support": 0,
+      "true_positive": 0,
+      "false_negative": 0,
+      "recall": null
+    }
+  },
+  "false_negative_indices": []
+}

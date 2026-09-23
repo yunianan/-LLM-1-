@@ -1,0 +1,23 @@
+<svg viewBox="0 0 1000 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">基于大语言模型的心理诊疗循证推理研究项目 Logo</title>
+  <desc id="desc">清晰的人物心智轮廓内含连续模型节点与循证路径，配完整中文项目名称。</desc>
+
+  <!-- Recognizable mind profile, kept as one continuous restrained contour -->
+  <g transform="translate(20 12)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M139 68C137 39 114 22 84 24C52 26 28 52 30 84C31 104 43 121 59 131C66 136 69 144 69 153V176H113V151C113 143 119 137 127 137H142C149 137 153 129 149 123L140 109C136 103 135 96 139 90C142 84 142 76 139 68Z"
+          stroke="#12344A" stroke-width="9"/>
+
+    <!-- Continuous evidence path inside the mind: signal -> reasoning -> feedback -->
+    <path d="M57 91C66 70 86 61 104 68C124 76 130 94 119 108C108 123 84 122 70 108"
+          stroke="#2A9D8F" stroke-width="6"/>
+    <circle cx="57" cy="91" r="6" fill="#2A9D8F" stroke="none"/>
+    <circle cx="103" cy="68" r="6" fill="#2A9D8F" stroke="none"/>
+    <circle cx="119" cy="108" r="6" fill="#2A9D8F" stroke="none"/>
+  </g>
+
+  <!-- Quieter wordmark with more breathing room -->
+  <g fill="#12344A" font-family="'Microsoft YaHei UI','Microsoft YaHei','Noto Sans SC','PingFang SC',sans-serif">
+    <text x="250" y="98" font-size="45" font-weight="500" letter-spacing="1.6">基于大语言模型的</text>
+    <text x="250" y="163" font-size="45" font-weight="500" letter-spacing="1.6">心理诊疗循证推理研究</text>
+  </g>
+</svg>

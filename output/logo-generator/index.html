@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>心理诊疗循证推理研究 - Logo 设计探索</title>
+  <style>
+    :root{--ink:#082f49;--accent:#0f766e;--paper:#f7faf9;--muted:#55706f;--line:#dbe7e5}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font-family:Inter,"Noto Sans SC","Microsoft YaHei",sans-serif;-webkit-font-smoothing:antialiased}
+    body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.18;background-image:radial-gradient(#0f766e 0.55px,transparent .55px);background-size:18px 18px;mask-image:linear-gradient(to bottom,black,transparent 70%)}
+    header{max-width:1120px;margin:auto;padding:88px 32px 48px;position:relative}.eyebrow{font:600 11px/1.4 ui-monospace,monospace;letter-spacing:.22em;color:var(--accent);text-transform:uppercase}.title{max-width:900px;margin:18px 0 14px;font-size:clamp(32px,5vw,64px);font-weight:350;letter-spacing:-.04em;line-height:1.13}.lead{max-width:760px;margin:0;color:var(--muted);font-size:15px;line-height:1.9}
+    .toolbar{max-width:1120px;margin:0 auto 28px;padding:0 32px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}.toolbar span{font:600 11px ui-monospace,monospace;letter-spacing:.12em;margin-right:8px}.swatch{width:30px;height:30px;border:0;border-radius:50%;cursor:pointer;box-shadow:0 0 0 1px #0001,0 4px 14px #0002;transition:.2s}.swatch:hover{transform:scale(1.12)}
+    main{max-width:1120px;margin:auto;padding:0 32px 96px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}.card{position:relative;min-height:470px;background:#fff;border:1px solid var(--line);border-radius:26px;padding:24px;overflow:hidden;transition:.55s cubic-bezier(.16,1,.3,1)}.card:hover{transform:translateY(-6px);box-shadow:0 24px 70px #08334414}.badge{font:500 10px ui-monospace,monospace;letter-spacing:.15em;color:var(--accent)}.canvas{height:230px;display:grid;place-items:center;color:var(--ink);transition:.45s}.card:hover .canvas{transform:scale(1.04)}.canvas object{width:142px;height:142px;pointer-events:none}.card h2{font-size:21px;margin:10px 0 5px;font-weight:600;letter-spacing:.03em}.subtitle{font:500 10px ui-monospace,monospace;color:var(--accent);letter-spacing:.12em;text-transform:uppercase}.card p{color:var(--muted);font-size:13px;line-height:1.75;margin:15px 0 20px}.links{display:flex;gap:8px}.links a{color:var(--ink);text-decoration:none;font:600 11px ui-monospace,monospace;border:1px solid var(--line);border-radius:999px;padding:8px 12px;transition:.2s}.links a:hover{background:var(--ink);color:#fff;border-color:var(--ink)}
+    footer{border-top:1px solid var(--line);padding:30px 32px;text-align:center;color:var(--muted);font:500 10px ui-monospace,monospace;letter-spacing:.14em}
+    @media(max-width:900px){main{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){header{padding-top:56px}main{grid-template-columns:1fr}.card{min-height:430px}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="eyebrow">Logo Generator / Design Exploration 01</div>
+    <h1 class="title">基于大语言模型的<br>心理诊疗循证推理研究</h1>
+    <p class="lead">六个可缩放的矢量方向，以“医生主导、证据约束、连续推理”为共同原则。图形刻意避免红十字、药物和机器人面孔，强调临床辅助而非自动诊断。</p>
+  </header>
+  <div class="toolbar"><span>预览颜色</span><button class="swatch" style="background:#082f49" data-color="#082f49" aria-label="深蓝"></button><button class="swatch" style="background:#0f766e" data-color="#0f766e" aria-label="青绿"></button><button class="swatch" style="background:#111827" data-color="#111827" aria-label="黑色"></button><button class="swatch" style="background:#6d28d9" data-color="#6d28d9" aria-label="紫色"></button></div>
+  <main>
+    <article class="card"><div class="badge">01 / PURE GEOMETRIC</div><div class="canvas"><object data="01-evidence-loop.svg" type="image/svg+xml" aria-label="循证闭环"></object></div><h2>循证闭环</h2><div class="subtitle">Evidence Loop</div><p>三枚阶段节点环绕对话核验符号，直接映射“评估—诊断—治疗—再评估”的连续临床路径。识别性最强，适合作为系统主标。</p><div class="links"><a href="01-evidence-loop.svg" download>下载 SVG</a></div></article>
+    <article class="card"><div class="badge">02 / BOOLEAN GEOMETRY</div><div class="canvas"><object data="02-mind-lens.svg" type="image/svg+xml" aria-label="心智透镜"></object></div><h2>心智透镜</h2><div class="subtitle">Mind Lens</div><p>双圆交叠为“心理状态 × 证据观察”，放大镜柄强化审慎核验。视觉克制、学术感强，适合论文、海报与课题材料。</p><div class="links"><a href="02-mind-lens.svg" download>下载 SVG</a></div></article>
+    <article class="card"><div class="badge">03 / NODE NETWORK</div><div class="canvas"><object data="03-reasoning-nodes.svg" type="image/svg+xml" aria-label="推理节点"></object></div><h2>推理节点</h2><div class="subtitle">Reasoning Nodes</div><p>非对称节点沿曲线逐步收敛，在中心完成循证校准；表达思维链、RAG 检索与可追溯推理，科技属性最突出。</p><div class="links"><a href="03-reasoning-nodes.svg" download>下载 SVG</a></div></article>
+    <article class="card"><div class="badge">04 / DOT MATRIX</div><div class="canvas"><object data="04-cognitive-matrix.svg" type="image/svg+xml" aria-label="认知矩阵"></object></div><h2>认知矩阵</h2><div class="subtitle">Cognitive Matrix</div><p>点阵以留白构成抽象脑区与对话框，象征中文心理语料、向量知识库和大模型表达；兼具数据感与人文温度。</p><div class="links"><a href="04-cognitive-matrix.svg" download>下载 SVG</a></div></article>
+    <article class="card"><div class="badge">05 / LINE SYSTEM</div><div class="canvas"><object data="05-clinical-path.svg" type="image/svg+xml" aria-label="临床路径"></object></div><h2>临床路径</h2><div class="subtitle">Clinical Path</div><p>多条信息路径进入统一圆形约束，并汇入核验节点；强调多源证据不是装饰，而是诊疗辅助结论的边界。</p><div class="links"><a href="05-clinical-path.svg" download>下载 SVG</a></div></article>
+    <article class="card"><div class="badge">06 / MIXED COMPOSITION</div><div class="canvas"><object data="06-human-ai-bridge.svg" type="image/svg+xml" aria-label="人机共证"></object></div><h2>人机共证</h2><div class="subtitle">Human-AI Bridge</div><p>人本圆形与 AI 方形相交，心智信号横跨二者；突出医生与模型协作，避免把系统表达成替代临床判断的机器。</p><div class="links"><a href="06-human-ai-bridge.svg" download>下载 SVG</a></div></article>
+  </main>
+  <footer>GENERATED WITH LOGO GENERATOR · 2026 · SVG / CURRENTCOLOR / VIEWBOX 0 0 100 100</footer>
+  <script>
+    let selectedColor = '#082f49';
+    const applyLogoColor = object => {
+      try { object.contentDocument.documentElement.style.color = selectedColor; } catch (_) {}
+    };
+    document.querySelectorAll('.canvas object').forEach(object=>object.addEventListener('load',()=>applyLogoColor(object)));
+    document.querySelectorAll('.swatch').forEach(button=>button.addEventListener('click',()=>{
+      selectedColor = button.dataset.color;
+      document.documentElement.style.setProperty('--ink',selectedColor);
+      document.querySelectorAll('.canvas object').forEach(applyLogoColor);
+    }));
+  </script>
+</body>
+</html>

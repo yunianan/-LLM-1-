@@ -6,6 +6,7 @@ from layers.layer4.llm.base import Message
 from layers.layer4.llm.local import LocalModelBackend
 from layers.layer4.llm.mock import MockBackend
 from layers.layer4.llm.openai_compat import OpenAICompatBackend
+from shared.llm_client import ask_llm
 
 
 def test_mock_json_mode_matches_substring():
@@ -37,6 +38,22 @@ def test_factory_dispatch():
                              llm_model="deepseek-chat")),
         OpenAICompatBackend,
     )
+
+
+def test_production_api_mode_requires_key(monkeypatch):
+    monkeypatch.delenv("L4_LLM_API_KEY", raising=False)
+    with pytest.raises(ValueError, match="L4_LLM_API_KEY"):
+        get_backend(Settings(
+            _env_file=None,
+            llm_provider="openai_compat",
+            llm_api_key=None,
+        ))
+
+
+def test_shared_l1_l5_api_requires_key_without_network_call(monkeypatch):
+    monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
+    with pytest.raises(RuntimeError, match="DEEPSEEK_API_KEY"):
+        ask_llm("不会真正发送的测试请求")
 
 
 def test_factory_local_raises():

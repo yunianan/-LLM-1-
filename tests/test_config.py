@@ -5,9 +5,14 @@ import pytest
 from layers.layer4.config import Settings
 
 
-def test_defaults():
+def test_defaults(monkeypatch):
+    monkeypatch.delenv("L4_LLM_PROVIDER", raising=False)
+    monkeypatch.delenv("L4_LLM_BASE_URL", raising=False)
+    monkeypatch.delenv("L4_LLM_API_KEY", raising=False)
+    monkeypatch.delenv("L4_REVIEW_MODE", raising=False)
     s = Settings(_env_file=None)
-    assert s.llm_provider == "mock"
+    assert s.llm_provider == "openai_compat"
+    assert s.llm_base_url == "https://api.deepseek.com"
     assert s.review_mode == "l5_local"
     assert s.llm_model == "deepseek-chat"
     assert s.max_rewrite_attempts == 3

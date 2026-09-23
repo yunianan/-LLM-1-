@@ -109,6 +109,5 @@ def test_l4_service_cannot_bypass_receipt_integrity_guard():
 
     with pytest.raises(L3ToL4ValidationError, match="V3-PAYLOAD-INTEGRITY"):
         service.create_session(SessionRequest(
-            role=RoleInstruction(identity="测试治疗师", style="共情"),
             report=report,
         ))

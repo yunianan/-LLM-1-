@@ -1,0 +1,13 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">人机共证</title>
+  <desc id="desc">人本圆形与人工智能方形相交，中间的桥接留白强调医生主导的人机协作。</desc>
+  <defs>
+    <clipPath id="left"><circle cx="40" cy="50" r="26"/></clipPath>
+  </defs>
+  <circle cx="40" cy="50" r="26" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="43" y="27" width="38" height="46" rx="12" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="43" y="27" width="38" height="46" rx="12" fill="currentColor" opacity=".14" clip-path="url(#left)"/>
+  <path d="M34 50h10l6-8 8 16 7-10h8" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="34" cy="50" r="4.5" fill="currentColor"/>
+  <circle cx="73" cy="48" r="4.5" fill="currentColor"/>
+</svg>

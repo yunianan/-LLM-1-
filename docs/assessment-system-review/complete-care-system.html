@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>完整心理诊疗系统流程</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: light-dark(#f6f8fb, #111827);
+      --surface: light-dark(#ffffff, #1f2937);
+      --surface-2: light-dark(#eef4fb, #263449);
+      --text: light-dark(#172033, #edf2f7);
+      --muted: light-dark(#53627a, #aab7c8);
+      --line: light-dark(#64748b, #94a3b8);
+      --border: light-dark(#cbd5e1, #475569);
+      --implemented: light-dark(#dff5e7, #174f33);
+      --implemented-stroke: light-dark(#20804a, #5bd68d);
+      --partial: light-dark(#fff1c9, #5b4614);
+      --partial-stroke: light-dark(#b7791f, #f4c95d);
+      --missing: light-dark(#fde5e5, #5b2525);
+      --missing-stroke: light-dark(#bb3e3e, #ff8585);
+      --safety: light-dark(#ffe6e6, #532323);
+      --accent: light-dark(#245ea8, #78aef2);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+    }
+    header {
+      padding: 20px 24px 12px;
+      max-width: 1500px;
+      margin: 0 auto;
+    }
+    h1 { margin: 0 0 8px; font-size: clamp(22px, 3vw, 34px); font-weight: 600; }
+    .subtitle { margin: 0; color: var(--muted); line-height: 1.65; }
+    .toolbar {
+      max-width: 1500px;
+      margin: 0 auto;
+      padding: 8px 24px 14px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+    button, input { font: inherit; }
+    button {
+      min-height: 40px;
+      padding: 8px 13px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+    }
+    button:hover { border-color: var(--accent); }
+    button:focus-visible, input:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 2px; }
+    label { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); }
+    input[type="range"] { width: 170px; }
+    .zoom-value { min-width: 52px; color: var(--text); font-variant-numeric: tabular-nums; }
+    .legend { margin-left: auto; display: flex; flex-wrap: wrap; gap: 12px; color: var(--muted); }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; border: 2px solid; }
+    .dot.impl { background: var(--implemented); border-color: var(--implemented-stroke); }
+    .dot.part { background: var(--partial); border-color: var(--partial-stroke); }
+    .dot.miss { background: var(--missing); border-color: var(--missing-stroke); }
+
+    main {
+      max-width: 1500px;
+      margin: 0 auto;
+      padding: 0 24px 24px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 16px;
+    }
+    .viewport {
+      position: relative;
+      height: min(72vh, 820px);
+      min-height: 520px;
+      overflow: hidden;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      cursor: grab;
+      touch-action: none;
+    }
+    .viewport.dragging { cursor: grabbing; }
+    svg { width: 100%; height: 100%; display: block; user-select: none; }
+    .edge { fill: none; stroke: var(--line); stroke-width: 3; marker-end: url(#arrow); }
+    .edge.loop { stroke-dasharray: 8 6; }
+    .edge-label { fill: var(--muted); font-size: 16px; font-weight: 500; paint-order: stroke; stroke: var(--surface); stroke-width: 6px; }
+    .node rect { rx: 15; ry: 15; stroke-width: 3; transition: filter .15s ease, stroke-width .15s ease; }
+    .node.impl rect { fill: var(--implemented); stroke: var(--implemented-stroke); }
+    .node.part rect { fill: var(--partial); stroke: var(--partial-stroke); }
+    .node.miss rect { fill: var(--missing); stroke: var(--missing-stroke); }
+    .node.safety rect { fill: var(--safety); stroke: var(--missing-stroke); }
+    .node text { fill: var(--text); pointer-events: none; text-anchor: middle; }
+    .node .title { font-size: 21px; font-weight: 600; }
+    .node .desc { font-size: 15px; fill: var(--muted); }
+    .node:hover rect, .node:focus rect, .node.selected rect { stroke-width: 6; filter: drop-shadow(0 5px 8px color-mix(in srgb, var(--text) 18%, transparent)); }
+    .node { cursor: pointer; outline: none; }
+
+    aside {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      align-self: start;
+      min-height: 280px;
+    }
+    aside h2 { margin: 0 0 10px; font-size: 20px; font-weight: 600; }
+    aside p { margin: 0 0 12px; line-height: 1.7; color: var(--muted); }
+    aside ul { margin: 0; padding-left: 20px; line-height: 1.7; }
+    .status { display: inline-block; margin-bottom: 12px; font-weight: 600; }
+    .hint { max-width: 1500px; margin: 0 auto; padding: 0 24px 24px; color: var(--muted); line-height: 1.65; }
+
+    @media (max-width: 900px) {
+      main { grid-template-columns: 1fr; }
+      aside { min-height: 0; }
+      .legend { width: 100%; margin-left: 0; }
+      .viewport { height: 65vh; min-height: 460px; }
+    }
+    @media (max-width: 520px) {
+      header, .toolbar, main, .hint { padding-left: 12px; padding-right: 12px; }
+      .viewport { min-height: 430px; }
+      input[type="range"] { width: 120px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>完整心理诊疗系统流程</h1>
+    <p class="subtitle">绿色表示当前原型已有较明确实现，黄色表示仅部分覆盖，红色表示仍需建设。点击任一节点查看其职责与当前差距。</p>
+  </header>
+
+  <div class="toolbar" aria-label="流程图控制">
+    <button id="zoomOut" type="button" aria-label="缩小流程图">缩小</button>
+    <button id="zoomIn" type="button" aria-label="放大流程图">放大</button>
+    <button id="fit" type="button">适应窗口</button>
+    <button id="reset" type="button">重置视图</button>
+    <label>缩放
+      <input id="zoomRange" type="range" min="50" max="240" step="10" value="100">
+      <span id="zoomValue" class="zoom-value">100%</span>
+    </label>
+    <div class="legend" aria-label="实现状态图例">
+      <span><i class="dot impl"></i>已实现</span>
+      <span><i class="dot part"></i>部分实现</span>
+      <span><i class="dot miss"></i>尚缺失</span>
+    </div>
+  </div>
+
+  <main>
+    <div id="viewport" class="viewport" aria-label="可缩放拖动的完整心理诊疗流程图">
+      <svg id="flow" viewBox="0 0 1600 1080" role="img" aria-labelledby="flowTitle flowDesc">
+        <title id="flowTitle">完整心理诊疗系统流程</title>
+        <desc id="flowDesc">流程从服务入口与知情同意开始，经过安全分诊、综合访谈、量表辅助、患者确认、鉴别诊断、共享决策、治疗、审核、结局监测、调整转诊与长期随访。</desc>
+        <defs>
+          <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="4" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,8 L11,4 z" fill="var(--line)"></path>
+          </marker>
+        </defs>
+
+        <g id="scene">
+          <path class="edge" d="M260 145 H390"></path>
+          <path class="edge" d="M650 145 H780"></path>
+          <path class="edge" d="M1040 145 H1170"></path>
+          <path class="edge" d="M1300 215 V295 H1040"></path>
+          <path class="edge" d="M910 365 H780"></path>
+          <path class="edge" d="M520 365 H390"></path>
+          <path class="edge" d="M260 435 V545 H390"></path>
+          <path class="edge" d="M650 615 H780"></path>
+          <path class="edge" d="M1040 615 H1170"></path>
+          <path class="edge" d="M1300 685 V795 H1040"></path>
+          <path class="edge" d="M910 865 H780"></path>
+          <path class="edge" d="M520 865 H390"></path>
+          <path class="edge" d="M260 935 H120 V365 H130"></path>
+          <text class="edge-label" x="88" y="665" transform="rotate(-90 88 665)">持续复评与回环</text>
+
+          <path class="edge" d="M520 215 V270 H1300 V245"></path>
+          <text class="edge-label" x="845" y="258">出现紧急风险</text>
+          <path class="edge loop" d="M1300 435 V495 H520 V545"></path>
+          <text class="edge-label" x="870" y="485">稳定后返回评估</text>
+
+          <path class="edge loop" d="M910 435 V505 H910 V545"></path>
+          <text class="edge-label" x="936" y="500">量表仅作辅助</text>
+
+          <path class="edge loop" d="M1300 935 V1010 H520 V935"></path>
+          <text class="edge-label" x="895" y="1000">调整方案或转诊</text>
+
+          <g class="node part" data-id="access" transform="translate(60 75)" role="button" aria-label="服务入口与知情同意" tabindex="0">
+            <rect width="200" height="140"></rect>
+            <text x="100" y="55" class="title">服务入口</text>
+            <text x="100" y="84" class="desc">知情同意与适用范围</text>
+            <text x="100" y="108" class="desc">隐私与数据授权</text>
+          </g>
+          <g class="node impl safety" data-id="safety" transform="translate(390 75)" role="button" aria-label="安全分诊 L1" tabindex="0">
+            <rect width="260" height="140"></rect>
+            <text x="130" y="50" class="title">安全分诊 L1</text>
+            <text x="130" y="80" class="desc">规则与语义模型识别风险</text>
+            <text x="130" y="105" class="desc">危机阻断与后续命令</text>
+          </g>
+          <g class="node part" data-id="interview" transform="translate(780 75)" role="button" aria-label="综合临床访谈 L2" tabindex="0">
+            <rect width="260" height="140"></rect>
+            <text x="130" y="50" class="title">综合临床访谈 L2</text>
+            <text x="130" y="80" class="desc">MI参与 聚焦 唤出 计划</text>
+            <text x="130" y="105" class="desc">主诉 病程 功能 背景 目标</text>
+          </g>
+          <g class="node miss" data-id="clinical" transform="translate(1170 75)" role="button" aria-label="临床与医学补充评估" tabindex="0">
+            <rect width="260" height="140"></rect>
+            <text x="130" y="46" class="title">临床与医学补充</text>
+            <text x="130" y="77" class="desc">精神状态检查与躯体排查</text>
+            <text x="130" y="102" class="desc">用药 物质史 家庭与社会史</text>
+          </g>
+
+          <g class="node part" data-id="crisis" transform="translate(1170 295)" role="button" aria-label="危机处置与人工转介" tabindex="0">
+            <rect width="260" height="140"></rect>
+            <text x="130" y="46" class="title">危机处置与转介</text>
+            <text x="130" y="77" class="desc">人工接管 紧急服务 地区资源</text>
+            <text x="130" y="102" class="desc">安全计划与连续随访</text>
+          </g>
+          <g class="node part" data-id="scales" transform="translate(780 295)" role="button" aria-label="量表辅助" tabindex="0">
+            <rect width="260" height="140"></rect>
+            <text x="130" y="46" class="title">量表辅助</text>
+            <text x="130" y="77" class="desc">访谈优先 量表就绪门</text>
+            <text x="130" y="102" class="desc">筛查 基线 严重度 随访</text>
+          </g>
+          <g class="node impl" data-id="profile" transform="translate(390 295)" role="button" aria-label="画像确认与证据链" tabindex="0">
+            <rect width="260" height="140"></rect>
+            <text x="130" y="46" class="title">画像确认与证据链</text>
+            <text x="130" y="77" class="desc">患者确认 修正 暂停</text>
+            <text x="130" y="102" class="desc">L2到L3接口守卫</text>
+          </g>
+          <g class="node impl" data-id="diagnosis" transform="translate(60 295)" role="button" aria-label="鉴别诊断 L3" tabindex="0">
+            <rect width="200" height="140"></rect>
+            <text x="100" y="46" class="title">鉴别诊断 L3</text>
+            <text x="100" y="77" class="desc">候选 排除 独立终验</text>
+            <text x="100" y="102" class="desc">证据不足回到 L2</text>
+          </g>
+
+          <g class="node part" data-id="shared" transform="translate(390 545)" role="button" aria-label="共享决策与治疗计划" tabindex="0">
+            <rect width="260" height="140"></rect>
+            <text x="130" y="46" class="title">共享决策与计划</text>
+            <text x="130" y="77" class="desc">解释结论 偏好 可选方案</text>
+            <text x="130" y="102" class="desc">目标 频率 预期与退出条件</text>
+          </g>
+          <g class="node impl" data-id="instructions" transform="translate(780 545)" role="button" aria-label="治疗指令 L3" tabindex="0">
+            <rect width="260" height="140"></rect>
+            <text x="130" y="46" class="title">治疗指令 L3</text>
+            <text x="130" y="77" class="desc">疗法匹配与个体化微调</text>
+            <text x="130" y="102" class="desc">静态锚点与动态轮次目标</text>
+          </g>
+          <g class="node part" data-id="therapy" transform="translate(1170 545)" role="button" aria-label="治疗实施 L4" tabindex="0">
+            <rect width="260" height="140"></rect>
+            <text x="130" y="46" class="title">治疗实施 L4</text>
+            <text x="130" y="77" class="desc">共情 反馈 技术执行 巩固</text>
+            <text x="130" y="102" class="desc">任务与患者反馈闭环</text>
+          </g>
+
+          <g class="node part" data-id="review" transform="translate(1170 795)" role="button" aria-label="输出审核 L5" tabindex="0">
+            <rect width="260" height="140"></rect>
+            <text x="130" y="46" class="title">输出审核 L5</text>
+            <text x="130" y="77" class="desc">安全 方案一致性 指令一致性</text>
+            <text x="130" y="102" class="desc">不通过则重写或人工复核</text>
+          </g>
+          <g class="node miss" data-id="outcomes" transform="translate(780 795)" role="button" aria-label="结局与过程监测" tabindex="0">
+            <rect width="260" height="140"></rect>
+            <text x="130" y="46" class="title">结局与过程监测</text>
+            <text x="130" y="77" class="desc">症状 功能 联盟 依从性 副作用</text>
+            <text x="130" y="102" class="desc">预设周期而非每轮堆量表</text>
+          </g>
+          <g class="node miss" data-id="adjust" transform="translate(390 795)" role="button" aria-label="方案调整与转诊" tabindex="0">
+            <rect width="260" height="140"></rect>
+            <text x="130" y="46" class="title">调整与转诊</text>
+            <text x="130" y="77" class="desc">无效 恶化 共病 超出能力</text>
+            <text x="130" y="102" class="desc">升级照护或人工会诊</text>
+          </g>
+          <g class="node miss" data-id="followup" transform="translate(60 795)" role="button" aria-label="结案与长期随访" tabindex="0">
+            <rect width="200" height="140"></rect>
+            <text x="100" y="46" class="title">结案与随访</text>
+            <text x="100" y="77" class="desc">复发预防 安全计划</text>
+            <text x="100" y="102" class="desc">长期记录与再次进入</text>
+          </g>
+        </g>
+      </svg>
+    </div>
+
+    <aside aria-live="polite">
+      <div id="status" class="status">选择节点查看详情</div>
+      <h2 id="detailTitle">完整诊疗不是一次诊断</h2>
+      <p id="detailSummary">完整系统需要把评估、诊断、共享决策、治疗、过程监测、转诊与长期随访连成闭环，并在关键位置允许人工接管。</p>
+      <ul id="detailList">
+        <li>量表是辅助证据，不应替代访谈。</li>
+        <li>模型审核不能替代临床责任主体。</li>
+        <li>一次对话输出不等于完整疗程。</li>
+      </ul>
+    </aside>
+  </main>
+  <p class="hint">操作：使用按钮或滑块缩放；鼠标滚轮缩放；按住空白区域拖动；点击节点查看职责与当前系统差距。按键盘方向键可平移，按加号或减号可缩放。</p>
+
+  <script>
+    const details = {
+      access: { status: "部分实现", title: "服务入口与知情同意", summary: "完整服务在采集健康信息前，应说明系统性质、适用边界、隐私用途、人工参与和紧急情况下的处理方式。", items: ["当前终端会提示真实 API 与费用，但尚未形成完整知情同意流程。", "需要身份、授权、撤回、数据保存期限和未成年人政策。", "前端与统一后端 API 尚未建立。"] },
+      safety: { status: "已实现核心原型", title: "L1 安全分诊", summary: "每条可处理消息先经过规则与语义模型，风险命令由守卫执行并验证。", items: ["模型不可用时停止后续处理。", "风险命令可持续传递到 L2。", "仍需地区化危机资源、真人接管和外部转介闭环。"] },
+      interview: { status: "部分实现", title: "L2 综合临床访谈", summary: "MI 四阶段、自然语言提取、画像构建已经存在，但临床访谈应始终优先于一般量表。", items: ["当前第一轮症状即可进入聚焦并触发量表候选。", "应增加主诉确认、病程、频率、功能影响和一次开放追问等量表就绪条件。", "量表拒绝不应阻止有充分访谈证据的画像进入下一层。"] },
+      clinical: { status: "尚缺失", title: "临床与医学补充评估", summary: "诊断前通常还需要精神状态检查、躯体或药物原因排查及更完整的个人史。", items: ["精神状态检查与客观观察尚未形成可靠输入。", "既往治疗、家族史、发展史、用药史和社会支持覆盖不足。", "需要明确何时转诊线下检查或请求旁系信息。"] },
+      crisis: { status: "部分实现", title: "危机处置与人工转介", summary: "软件阻断与安全提示只是起点，完整危机响应必须连接到现实服务。", items: ["建立地区化急救、危机热线与医疗机构资源。", "支持真人接管、联系紧急联系人和连续安全随访。", "保留授权、时间线与处置审计记录。"] },
+      scales: { status: "部分实现", title: "量表辅助", summary: "现有六类量表具备许可、计分和证据记录，但触发门槛过低。", items: ["LLM 只能推荐候选量表，规则决定是否到了合适时机。", "一次只提供与患者已确认主诉最相关的量表。", "设置拒绝保护、冷却期和固定复测周期，避免连续问卷化。"] },
+      profile: { status: "已实现核心原型", title: "画像确认与证据链", summary: "患者可以确认、修正或暂停画像，L2 到 L3 使用共享输入契约和证据守卫。", items: ["现有证据绑定提高可追溯性。", "仍需统一长期病历和跨会话恢复。", "画像确认不能被解释为患者同意诊断。"] },
+      diagnosis: { status: "已实现核心原型", title: "L3 鉴别诊断", summary: "CLINICR 生成多个候选、逐项排除并进行独立推理质量终验。", items: ["证据不足可回到 L2 补充。", "候选置信度与 Verifier 评分分开保存。", "Verifier 评估推理质量，不提供现实金标准，也不能替代持证医生诊断。"] },
+      shared: { status: "部分实现", title: "共享决策与治疗计划", summary: "完整系统应把诊断不确定性、选择、风险、患者偏好和现实可行性共同形成计划。", items: ["当前主要由规则匹配疗法并生成指令。", "需要面向患者的可理解解释与备选方案比较。", "需要约定疗程频率、复评点、退出标准和转诊标准。"] },
+      instructions: { status: "已实现核心原型", title: "L3 治疗指令", summary: "系统已生成角色、诊断锚点、本轮动态目标和防越界指令，并在进入 L4 前验证。", items: ["基础疗法、插件与个体特征微调已有规则。", "插件只作为指令传递，不在 L3 调用外部插件。", "仍需与长期治疗计划和过程数据建立稳定版本关系。"] },
+      therapy: { status: "部分实现", title: "L4 治疗实施", summary: "当前可生成治疗轮次回复，但完整疗程需要计划、技术执行、练习、复盘与终止阶段。", items: ["需要明确每次会谈目标与疗程阶段。", "需要作业、完成情况、困难和调整记录。", "需要处理脱落、恶化、治疗无效和治疗关系破裂。"] },
+      review: { status: "部分实现", title: "L5 输出审核", summary: "L5 检查 L4 回复的安全性、疗法一致性和指令一致性，并支持重写回环。", items: ["当前主要审核 L4 治疗回复，不覆盖所有系统输出。", "自动审核失败耗尽后进入人工复核，但没有真人审核后台。", "模型审核不能证明临床正确。"] },
+      outcomes: { status: "尚缺失", title: "结局与过程监测", summary: "治疗中应按预设周期观察症状、功能、治疗联盟、依从性、不良反应和患者目标。", items: ["量表应在基线和合理间隔复测，而不是遇到关键词即触发。", "同时纳入功能与患者目标结果，避免只看分数。", "达到恶化阈值时触发重新评估或转诊。"] },
+      adjust: { status: "尚缺失", title: "方案调整与转诊", summary: "当治疗无效、风险上升或问题超出系统能力时，应转向更高等级照护。", items: ["定义无反应、部分反应和恶化标准。", "支持药物评估、精神科、综合医院与其他专业服务转介。", "转诊后仍需信息交接和结果回传。"] },
+      followup: { status: "尚缺失", title: "结案与长期随访", summary: "完整疗程以目标达成、复发预防与可恢复的长期记录结束，而不是终端退出。", items: ["建立结案摘要和复发预警信号。", "约定随访时间和再次求助路径。", "当前会话仅在内存中，退出后不能恢复。"] }
+    };
+
+    const svg = document.getElementById("flow");
+    const viewport = document.getElementById("viewport");
+    const range = document.getElementById("zoomRange");
+    const zoomValue = document.getElementById("zoomValue");
+    const base = { x: 0, y: 0, w: 1600, h: 1080 };
+    let view = { ...base };
+    let dragging = false;
+    let pointer = null;
+    let dragStart = null;
+
+    function renderView() {
+      svg.setAttribute("viewBox", `${view.x} ${view.y} ${view.w} ${view.h}`);
+      const pct = Math.round((base.w / view.w) * 100);
+      range.value = Math.max(50, Math.min(240, pct));
+      zoomValue.textContent = `${pct}%`;
+    }
+    function zoomAt(factor, cx = view.x + view.w / 2, cy = view.y + view.h / 2) {
+      const newW = Math.max(base.w / 2.4, Math.min(base.w * 2, view.w * factor));
+      const newH = newW * base.h / base.w;
+      const rx = (cx - view.x) / view.w;
+      const ry = (cy - view.y) / view.h;
+      view.x = cx - rx * newW;
+      view.y = cy - ry * newH;
+      view.w = newW;
+      view.h = newH;
+      renderView();
+    }
+    function resetView() { view = { ...base }; renderView(); }
+
+    document.getElementById("zoomIn").addEventListener("click", () => zoomAt(0.8));
+    document.getElementById("zoomOut").addEventListener("click", () => zoomAt(1.25));
+    document.getElementById("fit").addEventListener("click", resetView);
+    document.getElementById("reset").addEventListener("click", resetView);
+    range.addEventListener("input", () => {
+      const wanted = Number(range.value) / 100;
+      const current = base.w / view.w;
+      zoomAt(current / wanted);
+    });
+    viewport.addEventListener("wheel", event => {
+      event.preventDefault();
+      const rect = svg.getBoundingClientRect();
+      const cx = view.x + ((event.clientX - rect.left) / rect.width) * view.w;
+      const cy = view.y + ((event.clientY - rect.top) / rect.height) * view.h;
+      zoomAt(event.deltaY > 0 ? 1.12 : 0.89, cx, cy);
+    }, { passive: false });
+    viewport.addEventListener("pointerdown", event => {
+      if (event.target.closest(".node")) return;
+      dragging = true;
+      pointer = event.pointerId;
+      dragStart = { x: event.clientX, y: event.clientY, vx: view.x, vy: view.y };
+      viewport.setPointerCapture(pointer);
+      viewport.classList.add("dragging");
+    });
+    viewport.addEventListener("pointermove", event => {
+      if (!dragging || event.pointerId !== pointer) return;
+      const rect = svg.getBoundingClientRect();
+      view.x = dragStart.vx - (event.clientX - dragStart.x) * view.w / rect.width;
+      view.y = dragStart.vy - (event.clientY - dragStart.y) * view.h / rect.height;
+      renderView();
+    });
+    function stopDrag(event) {
+      if (!dragging || event.pointerId !== pointer) return;
+      dragging = false;
+      viewport.classList.remove("dragging");
+      viewport.releasePointerCapture(pointer);
+    }
+    viewport.addEventListener("pointerup", stopDrag);
+    viewport.addEventListener("pointercancel", stopDrag);
+
+    function selectNode(node) {
+      document.querySelectorAll(".node").forEach(item => item.classList.remove("selected"));
+      node.classList.add("selected");
+      const data = details[node.dataset.id];
+      document.getElementById("status").textContent = data.status;
+      document.getElementById("detailTitle").textContent = data.title;
+      document.getElementById("detailSummary").textContent = data.summary;
+      const list = document.getElementById("detailList");
+      list.replaceChildren(...data.items.map(text => {
+        const li = document.createElement("li");
+        li.textContent = text;
+        return li;
+      }));
+    }
+    document.querySelectorAll(".node").forEach(node => {
+      node.addEventListener("click", () => selectNode(node));
+      node.addEventListener("keydown", event => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          selectNode(node);
+        }
+      });
+    });
+    document.addEventListener("keydown", event => {
+      if (event.target.matches("input, button")) return;
+      const step = 55 * view.w / base.w;
+      if (event.key === "+" || event.key === "=") zoomAt(0.8);
+      else if (event.key === "-") zoomAt(1.25);
+      else if (event.key === "ArrowLeft") view.x -= step;
+      else if (event.key === "ArrowRight") view.x += step;
+      else if (event.key === "ArrowUp") view.y -= step;
+      else if (event.key === "ArrowDown") view.y += step;
+      else return;
+      event.preventDefault();
+      renderView();
+    });
+    renderView();
+  </script>
+</body>
+</html>

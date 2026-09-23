@@ -4,36 +4,49 @@ from typing import Any, List, Literal, Optional
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
-from .clinicr import CLINICR
-from .therapy_selector import TherapySelector
-from .instruction_generator import InstructionGenerator
+from .diagnosis.clinicr import CLINICR
+from .llm import CLINICRModelUnavailable
+from .therapy.therapy_selector import TherapySelector
+from .instructions.instruction_generator import InstructionGenerator
 from .output_validator import L3OutputValidator
+from shared.l2_l3_contract import (
+    as_missing_dimension,
+    missing_required_profile_evidence,
+    missing_required_profile_fields,
+)
 
 app = FastAPI(title="Diagnosis Layer API")
 
 
+class MotivationInput(BaseModel):
+    importance: int | None = Field(default=None, ge=0, le=10)
+    confidence: int | None = Field(default=None, ge=0, le=10)
+    readiness: int | None = Field(default=None, ge=0, le=10)
+
+
 class DiagnoseRequest(BaseModel):
-    PHQ9: float = 0
-    GAD7: float = 0
-    MDQ: float = 0
-    PCL5: float = 0
-    ISI: float = 0
-    Y_BOCS: float = 0
-    ADNM: float = 0
-    RRS: float = 0
-    AAQ_II: float = 0
-    PHQ15: float = 0
-    relapse_count: int = 0
-    rhythm_disturbance: bool = False
-    exposure_avoidant: bool = False
-    ritual_behaviors: bool = False
-    chronic_months: int = 0
-    interpersonal_conflicts: int = 0
-    interpersonal_impairment: bool = False
-    single_focus: bool = False
-    psychotic_symptoms: bool = False
-    substance_active: bool = False
-    severe_dissociation: bool = False
+    PHQ9: float | None = Field(default=None, ge=0, le=27)
+    GAD7: float | None = Field(default=None, ge=0, le=21)
+    MDQ: float | None = Field(default=None, ge=0, le=13)
+    PCL5: float | None = Field(default=None, ge=0, le=80)
+    ISI: float | None = Field(default=None, ge=0, le=28)
+    Y_BOCS: float | None = Field(default=None, ge=0, le=40)
+    ADNM: float | None = Field(default=None, ge=0)
+    RRS: float | None = Field(default=None, ge=0)
+    AAQ_II: float | None = Field(default=None, ge=0)
+    PHQ15: float | None = Field(default=None, ge=0, le=30)
+    relapse_count: int | None = Field(default=None, ge=0)
+    rhythm_disturbance: bool | None = None
+    exposure_avoidant: bool | None = None
+    ritual_behaviors: bool | None = None
+    insomnia_chief_complaint: bool | None = None
+    chronic_months: int | None = Field(default=None, ge=0)
+    interpersonal_conflicts: int | None = Field(default=None, ge=0)
+    interpersonal_impairment: bool | None = None
+    single_focus: bool | None = None
+    psychotic_symptoms: bool | None = None
+    substance_active: bool | None = None
+    severe_dissociation: bool | None = None
     risk_level: int = 0
     sensitive_topics: List[str] = []
     l1_flags: List[str] = []
@@ -45,6 +58,13 @@ class DiagnoseRequest(BaseModel):
     substance_or_medical_cause: bool | None = None
     differential_diagnoses_assessed: list[str] | None = None
     evidence_conflicts: list[dict[str, Any]] | None = None
+    emotions: list[dict[str, Any]] = Field(default_factory=list)
+    cognitive_patterns: list[dict[str, Any]] = Field(default_factory=list)
+    key_narratives: list[dict[str, Any]] = Field(default_factory=list)
+    functional_impairments: list[dict[str, Any]] = Field(default_factory=list)
+    patient_goals: list[str] = Field(default_factory=list)
+    motivation: MotivationInput = Field(default_factory=MotivationInput)
+    evidence_nodes: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class DiagnoseResponse(BaseModel):
@@ -52,6 +72,7 @@ class DiagnoseResponse(BaseModel):
     timestamp: str
     diagnosis: dict
     verifier_score: float
+    verifier_decision: str
     candidate_confidence: float
     verifier_routing: str
     recommended_therapy: dict
@@ -89,18 +110,31 @@ def build_blocked_report(clinicr_result):
         "diagnosis": clinicr_result["diagnosis"],
         "provisional_diagnosis": clinicr_result.get("provisional_diagnosis"),
         "verifier_score": clinicr_result["verifier_score"],
+        "verifier_decision": clinicr_result["verifier_decision"],
         "candidate_confidence": (
             clinicr_result.get("provisional_diagnosis") or {}
         ).get("confidence", 0.0),
         "verifier_routing": routing,
         "verifier_checks": clinicr_result.get("verifier_checks", []),
         "verifier_fail_reasons": clinicr_result.get("verifier_fail_reasons", []),
-        "recommended_therapy": {"primary": "", "addon": [], "contraindications": []},
+        "recommended_therapy": {
+            "primary": "",
+            "addon": [],
+            "plugin_triggers": [],
+            "strategy_adjustments": {},
+            "contraindications": [],
+        },
         "severity_level": clinicr_result["severity_level"],
         "clinical_notes_for_L4": "",
         "summary": clinicr_result["summary"],
         "structured_labels": {
-            "therapy_routing": {"primary": "", "addon": [], "l4_substage_priority": []},
+            "therapy_routing": {
+                "primary": "",
+                "addon": [],
+                "plugin_triggers": [],
+                "strategy_adjustments": {},
+                "l4_substage_priority": [],
+            },
             "wording_constraint": "信息不足，不得形成诊断结论或进入治疗对话",
             "risk_monitoring": [],
         },
@@ -118,12 +152,51 @@ def build_blocked_report(clinicr_result):
     }
 
 
+def build_input_contract_report(profile: dict[str, Any]) -> dict[str, Any] | None:
+    """在调用 CLINICR 前执行与 L2 相同的最低输入契约。"""
+
+    requirements = [
+        *missing_required_profile_fields(profile),
+        *missing_required_profile_evidence(profile),
+    ]
+    unique = {item.field: item for item in requirements}
+    if not unique:
+        return None
+
+    missing = [as_missing_dimension(item) for item in unique.values()]
+    result = {
+        "diagnosis": {
+            "primary": None,
+            "secondary": [],
+            "under_observation": [],
+            "ruled_out": [],
+        },
+        "provisional_diagnosis": None,
+        "verifier_score": 0.0,
+        "verifier_decision": "rejected",
+        "verifier_routing": "return_to_l2",
+        "verifier_checks": [],
+        "verifier_fail_reasons": [
+            "L2→L3共享输入契约未满足，未调用CLINICR模型"
+        ],
+        "missing_dimensions": missing,
+        "severity_level": 1,
+        "summary": "患者画像缺少诊断所需字段或对应证据，返回L2补充信息。",
+        "evidence_refs": [],
+        "flags": ["insufficient_diagnostic_evidence"],
+    }
+    report = build_blocked_report(result)
+    report["l3_validation"] = L3OutputValidator().validate(report)
+    return report
+
+
 THERAPY_SUBSTAGE_PRIORITY = {
     "CBT": ["behavioral_activation", "cognitive_restructuring", "sleep_hygiene"],
     "CBT+BA": ["behavioral_activation", "cognitive_restructuring", "sleep_hygiene"],
     "CBT-TF": ["trauma_processing", "cognitive_restructuring"],
     "CBT-I": ["sleep_hygiene", "stimulus_control", "sleep_restriction"],
     "CBT+IPSRT": ["behavioral_activation", "interpersonal_rhythm"],
+    "CBT/SFBT": ["behavioral_activation", "solution_focused"],
 }
 
 PLUGIN_SUBSTAGE = {
@@ -143,6 +216,7 @@ GUIDELINE_SOURCE = {
     "CBT-TF": "ISTSS_2019; NICE_NG116",
     "CBT-I": "AASM_2021; ACP_Qaseem_2016",
     "CBT+IPSRT": "ISBD_2020; NICE_NG185",
+    "CBT/SFBT": "APA_2019; NICE_NG222",
 }
 
 
@@ -162,12 +236,16 @@ def build_report(profile, clinicr_result, therapy, safety_context=None):
     safety_flags = safety.get("l1_flags", []) or safety.get("flags", [])
 
     contraindications = list(therapy.get("contraindications", []))
+    plugin_triggers = list(therapy.get("plugin_triggers", []))
+    strategy_adjustments = dict(therapy.get("strategy_adjustments", {}))
     if "trauma" in sensitive_topics:
         contraindications.append("避免深度创伤暴露（per L1敏感话题标记）")
 
     risk_monitoring = []
     if "monitor_suicidal_ideation" in safety_flags or "passive_si_monitor" in safety_flags:
         risk_monitoring.append("passive_si_to_active_si_escalation")
+    if strategy_adjustments.get("safety_monitoring") == "enhanced":
+        risk_monitoring.append("enhanced_monitoring_frequency")
 
     evidence_refs = list(clinicr_result["evidence_refs"])
     evidence_refs.append({
@@ -175,11 +253,16 @@ def build_report(profile, clinicr_result, therapy, safety_context=None):
         "therapy": f"{therapy_type}_for_{primary['disorder']}" if primary else therapy_type,
         "source": GUIDELINE_SOURCE.get(therapy_type, "APA_2019"),
     })
+    trigger_by_plugin = {
+        item.get("plugin"): item for item in plugin_triggers if item.get("plugin")
+    }
     for plugin in therapy.get("plugins", []):
+        trigger = trigger_by_plugin.get(plugin, {})
         evidence_refs.append({
             "type": "guideline",
             "therapy": f"{plugin}_plugin",
-            "source": "临床指南（触发条件：量表阈值+患者特征）",
+            "source": "L3治疗插件确定性规则",
+            "threshold": "; ".join(trigger.get("conditions", [])),
         })
 
     focus_notes = []
@@ -194,23 +277,28 @@ def build_report(profile, clinicr_result, therapy, safety_context=None):
     if primary is None:
         raise HTTPException(status_code=400, detail="Cannot determine diagnosis")
 
+    adjustment_text = "；".join(strategy_adjustments.get("instructions", []))
     clinical_notes = (
         f"L4治疗焦点按序推进：{'→'.join(priority)}。"
         f"主诊断{primary['disorder']}（置信度{primary['confidence']}，"
         f"严重度{primary.get('severity', 'unknown')}）。"
-        f"需温和监测自杀意念变化，若从被动转为主动，立即升级至L1安全协议。"
+        f"方案微调：{adjustment_text or '无'}。"
     )
+    if risk_monitoring:
+        clinical_notes += "需按L1安全通行证执行风险监测，风险升级时立即返回L1。"
 
     instruction_to_next = (
-        f"L4对话应聚焦{'→'.join(priority[:2])}，避免涉及创伤暴露练习。"
+        f"L4对话应聚焦{'→'.join(priority[:2])}。"
+        f"执行方案微调：{adjustment_text or '无'}。"
         "L4-L2需温和反馈诊断（'初步印象'措辞），征求患者确认。"
     )
 
-    return {
+    report = {
         "layer_id": "L3",
         "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "diagnosis": diagnosis,
         "verifier_score": clinicr_result["verifier_score"],
+        "verifier_decision": clinicr_result["verifier_decision"],
         "candidate_confidence": primary["confidence"] if primary else 0.0,
         "verifier_routing": clinicr_result["verifier_routing"],
         "verifier_checks": clinicr_result.get("verifier_checks", []),
@@ -218,6 +306,8 @@ def build_report(profile, clinicr_result, therapy, safety_context=None):
         "recommended_therapy": {
             "primary": therapy_type,
             "addon": therapy.get("plugins", []),
+            "plugin_triggers": plugin_triggers,
+            "strategy_adjustments": strategy_adjustments,
             "contraindications": contraindications,
         },
         "severity_level": clinicr_result["severity_level"],
@@ -227,6 +317,8 @@ def build_report(profile, clinicr_result, therapy, safety_context=None):
             "therapy_routing": {
                 "primary": therapy_type,
                 "addon": therapy.get("plugins", []),
+                "plugin_triggers": plugin_triggers,
+                "strategy_adjustments": strategy_adjustments,
                 "l4_substage_priority": priority,
             },
             "wording_constraint": "使用'初步印象'措辞，禁止'确诊'",
@@ -237,11 +329,17 @@ def build_report(profile, clinicr_result, therapy, safety_context=None):
         "flags": flags,
         "instruction_to_next": instruction_to_next,
     }
+    report["instructions"] = InstructionGenerator().generate(report, profile).model_dump(mode="json")
+    return report
 
 
-def diagnose(profile, safety_context=None):
-    clinicr = CLINICR()
-    result = clinicr.run(profile, safety_context=safety_context)
+def diagnose(profile, safety_context=None, clinicr: CLINICR | None = None):
+    contract_report = build_input_contract_report(profile)
+    if contract_report is not None:
+        return contract_report
+
+    engine = clinicr or CLINICR()
+    result = engine.run(profile, safety_context=safety_context)
 
     if result["verifier_routing"] not in {"pass", "conditional"}:
         report = build_blocked_report(result)
@@ -253,7 +351,15 @@ def diagnose(profile, safety_context=None):
         raise HTTPException(status_code=400, detail="Cannot determine diagnosis")
 
     selector = TherapySelector()
-    therapy = selector.run(primary["disorder"], profile)
+    confirmed_diagnoses = [primary["disorder"]] + [
+        item["disorder"] for item in result["diagnosis"].get("secondary", [])
+    ]
+    therapy = selector.run(
+        primary["disorder"],
+        profile,
+        confirmed_diagnoses=confirmed_diagnoses,
+        verifier_decision=result["verifier_decision"],
+    )
 
     report = build_report(profile, result, therapy, safety_context)
 
@@ -272,10 +378,6 @@ def diagnose(profile, safety_context=None):
         }
         return report
 
-    generator = InstructionGenerator()
-    instructions = generator.generate(result["diagnosis"], therapy, profile)
-
-    report["instructions"] = instructions
     return report
 
 
@@ -296,6 +398,7 @@ def diagnose_endpoint(request: DiagnoseRequest):
         "rhythm_disturbance": request.rhythm_disturbance,
         "exposure_avoidant": request.exposure_avoidant,
         "ritual_behaviors": request.ritual_behaviors,
+        "insomnia_chief_complaint": request.insomnia_chief_complaint,
         "chronic_months": request.chronic_months,
         "interpersonal_conflicts": request.interpersonal_conflicts,
         "interpersonal_impairment": request.interpersonal_impairment,
@@ -311,13 +414,23 @@ def diagnose_endpoint(request: DiagnoseRequest):
         "substance_or_medical_cause": request.substance_or_medical_cause,
         "differential_diagnoses_assessed": request.differential_diagnoses_assessed,
         "evidence_conflicts": request.evidence_conflicts,
+        "emotions": request.emotions,
+        "cognitive_patterns": request.cognitive_patterns,
+        "key_narratives": request.key_narratives,
+        "functional_impairments": request.functional_impairments,
+        "patient_goals": request.patient_goals,
+        "motivation": request.motivation.model_dump(mode="json"),
+        "evidence_nodes": request.evidence_nodes,
     }
     safety_context = {
         "risk_level": request.risk_level,
         "sensitive_topics": request.sensitive_topics,
         "l1_flags": request.l1_flags,
     }
-    return DiagnoseResponse(**diagnose(profile, safety_context))
+    try:
+        return DiagnoseResponse(**diagnose(profile, safety_context))
+    except CLINICRModelUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 @app.get("/health")

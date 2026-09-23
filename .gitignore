@@ -226,3 +226,6 @@ __marimo__/
 *.sln
 diagnosis_output.json
 
+# Local L2 diagnostic responses may contain patient information.
+/artifacts/debug/
+

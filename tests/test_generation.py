@@ -15,6 +15,7 @@ from layers.layer4.schemas.instructions import (
     TurnInstruction,
 )
 from layers.layer4.session.history import ConversationTurn
+from shared.schemas.treatment_instructions import TreatmentInstructions
 
 ROLE = RoleInstruction(identity="你是一名受过CBT训练的心理治疗师", style="温暖、共情、结构化")
 ANCHOR = DiagnosticAnchor(primary="MDD（置信度 0.87）", comorbidities=["Insomnia Disorder"],
@@ -44,7 +45,7 @@ def test_assemble_prompt_four_sections():
     # L2 诊断锚点
     assert "MDD（置信度 0.87）" in sys_text
     assert "候选诊断支持度：0.75" in sys_text
-    assert "独立终验证据质量：1.0" in sys_text
+    assert "独立终验证据质量（CLINICR）：1.0" in sys_text
     # L4 防越界
     assert "禁止开药" in sys_text
     user_text = msgs[1].content
@@ -105,7 +106,8 @@ def test_responder_forwards_fix_instruction():
 def test_build_l5_context_fields():
     safety = SafetyPassport(risk_level=2, sensitive_topics=["trauma"],
                             flags=["monitor_suicidal_ideation"])
-    ctx = build_l5_context("你好", "L4-L2", "CBT", safety, ANCHOR)
+    instructions = TreatmentInstructions(L1=ROLE, L2=ANCHOR, L3=_turn(), L4=BOUNDARY)
+    ctx = build_l5_context("你好", "L4-L2", safety, instructions, "我最近睡不好", [])
     assert ctx.l4_raw_output == "你好"
     assert ctx.l4_substage == "L4-L2"
     assert ctx.therapy_type == "CBT"
