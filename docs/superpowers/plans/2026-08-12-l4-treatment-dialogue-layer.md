@@ -12,7 +12,7 @@
 
 - 根目录：`D:\心理诊疗LLM\Layer 4`（所有路径相对此目录）
 - Python >= 3.11；依赖：`pydantic>=2.12`、`pydantic-settings>=2.2`、`openai>=1.30`、`fastapi>=0.111`、`uvicorn[standard]>=0.30`；dev 依赖：`pytest>=8`、`httpx>=0.27`
-- 包名 `l4`，目录 `l4/`，测试目录 `tests/`
+- 包名 `layers.layer4`，目录 `layers/layer4/`，测试目录 `tests/`
 - 测试一律使用 `MockBackend` + `MockReviewer`，禁止真实网络调用
 - 每个任务结束必须跑测试并提交 git commit（Task 1 先 `git init`）
 - 不做临床推理：回复生成仅翻译 L3 指令；即使 L3 指令有误也忠实执行
@@ -28,8 +28,8 @@
 - Create: `pyproject.toml`
 - Create: `.gitignore`
 - Create: `.env.example`
-- Create: `l4/__init__.py`
-- Create: `l4/config.py`
+- Create: `layers/layer4/__init__.py`
+- Create: `layers/layer4/config.py`
 - Create: `tests/test_config.py`
 - Create: `README.md`（先写占位，Task 9 补全）
 
@@ -46,7 +46,7 @@ import os
 
 import pytest
 
-from l4.config import Settings
+from layers.layer4.config import Settings
 
 
 def test_defaults():
@@ -145,13 +145,13 @@ L4_REVIEW_MODE=mock
 L4_MAX_REWRITE_ATTEMPTS=3
 ```
 
-`l4/__init__.py`：
+`layers/layer4/__init__.py`：
 
 ```python
 __version__ = "0.1.0"
 ```
 
-`l4/config.py`：
+`layers/layer4/config.py`：
 
 ```python
 from typing import Literal
@@ -204,12 +204,12 @@ git commit -m "feat: L4 项目脚手架与配置（Settings/pyproject/tests）"
 ### Task 2: 层间数据契约（schemas）
 
 **Files:**
-- Create: `l4/schemas/__init__.py`
-- Create: `l4/schemas/instructions.py`
-- Create: `l4/schemas/l3_report.py`
-- Create: `l4/schemas/l5_context.py`
-- Create: `l4/schemas/summary.py`
-- Create: `l4/schemas/review.py`
+- Create: `layers/layer4/schemas/__init__.py`
+- Create: `layers/layer4/schemas/instructions.py`
+- Create: `layers/layer4/schemas/l3_report.py`
+- Create: `layers/layer4/schemas/l5_context.py`
+- Create: `layers/layer4/schemas/summary.py`
+- Create: `layers/layer4/schemas/review.py`
 - Create: `examples/sample_diagnostic_report.json`
 - Test: `tests/test_schemas.py`
 
@@ -238,17 +238,17 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from l4.schemas.instructions import (
+from layers.layer4.schemas.instructions import (
     BoundaryInstruction,
     DiagnosticAnchor,
     RoleInstruction,
     SafetyPassport,
     TurnInstruction,
 )
-from l4.schemas.l3_report import DiagnosticReport
-from l4.schemas.l5_context import DiagnosisContext, L5Context, RiskContext
-from l4.schemas.review import ReviewResult
-from l4.schemas.summary import EvidenceRef, StructuredSummary
+from layers.layer4.schemas.l3_report import DiagnosticReport
+from layers.layer4.schemas.l5_context import DiagnosisContext, L5Context, RiskContext
+from layers.layer4.schemas.review import ReviewResult
+from layers.layer4.schemas.summary import EvidenceRef, StructuredSummary
 
 EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
 
@@ -331,10 +331,10 @@ Expected: FAIL（ModuleNotFoundError: l4.schemas）
 
 - [ ] **Step 3: 最小实现**
 
-`l4/schemas/__init__.py`：
+`layers/layer4/schemas/__init__.py`：
 
 ```python
-from l4.schemas.instructions import (
+from layers.layer4.schemas.instructions import (
     BoundaryInstruction,
     DiagnosticAnchor,
     RoleInstruction,
@@ -342,10 +342,10 @@ from l4.schemas.instructions import (
     Substage,
     TurnInstruction,
 )
-from l4.schemas.l3_report import DiagnosticReport
-from l4.schemas.l5_context import DiagnosisContext, L5Context, RiskContext
-from l4.schemas.review import ReviewResult
-from l4.schemas.summary import EvidenceRef, StructuredSummary
+from layers.layer4.schemas.l3_report import DiagnosticReport
+from layers.layer4.schemas.l5_context import DiagnosisContext, L5Context, RiskContext
+from layers.layer4.schemas.review import ReviewResult
+from layers.layer4.schemas.summary import EvidenceRef, StructuredSummary
 
 __all__ = [
     "BoundaryInstruction",
@@ -364,7 +364,7 @@ __all__ = [
 ]
 ```
 
-`l4/schemas/instructions.py`：
+`layers/layer4/schemas/instructions.py`：
 
 ```python
 from typing import Literal
@@ -419,12 +419,12 @@ class SafetyPassport(BaseModel):
     flags: list[str] = []
 ```
 
-`l4/schemas/l3_report.py`：
+`layers/layer4/schemas/l3_report.py`：
 
 ```python
 from pydantic import BaseModel
 
-from l4.schemas.instructions import DiagnosticAnchor
+from layers.layer4.schemas.instructions import DiagnosticAnchor
 
 
 class PrimaryDiagnosis(BaseModel):
@@ -511,12 +511,12 @@ class DiagnosticReport(BaseModel):
         )
 ```
 
-`l4/schemas/l5_context.py`：
+`layers/layer4/schemas/l5_context.py`：
 
 ```python
 from pydantic import BaseModel
 
-from l4.schemas.instructions import Substage
+from layers.layer4.schemas.instructions import Substage
 
 
 class DiagnosisContext(BaseModel):
@@ -540,7 +540,7 @@ class L5Context(BaseModel):
     risk_context: RiskContext = RiskContext()
 ```
 
-`l4/schemas/summary.py`：
+`layers/layer4/schemas/summary.py`：
 
 ```python
 from typing import Any, Literal
@@ -568,7 +568,7 @@ class StructuredSummary(BaseModel):
     flags: list[str] = []
 ```
 
-`l4/schemas/review.py`：
+`layers/layer4/schemas/review.py`：
 
 ```python
 from typing import Literal
@@ -651,7 +651,7 @@ Expected: PASS（8 passed）
 - [ ] **Step 5: 提交**
 
 ```bash
-git add l4/schemas examples tests/test_schemas.py
+git add layers/layer4/schemas examples tests/test_schemas.py
 git commit -m "feat: 层间数据契约 schemas（L1-L4指令/DiagnosticReport/L5Context/摘要/审核）"
 ```
 
@@ -660,11 +660,11 @@ git commit -m "feat: 层间数据契约 schemas（L1-L4指令/DiagnosticReport/L
 ### Task 3: LLM 后端抽象（端口 + 适配器 + 工厂）
 
 **Files:**
-- Create: `l4/llm/__init__.py`
-- Create: `l4/llm/base.py`
-- Create: `l4/llm/mock.py`
-- Create: `l4/llm/openai_compat.py`
-- Create: `l4/llm/local.py`
+- Create: `layers/layer4/llm/__init__.py`
+- Create: `layers/layer4/llm/base.py`
+- Create: `layers/layer4/llm/mock.py`
+- Create: `layers/layer4/llm/openai_compat.py`
+- Create: `layers/layer4/llm/local.py`
 - Test: `tests/test_llm.py`
 
 **Interfaces:**
@@ -684,12 +684,12 @@ git commit -m "feat: 层间数据契约 schemas（L1-L4指令/DiagnosticReport/L
 ```python
 import pytest
 
-from l4.config import Settings
-from l4.llm import get_backend
-from l4.llm.base import Message
-from l4.llm.local import LocalModelBackend
-from l4.llm.mock import MockBackend
-from l4.llm.openai_compat import OpenAICompatBackend
+from layers.layer4.config import Settings
+from layers.layer4.llm import get_backend
+from layers.layer4.llm.base import Message
+from layers.layer4.llm.local import LocalModelBackend
+from layers.layer4.llm.mock import MockBackend
+from layers.layer4.llm.openai_compat import OpenAICompatBackend
 
 
 def test_mock_json_mode_matches_substring():
@@ -735,18 +735,18 @@ Expected: FAIL（ModuleNotFoundError: l4.llm）
 
 - [ ] **Step 3: 最小实现**
 
-`l4/llm/__init__.py`：
+`layers/layer4/llm/__init__.py`：
 
 ```python
-from l4.config import Settings
-from l4.llm.base import LLMBackend
-from l4.llm.local import LocalModelBackend
-from l4.llm.mock import MockBackend
-from l4.llm.openai_compat import OpenAICompatBackend
+from layers.layer4.config import Settings
+from layers.layer4.llm.base import LLMBackend
+from layers.layer4.llm.local import LocalModelBackend
+from layers.layer4.llm.mock import MockBackend
+from layers.layer4.llm.openai_compat import OpenAICompatBackend
 
 
 def get_backend(config: Settings) -> LLMBackend:
-    """按配置返回 LLM 后端实例。后期本地模型就绪时，实现 l4/llm/local.py 即可。"""
+    """按配置返回 LLM 后端实例。后期本地模型就绪时，实现 layers/layer4/llm/local.py 即可。"""
     if config.llm_provider == "mock":
         return MockBackend()
     if config.llm_provider == "openai_compat":
@@ -760,7 +760,7 @@ def get_backend(config: Settings) -> LLMBackend:
     raise ValueError(f"未知 LLM 提供商: {config.llm_provider}")
 ```
 
-`l4/llm/base.py`：
+`layers/layer4/llm/base.py`：
 
 ```python
 from typing import Literal, Protocol, runtime_checkable
@@ -794,10 +794,10 @@ class LLMError(Exception):
     pass
 ```
 
-`l4/llm/mock.py`：
+`layers/layer4/llm/mock.py`：
 
 ```python
-from l4.llm.base import LLMBackend, Message
+from layers.layer4.llm.base import LLMBackend, Message
 
 DEFAULT_MOCK_RESPONSE = (
     '{"reply": "我听到你说的了，这很不容易。我们可以一起看看现在的情况。"'
@@ -832,12 +832,12 @@ class MockBackend(LLMBackend):
         return self._default
 ```
 
-`l4/llm/openai_compat.py`：
+`layers/layer4/llm/openai_compat.py`：
 
 ```python
 from openai import OpenAI
 
-from l4.llm.base import LLMBackend, Message
+from layers.layer4.llm.base import LLMBackend, Message
 
 
 class OpenAICompatBackend(LLMBackend):
@@ -868,10 +868,10 @@ class OpenAICompatBackend(LLMBackend):
         return content or ""
 ```
 
-`l4/llm/local.py`：
+`layers/layer4/llm/local.py`：
 
 ```python
-from l4.llm.base import LLMBackend, Message
+from layers.layer4.llm.base import LLMBackend, Message
 
 
 class LocalModelBackend(LLMBackend):
@@ -905,7 +905,7 @@ Expected: PASS（4 passed）
 - [ ] **Step 5: 提交**
 
 ```bash
-git add l4/llm tests/test_llm.py
+git add layers/layer4/llm tests/test_llm.py
 git commit -m "feat: LLM 后端抽象（Mock/OpenAI兼容/本地占位 + 工厂）"
 ```
 
@@ -914,9 +914,9 @@ git commit -m "feat: LLM 后端抽象（Mock/OpenAI兼容/本地占位 + 工厂�
 ### Task 4: 会话状态机与历史存储
 
 **Files:**
-- Create: `l4/session/__init__.py`
-- Create: `l4/session/state_machine.py`
-- Create: `l4/session/history.py`
+- Create: `layers/layer4/session/__init__.py`
+- Create: `layers/layer4/session/state_machine.py`
+- Create: `layers/layer4/session/history.py`
 - Test: `tests/test_session.py`
 
 **Interfaces:**
@@ -934,15 +934,15 @@ git commit -m "feat: LLM 后端抽象（Mock/OpenAI兼容/本地占位 + 工厂�
 ```python
 import pytest
 
-from l4.llm.base import Message
-from l4.schemas.instructions import (
+from layers.layer4.llm.base import Message
+from layers.layer4.schemas.instructions import (
     BoundaryInstruction,
     RoleInstruction,
     SafetyPassport,
     TurnInstruction,
 )
-from l4.session.history import ConversationTurn, SessionData, SessionStore
-from l4.session.state_machine import SUBSTAGE_ORDER, SubstageMachine
+from layers.layer4.session.history import ConversationTurn, SessionData, SessionStore
+from layers.layer4.session.state_machine import SUBSTAGE_ORDER, SubstageMachine
 
 
 def test_substage_order():
@@ -1031,23 +1031,23 @@ Expected: FAIL（ModuleNotFoundError: l4.session）
 
 - [ ] **Step 3: 最小实现**
 
-`l4/session/__init__.py`：
+`layers/layer4/session/__init__.py`：
 
 ```python
-from l4.session.history import SessionData, SessionStore
-from l4.session.state_machine import SUBSTAGE_ORDER, SubstageMachine
+from layers.layer4.session.history import SessionData, SessionStore
+from layers.layer4.session.state_machine import SUBSTAGE_ORDER, SubstageMachine
 
 __all__ = ["SUBSTAGE_ORDER", "SessionData", "SessionStore", "SubstageMachine"]
 ```
 
-`l4/session/state_machine.py`：
+`layers/layer4/session/state_machine.py`：
 
 ```python
 from typing import Literal
 
 from pydantic import BaseModel
 
-from l4.schemas.instructions import Substage
+from layers.layer4.schemas.instructions import Substage
 
 SUBSTAGE_ORDER: tuple[Substage, ...] = ("L4-L1", "L4-L2", "L4-L3", "L4-L4")
 
@@ -1085,22 +1085,22 @@ class SubstageMachine(BaseModel):
             self.flags.append(flag)
 ```
 
-`l4/session/history.py`：
+`layers/layer4/session/history.py`：
 
 ```python
 from typing import Literal
 
 from pydantic import BaseModel
 
-from l4.llm.base import Message
-from l4.schemas.instructions import (
+from layers.layer4.llm.base import Message
+from layers.layer4.schemas.instructions import (
     BoundaryInstruction,
     DiagnosticAnchor,
     RoleInstruction,
     SafetyPassport,
     TurnInstruction,
 )
-from l4.session.state_machine import SubstageMachine
+from layers.layer4.session.state_machine import SubstageMachine
 
 
 class ConversationTurn(BaseModel):
@@ -1148,7 +1148,7 @@ Expected: PASS（8 passed）
 - [ ] **Step 5: 提交**
 
 ```bash
-git add l4/session tests/test_session.py
+git add layers/layer4/session tests/test_session.py
 git commit -m "feat: L4 子层状态机与会话历史存储"
 ```
 
@@ -1157,10 +1157,10 @@ git commit -m "feat: L4 子层状态机与会话历史存储"
 ### Task 5: Prompt 组装与生成
 
 **Files:**
-- Create: `l4/generation/__init__.py`
-- Create: `l4/generation/prompt_assembler.py`
-- Create: `l4/generation/responder.py`
-- Create: `l4/generation/summary_builder.py`
+- Create: `layers/layer4/generation/__init__.py`
+- Create: `layers/layer4/generation/prompt_assembler.py`
+- Create: `layers/layer4/generation/responder.py`
+- Create: `layers/layer4/generation/summary_builder.py`
 - Test: `tests/test_generation.py`
 
 **Interfaces:**
@@ -1175,23 +1175,23 @@ git commit -m "feat: L4 子层状态机与会话历史存储"
 `tests/test_generation.py`：
 
 ```python
-from l4.generation.prompt_assembler import assemble_prompt
-from l4.generation.responder import GenerationResult, Responder
-from l4.generation.summary_builder import (
+from layers.layer4.generation.prompt_assembler import assemble_prompt
+from layers.layer4.generation.responder import GenerationResult, Responder
+from layers.layer4.generation.summary_builder import (
     build_evidence_refs,
     build_l5_context,
     build_summary,
 )
-from l4.llm.base import Message
-from l4.llm.mock import MockBackend
-from l4.schemas.instructions import (
+from layers.layer4.llm.base import Message
+from layers.layer4.llm.mock import MockBackend
+from layers.layer4.schemas.instructions import (
     BoundaryInstruction,
     DiagnosticAnchor,
     RoleInstruction,
     SafetyPassport,
     TurnInstruction,
 )
-from l4.session.history import ConversationTurn
+from layers.layer4.session.history import ConversationTurn
 
 ROLE = RoleInstruction(identity="你是一名受过CBT训练的心理治疗师", style="温暖、共情、结构化")
 ANCHOR = DiagnosticAnchor(primary="MDD（置信度 0.87）", comorbidities=["Insomnia Disorder"],
@@ -1319,12 +1319,12 @@ Expected: FAIL（ModuleNotFoundError: l4.generation）
 
 - [ ] **Step 3: 最小实现**
 
-`l4/generation/__init__.py`：
+`layers/layer4/generation/__init__.py`：
 
 ```python
-from l4.generation.prompt_assembler import assemble_prompt
-from l4.generation.responder import GenerationResult, Responder
-from l4.generation.summary_builder import (
+from layers.layer4.generation.prompt_assembler import assemble_prompt
+from layers.layer4.generation.responder import GenerationResult, Responder
+from layers.layer4.generation.summary_builder import (
     build_evidence_refs,
     build_l5_context,
     build_summary,
@@ -1340,11 +1340,11 @@ __all__ = [
 ]
 ```
 
-`l4/generation/prompt_assembler.py`：
+`layers/layer4/generation/prompt_assembler.py`：
 
 ```python
-from l4.llm.base import Message
-from l4.schemas.instructions import (
+from layers.layer4.llm.base import Message
+from layers.layer4.schemas.instructions import (
     BoundaryInstruction,
     DiagnosticAnchor,
     RoleInstruction,
@@ -1416,16 +1416,16 @@ def assemble_prompt(
     ]
 ```
 
-`l4/generation/responder.py`：
+`layers/layer4/generation/responder.py`：
 
 ```python
 import json
 
 from pydantic import BaseModel, ValidationError
 
-from l4.generation.prompt_assembler import assemble_prompt
-from l4.llm.base import LLMBackend, Message
-from l4.schemas.instructions import (
+from layers.layer4.generation.prompt_assembler import assemble_prompt
+from layers.layer4.llm.base import LLMBackend, Message
+from layers.layer4.schemas.instructions import (
     BoundaryInstruction,
     DiagnosticAnchor,
     RoleInstruction,
@@ -1476,20 +1476,20 @@ class Responder:
                                     reason="parse_fallback")
 ```
 
-`l4/generation/summary_builder.py`：
+`layers/layer4/generation/summary_builder.py`：
 
 ```python
 from datetime import datetime, timezone
 
-from l4.schemas.instructions import (
+from layers.layer4.schemas.instructions import (
     DiagnosticAnchor,
     SafetyPassport,
     Substage,
     TurnInstruction,
 )
-from l4.schemas.l5_context import DiagnosisContext, L5Context, RiskContext
-from l4.schemas.summary import EvidenceRef, StructuredSummary
-from l4.session.history import ConversationTurn
+from layers.layer4.schemas.l5_context import DiagnosisContext, L5Context, RiskContext
+from layers.layer4.schemas.summary import EvidenceRef, StructuredSummary
+from layers.layer4.session.history import ConversationTurn
 
 
 def build_l5_context(
@@ -1581,7 +1581,7 @@ Expected: PASS（10 passed）
 - [ ] **Step 5: 提交**
 
 ```bash
-git add l4/generation tests/test_generation.py
+git add layers/layer4/generation tests/test_generation.py
 git commit -m "feat: prompt 四段式组装、回复生成与结构化摘要构建"
 ```
 
@@ -1590,10 +1590,10 @@ git commit -m "feat: prompt 四段式组装、回复生成与结构化摘要构�
 ### Task 6: 审核端口与回环A 编排
 
 **Files:**
-- Create: `l4/review/__init__.py`
-- Create: `l4/review/reviewer.py`
-- Create: `l4/review/mock_reviewer.py`
-- Create: `l4/review/orchestrator.py`
+- Create: `layers/layer4/review/__init__.py`
+- Create: `layers/layer4/review/reviewer.py`
+- Create: `layers/layer4/review/mock_reviewer.py`
+- Create: `layers/layer4/review/orchestrator.py`
 - Test: `tests/test_review_loop.py`
 
 **Interfaces:**
@@ -1609,20 +1609,20 @@ git commit -m "feat: prompt 四段式组装、回复生成与结构化摘要构�
 `tests/test_review_loop.py`：
 
 ```python
-from l4.generation.responder import Responder
-from l4.generation.summary_builder import build_l5_context
-from l4.llm.base import Message
-from l4.llm.mock import MockBackend
-from l4.review.mock_reviewer import MockReviewer
-from l4.review.orchestrator import DEFAULT_FALLBACK, ReviewOrchestrator
-from l4.schemas.instructions import (
+from layers.layer4.generation.responder import Responder
+from layers.layer4.generation.summary_builder import build_l5_context
+from layers.layer4.llm.base import Message
+from layers.layer4.llm.mock import MockBackend
+from layers.layer4.review.mock_reviewer import MockReviewer
+from layers.layer4.review.orchestrator import DEFAULT_FALLBACK, ReviewOrchestrator
+from layers.layer4.schemas.instructions import (
     BoundaryInstruction,
     DiagnosticAnchor,
     RoleInstruction,
     SafetyPassport,
     TurnInstruction,
 )
-from l4.session.history import ConversationTurn
+from layers.layer4.session.history import ConversationTurn
 
 ROLE = RoleInstruction(identity="CBT治疗师", style="温暖")
 ANCHOR = DiagnosticAnchor(primary="MDD", confidence=0.87, therapy_type="CBT")
@@ -1733,22 +1733,22 @@ Expected: FAIL（ModuleNotFoundError: l4.review）
 
 - [ ] **Step 3: 最小实现**
 
-`l4/review/__init__.py`：
+`layers/layer4/review/__init__.py`：
 
 ```python
-from l4.review.mock_reviewer import MockReviewer
-from l4.review.orchestrator import DEFAULT_FALLBACK, ReviewOrchestrator, ReviewOutcome
+from layers.layer4.review.mock_reviewer import MockReviewer
+from layers.layer4.review.orchestrator import DEFAULT_FALLBACK, ReviewOrchestrator, ReviewOutcome
 
 __all__ = ["DEFAULT_FALLBACK", "MockReviewer", "ReviewOrchestrator", "ReviewOutcome"]
 ```
 
-`l4/review/reviewer.py`：
+`layers/layer4/review/reviewer.py`：
 
 ```python
 from typing import Protocol, runtime_checkable
 
-from l4.schemas.l5_context import L5Context
-from l4.schemas.review import ReviewResult
+from layers.layer4.schemas.l5_context import L5Context
+from layers.layer4.schemas.review import ReviewResult
 
 
 @runtime_checkable
@@ -1764,12 +1764,12 @@ class Reviewer(Protocol):
         ...
 ```
 
-`l4/review/mock_reviewer.py`：
+`layers/layer4/review/mock_reviewer.py`：
 
 ```python
-from l4.review.reviewer import Reviewer
-from l4.schemas.l5_context import L5Context
-from l4.schemas.review import ReviewResult
+from layers.layer4.review.reviewer import Reviewer
+from layers.layer4.schemas.l5_context import L5Context
+from layers.layer4.schemas.review import ReviewResult
 
 
 class MockReviewer(Reviewer):
@@ -1809,19 +1809,19 @@ class MockReviewer(Reviewer):
         )
 ```
 
-`l4/review/orchestrator.py`：
+`layers/layer4/review/orchestrator.py`：
 
 ```python
 from collections.abc import Callable
 
 from pydantic import BaseModel
 
-from l4.generation.responder import Responder
-from l4.llm.base import Message
-from l4.review.reviewer import Reviewer
-from l4.schemas.instructions import TurnInstruction
-from l4.schemas.l5_context import L5Context
-from l4.schemas.review import ReviewResult
+from layers.layer4.generation.responder import Responder
+from layers.layer4.llm.base import Message
+from layers.layer4.review.reviewer import Reviewer
+from layers.layer4.schemas.instructions import TurnInstruction
+from layers.layer4.schemas.l5_context import L5Context
+from layers.layer4.schemas.review import ReviewResult
 
 DEFAULT_FALLBACK = "我可能需要重新整理一下思路，我们能换个角度聊吗？"
 
@@ -1910,7 +1910,7 @@ Expected: PASS（5 passed）
 - [ ] **Step 5: 提交**
 
 ```bash
-git add l4/review tests/test_review_loop.py
+git add layers/layer4/review tests/test_review_loop.py
 git commit -m "feat: 审核端口、Mock审核器与回环A编排（≤3轮重写+兜底）"
 ```
 
@@ -1919,7 +1919,7 @@ git commit -m "feat: 审核端口、Mock审核器与回环A编排（≤3轮重�
 ### Task 7: L4 门面服务（service）与 V4 自校验
 
 **Files:**
-- Create: `l4/service.py`
+- Create: `layers/layer4/service.py`
 - Test: `tests/test_service.py`
 - Test: `tests/test_l5_validation.py`
 
@@ -1945,17 +1945,17 @@ from pathlib import Path
 
 import pytest
 
-from l4.config import Settings
-from l4.llm.mock import MockBackend
-from l4.review.mock_reviewer import MockReviewer
-from l4.schemas.instructions import (
+from layers.layer4.config import Settings
+from layers.layer4.llm.mock import MockBackend
+from layers.layer4.review.mock_reviewer import MockReviewer
+from layers.layer4.schemas.instructions import (
     BoundaryInstruction,
     RoleInstruction,
     SafetyPassport,
     TurnInstruction,
 )
-from l4.schemas.l3_report import DiagnosticReport
-from l4.service import L4Service, SessionRequest, TurnRequest
+from layers.layer4.schemas.l3_report import DiagnosticReport
+from layers.layer4.service import L4Service, SessionRequest, TurnRequest
 
 EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
 
@@ -2073,7 +2073,7 @@ def test_handle_turn_initial_fix():
 `tests/test_l5_validation.py`：
 
 ```python
-from l4.service import L4Service, THERAPY_KEYWORDS
+from layers.layer4.service import L4Service, THERAPY_KEYWORDS
 
 
 def test_validate_forbidden_words():
@@ -2099,7 +2099,7 @@ def test_therapy_keywords_covered():
 
 
 def _turn(**kw):
-    from l4.schemas.instructions import TurnInstruction
+    from layers.layer4.schemas.instructions import TurnInstruction
     d = dict(goal="g", technique="t")
     d.update(kw)
     return TurnInstruction(**d)
@@ -2112,26 +2112,26 @@ Expected: FAIL（ModuleNotFoundError: l4.service）
 
 - [ ] **Step 3: 最小实现**
 
-`l4/service.py`：
+`layers/layer4/service.py`：
 
 ```python
 import uuid
 
 from pydantic import BaseModel
 
-from l4.config import Settings
-from l4.generation.responder import Responder
-from l4.generation.summary_builder import (
+from layers.layer4.config import Settings
+from layers.layer4.generation.responder import Responder
+from layers.layer4.generation.summary_builder import (
     build_evidence_refs,
     build_l5_context,
     build_summary,
 )
-from l4.llm.base import LLMBackend
-from l4.llm import get_backend
-from l4.review.mock_reviewer import MockReviewer
-from l4.review.orchestrator import ReviewOrchestrator
-from l4.review.reviewer import Reviewer
-from l4.schemas.instructions import (
+from layers.layer4.llm.base import LLMBackend
+from layers.layer4.llm import get_backend
+from layers.layer4.review.mock_reviewer import MockReviewer
+from layers.layer4.review.orchestrator import ReviewOrchestrator
+from layers.layer4.review.reviewer import Reviewer
+from layers.layer4.schemas.instructions import (
     BoundaryInstruction,
     DiagnosticAnchor,
     RoleInstruction,
@@ -2139,11 +2139,11 @@ from l4.schemas.instructions import (
     Substage,
     TurnInstruction,
 )
-from l4.schemas.l3_report import DiagnosticReport
-from l4.schemas.l5_context import L5Context
-from l4.schemas.review import ReviewResult
-from l4.schemas.summary import StructuredSummary
-from l4.session.history import ConversationTurn, SessionData, SessionStore
+from layers.layer4.schemas.l3_report import DiagnosticReport
+from layers.layer4.schemas.l5_context import L5Context
+from layers.layer4.schemas.review import ReviewResult
+from layers.layer4.schemas.summary import StructuredSummary
+from layers.layer4.session.history import ConversationTurn, SessionData, SessionStore
 
 THERAPY_KEYWORDS = {
     "EMDR": "EMDR", "CPT": "CPT", "IPSRT": "IPSRT", "ERP": "ERP",
@@ -2282,7 +2282,7 @@ Expected: PASS（8 passed）
 - [ ] **Step 5: 提交**
 
 ```bash
-git add l4/service.py tests/test_service.py tests/test_l5_validation.py
+git add layers/layer4/service.py tests/test_service.py tests/test_l5_validation.py
 git commit -m "feat: L4 门面服务（会话/回合处理、V4 本地自校验、兜底标记）"
 ```
 
@@ -2291,8 +2291,8 @@ git commit -m "feat: L4 门面服务（会话/回合处理、V4 本地自校验�
 ### Task 8: FastAPI 服务
 
 **Files:**
-- Create: `l4/api/__init__.py`
-- Create: `l4/api/server.py`
+- Create: `layers/layer4/api/__init__.py`
+- Create: `layers/layer4/api/server.py`
 - Test: `tests/test_api.py`
 
 **Interfaces:**
@@ -2314,8 +2314,8 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from l4.api.server import create_app
-from l4.schemas.instructions import (
+from layers.layer4.api.server import create_app
+from layers.layer4.schemas.instructions import (
     BoundaryInstruction,
     RoleInstruction,
     TurnInstruction,
@@ -2396,23 +2396,23 @@ Expected: FAIL（ModuleNotFoundError: l4.api）
 
 - [ ] **Step 3: 最小实现**
 
-`l4/api/__init__.py`：
+`layers/layer4/api/__init__.py`：
 
 ```python
-from l4.api.server import app, create_app
+from layers.layer4.api.server import app, create_app
 
 __all__ = ["app", "create_app"]
 ```
 
-`l4/api/server.py`：
+`layers/layer4/api/server.py`：
 
 ```python
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from l4.config import Settings
-from l4.schemas.instructions import TurnInstruction
-from l4.service import L4Service, SessionRequest, TurnOutcome, TurnRequest
+from layers.layer4.config import Settings
+from layers.layer4.schemas.instructions import TurnInstruction
+from layers.layer4.service import L4Service, SessionRequest, TurnOutcome, TurnRequest
 
 
 class SessionCreated(BaseModel):
@@ -2472,7 +2472,7 @@ Expected: PASS（4 passed）
 - [ ] **Step 5: 提交**
 
 ```bash
-git add l4/api tests/test_api.py
+git add layers/layer4/api tests/test_api.py
 git commit -m "feat: FastAPI 服务（会话/回合/重写端点 + 健康检查）"
 ```
 
@@ -2481,33 +2481,33 @@ git commit -m "feat: FastAPI 服务（会话/回合/重写端点 + 健康检查�
 ### Task 9: CLI 演示与 README 补全
 
 **Files:**
-- Create: `l4/cli/__init__.py`
-- Create: `l4/cli/demo.py`
+- Create: `layers/layer4/cli/__init__.py`
+- Create: `layers/layer4/cli/demo.py`
 - Modify: `README.md`（补全使用说明）
-- Test: 无（演示脚本；用 `python -m l4.cli.demo --scripted` 验证）
+- Test: 无（演示脚本；用 `python -m layers.layer4.cli.demo --scripted` 验证）
 
 **Interfaces:**
 - Consumes: `L4Service/SessionRequest/TurnRequest`（Task 7）、`RoleInstruction/BoundaryInstruction/SafetyPassport/TurnInstruction`（Task 2）、`examples/sample_diagnostic_report.json`
-- Produces: 可执行入口 `python -m l4.cli.demo`（`--scripted` 自动演示；无参数时交互式）
+- Produces: 可执行入口 `python -m layers.layer4.cli.demo`（`--scripted` 自动演示；无参数时交互式）
 
 - [ ] **Step 1: 实现演示脚本**
 
-`l4/cli/__init__.py`：
+`layers/layer4/cli/__init__.py`：
 
 ```python
-from l4.cli.demo import main
+from layers.layer4.cli.demo import main
 
 __all__ = ["main"]
 ```
 
-`l4/cli/demo.py`：
+`layers/layer4/cli/demo.py`：
 
 ```python
 """L4 治疗对话层 CLI 演示。
 
 用法：
-    python -m l4.cli.demo            # 交互式（需 stdin 终端）
-    python -m l4.cli.demo --scripted # 脚本化演示，自动走完 L4-L1 → L4-L4
+    python -m layers.layer4.cli.demo            # 交互式（需 stdin 终端）
+    python -m layers.layer4.cli.demo --scripted # 脚本化演示，自动走完 L4-L1 → L4-L4
 默认使用 MockBackend + MockReviewer，无需 API 密钥。
 """
 
@@ -2516,15 +2516,15 @@ import json
 import sys
 from pathlib import Path
 
-from l4.config import Settings
-from l4.schemas.instructions import (
+from layers.layer4.config import Settings
+from layers.layer4.schemas.instructions import (
     BoundaryInstruction,
     RoleInstruction,
     SafetyPassport,
     TurnInstruction,
 )
-from l4.schemas.l3_report import DiagnosticReport
-from l4.service import L4Service, SessionRequest, TurnRequest
+from layers.layer4.schemas.l3_report import DiagnosticReport
+from layers.layer4.service import L4Service, SessionRequest, TurnRequest
 
 ROLE = RoleInstruction(identity="你是一名受过CBT训练的心理治疗师", style="温暖、共情、结构化")
 BOUNDARY = BoundaryInstruction(
@@ -2636,7 +2636,7 @@ if __name__ == "__main__":
 
 - [ ] **Step 2: 运行演示验证**
 
-Run: `python -m l4.cli.demo --scripted`
+Run: `python -m layers.layer4.cli.demo --scripted`
 Expected: 输出 4 轮对话，每轮显示子阶段 L4-L1→L4-L4、回复、审核历史；无异常
 
 - [ ] **Step 3: 补全 README**
@@ -2670,9 +2670,9 @@ l4/
 ```bash
 pip install -e ".[dev]"
 pytest                       # 跑全部单测（Mock 实现，无网络）
-python -m l4.cli.demo --scripted   # 脚本化演示四阶段对话
-python -m l4.cli.demo              # 交互式演示
-uvicorn l4.api.server:app --port 8000   # 启动服务
+python -m layers.layer4.cli.demo --scripted   # 脚本化演示四阶段对话
+python -m layers.layer4.cli.demo              # 交互式演示
+uvicorn layers.layer4.api.server:app --port 8000   # 启动服务
 ```
 
 ## 接入真实 LLM（DeepSeek）
@@ -2683,7 +2683,7 @@ set L4_LLM_BASE_URL=https://api.deepseek.com
 set L4_LLM_API_KEY=sk-xxxx
 set L4_LLM_MODEL=deepseek-chat
 set L4_REVIEW_MODE=mock        # 真实 L5 就绪后替换为 l5_endpoint 或注入 reviewer
-uvicorn l4.api.server:app --port 8000
+uvicorn layers.layer4.api.server:app --port 8000
 ```
 
 ## API
@@ -2703,7 +2703,7 @@ uvicorn l4.api.server:app --port 8000
 
 ## 接入本地训练模型
 
-本地模型训练完成后，实现 `l4/llm/local.py`（vLLM/transformers），保持 `LLMBackend.chat()` 签名不变，
+本地模型训练完成后，实现 `layers/layer4/llm/local.py`（vLLM/transformers），保持 `LLMBackend.chat()` 签名不变，
 并设置 `L4_LLM_PROVIDER=local`，L4 其余代码零改动。
 
 ## 测试
@@ -2723,7 +2723,7 @@ Expected: 全部 PASS（约 42 passed）
 - [ ] **Step 5: 提交**
 
 ```bash
-git add l4/cli README.md
+git add layers/layer4/cli README.md
 git commit -m "feat: CLI 演示脚本与 README 使用说明"
 ```
 

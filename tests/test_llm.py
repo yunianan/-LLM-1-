@@ -1,11 +1,11 @@
 import pytest
 
-from l4.config import Settings
-from l4.llm import get_backend
-from l4.llm.base import Message
-from l4.llm.local import LocalModelBackend
-from l4.llm.mock import MockBackend
-from l4.llm.openai_compat import OpenAICompatBackend
+from layers.layer4.config import Settings
+from layers.layer4.llm import get_backend
+from layers.layer4.llm.base import Message
+from layers.layer4.llm.local import LocalModelBackend
+from layers.layer4.llm.mock import MockBackend
+from layers.layer4.llm.openai_compat import OpenAICompatBackend
 
 
 def test_mock_json_mode_matches_substring():

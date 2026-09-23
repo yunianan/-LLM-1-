@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
 
+from .verifier import IndependentVerifier
+
 DISORDER_SEVERITY_SCALE = {
     "MDD": "PHQ9",
     "GAD": "GAD7",
@@ -50,6 +52,18 @@ DSM5_CRITERIA_RULES = {
         ("A1", "躁狂/轻躁狂发作史", lambda p: p.get("MDQ", 0) >= 7, "MDQ>=7"),
         ("B1", "活动增多/精力旺盛", lambda p: p.get("MDQ", 0) >= 7, "MDQ>=7"),
     ],
+}
+
+MDD_PHQ9_CRITERIA = {
+    "A1": ("心境抑郁", "item2", "depressed_mood"),
+    "A2": ("兴趣减退", "item1", "anhedonia"),
+    "A3": ("食欲/体重改变", "item5", "appetite_or_weight_change"),
+    "A4": ("睡眠障碍", "item3", "sleep_disturbance"),
+    "A5": ("精神运动性改变", "item8", "psychomotor_change"),
+    "A6": ("疲劳/精力减退", "item4", "fatigue"),
+    "A7": ("无价值感/过度自责", "item6", "worthlessness"),
+    "A8": ("注意力减退", "item7", "concentration_difficulty"),
+    "A9": ("自杀意念", "item9", "suicidal_ideation"),
 }
 
 
@@ -245,14 +259,103 @@ class CLINICR:
         return 1
 
     def _criteria(self, disorder: str, profile: Dict[str, float]):
+        if disorder == "MDD":
+            return self._mdd_criteria(profile)
         met = []
         detail = []
         for code, name, cond, basis in DSM5_CRITERIA_RULES.get(disorder, []):
             ok = bool(cond(profile))
             if ok:
                 met.append(code)
-            detail.append({"criterion": f"{code} {name}", "met": ok, "evidence": basis})
+            detail.append({
+                "code": code,
+                "name": name,
+                "status": "met" if ok else "not_met",
+                "met": ok,
+                "evidence_refs": [basis],
+            })
         return met, detail
+
+    @staticmethod
+    def _phq9_items(profile: Dict[str, Any]) -> Dict[str, Any]:
+        direct = profile.get("PHQ9_items")
+        if isinstance(direct, dict):
+            return direct
+        scale_results = profile.get("scale_results") or {}
+        phq9 = scale_results.get("PHQ-9") or scale_results.get("PHQ9") or {}
+        items = phq9.get("key_items") or phq9.get("items") or {}
+        return items if isinstance(items, dict) else {}
+
+    @staticmethod
+    def _symptom_evidence(profile: Dict[str, Any]) -> Dict[str, List[str]]:
+        result: Dict[str, List[str]] = {}
+        for item in profile.get("key_symptoms_extracted") or []:
+            if not isinstance(item, dict) or not item.get("symptom"):
+                continue
+            sources = [str(source) for source in item.get("sources") or [] if source]
+            if sources:
+                result.setdefault(str(item["symptom"]), []).extend(sources)
+        return result
+
+    def _mdd_criteria(self, profile: Dict[str, Any]):
+        """逐条使用单题或症状证据判定 MDD；总分不参与单项判定。"""
+        items = self._phq9_items(profile)
+        symptoms = self._symptom_evidence(profile)
+        met: List[str] = []
+        detail: List[Dict[str, Any]] = []
+
+        for code, (name, item_key, symptom_key) in MDD_PHQ9_CRITERIA.items():
+            evidence_refs: List[str] = []
+            status = "unknown"
+            score = items.get(item_key)
+            if score is not None:
+                threshold = 1 if item_key == "item9" else 2
+                status = "met" if float(score) >= threshold else "not_met"
+                evidence_refs.append(f"PHQ9_{item_key}={score}")
+            if symptoms.get(symptom_key):
+                status = "met"
+                evidence_refs.extend(symptoms[symptom_key])
+            if status == "met":
+                met.append(code)
+            detail.append({
+                "code": code,
+                "name": name,
+                "status": status,
+                "met": status == "met",
+                "evidence_refs": list(dict.fromkeys(evidence_refs)),
+            })
+        return met, detail
+
+    @staticmethod
+    def _diagnostic_missing_dimensions(
+        disorder: str, detail: List[Dict[str, Any]], profile: Dict[str, Any]
+    ) -> List[Dict[str, str]]:
+        if disorder != "MDD":
+            return []
+        missing: List[Dict[str, str]] = []
+        item_by_code = {code: item for code, (_, item, _) in MDD_PHQ9_CRITERIA.items()}
+        for criterion in detail:
+            if criterion.get("status") != "unknown":
+                continue
+            code = criterion["code"]
+            missing.append({
+                "field": f"phq9_items.{item_by_code[code]}",
+                "purpose": f"判断 DSM-5 {code} {criterion['name']}",
+                "suggested_question": "请用开放式提问了解该症状在最近两周的频率和具体表现。",
+            })
+        if profile.get("symptom_duration_days") is None:
+            missing.append({
+                "field": "symptom_duration_days",
+                "purpose": "确认核心症状是否持续至少两周",
+                "suggested_question": "这些感受和变化大约持续多久了？",
+            })
+        if profile.get("functional_impairment") is None:
+            missing.append({
+                "field": "functional_impairment",
+                "purpose": "确认症状是否造成明显痛苦或功能损害",
+                "suggested_question": "这些情况对工作、学习、人际或日常生活造成了什么影响？",
+            })
+        return missing
 
     def run(self, profile: Dict[str, float], safety_context: Optional[Dict] = None) -> Dict[str, Any]:
         candidates = self.generate_candidates(profile)
@@ -285,6 +388,19 @@ class CLINICR:
                     "evidence": other["evidence"],
                 })
 
+        provisional_primary = primary
+        initial_missing: List[Dict[str, str]] = []
+        if primary:
+            initial_missing = self._diagnostic_missing_dimensions(
+                primary["disorder"], primary.get("dsm5_criteria_detail", []), profile
+            )
+        verdict = IndependentVerifier().verify(provisional_primary, profile, initial_missing)
+        verifier_score = verdict["score"]
+        verifier_routing = verdict["routing"]
+        missing_dimensions = verdict["missing_dimensions"]
+        if verifier_routing not in {"pass", "conditional"}:
+            primary = None
+
         ruled_out = []
         for e in excluded:
             ruled_out.append({
@@ -293,15 +409,19 @@ class CLINICR:
                 "evidence_ref": "DSM-5/ICD-11 排除标准",
             })
 
-        verifier_score = primary["confidence"] if primary else 0.0
-        if verifier_score >= 0.8:
-            verifier_routing = "pass"
-        elif verifier_score >= 0.5:
-            verifier_routing = "conditional"
-        else:
-            verifier_routing = "reject"
-
         evidence_refs = []
+        evidence_primary = primary or provisional_primary
+        if evidence_primary:
+            for criterion in evidence_primary.get("dsm5_criteria_detail", []):
+                evidence_refs.append({
+                    "type": "DSM-5-criterion",
+                    "disorder": evidence_primary["disorder"],
+                    "criterion_code": criterion["code"],
+                    "criterion_name": criterion["name"],
+                    "status": criterion["status"],
+                    "evidence_refs": criterion["evidence_refs"],
+                    "source_doc": "DSM-5_TR_zh_v1.0",
+                })
         if primary:
             evidence_refs.append({
                 "type": "DSM-5",
@@ -339,7 +459,13 @@ class CLINICR:
             flags.append("medical_referral")
 
         summary_parts = []
-        if primary:
+        if verifier_routing == "return_to_l2":
+            summary_parts.append("诊断证据不足，需返回L2定向补充患者画像。")
+        elif verifier_routing == "manual_review":
+            summary_parts.append("诊断证据存在冲突，需转人工复核。")
+        elif verifier_routing == "reject":
+            summary_parts.append("独立终验不支持当前候选诊断，停止向治疗层推进。")
+        elif primary:
             summary_parts.append(
                 f"初步印象为{primary['disorder']}（置信度{primary['confidence']}，"
                 f"Verifier={verifier_score}，{verifier_routing}）"
@@ -357,12 +483,20 @@ class CLINICR:
             },
             "verifier_score": verifier_score,
             "verifier_routing": verifier_routing,
+            "verifier_checks": verdict["checks"],
+            "verifier_fail_reasons": verdict["fail_reasons"],
+            "provisional_diagnosis": provisional_primary,
+            "missing_dimensions": missing_dimensions,
             "severity": severity,
             "severity_level": severity_level,
             "candidates": candidates,
             "checked": checked,
             "evidence_refs": evidence_refs,
             "confidence": verifier_score,
-            "flags": flags,
+            "flags": flags + {
+                "return_to_l2": ["insufficient_diagnostic_evidence"],
+                "manual_review": ["diagnostic_evidence_conflict", "manual_review_required"],
+                "reject": ["verifier_rejected"],
+            }.get(verifier_routing, []),
             "summary": "；".join(summary_parts) or "未获得可确认的诊断结论，需补充信息。",
         }

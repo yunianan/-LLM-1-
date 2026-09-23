@@ -22,7 +22,7 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["l4*", "layers*", "shared*"]
+include = ["layers*", "shared*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

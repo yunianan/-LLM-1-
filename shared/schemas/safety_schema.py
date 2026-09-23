@@ -28,3 +28,18 @@ class SafetyPassport(TypedDict):
     confidence: float
     flags: List[str]
     instruction_to_next: str
+    execution: dict[str, Any]
+    guard: dict[str, Any]
+
+
+class SafetyModelUnavailable(TypedDict):
+    """L1 的 LLM 连续失败时返回的终止错误，不能传递给 L2。"""
+
+    layer_id: Literal["L1"]
+    status: Literal["error"]
+    error_code: Literal["L1_LLM_UNAVAILABLE"]
+    message: str
+    terminal: Literal[True]
+    can_call_l2: Literal[False]
+    details: dict[str, Any]
+    evidence_refs: List[EvidenceRef]

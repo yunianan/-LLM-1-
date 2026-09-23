@@ -3,16 +3,16 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from l4.api.server import create_app
-from l4.config import Settings
-from l4.llm.mock import MockBackend
-from l4.review.mock_reviewer import MockReviewer
-from l4.schemas.instructions import (
+from layers.layer4.api.server import create_app
+from layers.layer4.config import Settings
+from layers.layer4.llm.mock import MockBackend
+from layers.layer4.review.mock_reviewer import MockReviewer
+from layers.layer4.schemas.instructions import (
     BoundaryInstruction,
     RoleInstruction,
     TurnInstruction,
 )
-from l4.service import L4Service
+from layers.layer4.service import L4Service
 
 EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
 
@@ -21,7 +21,7 @@ BOUNDARY = BoundaryInstruction(absolute_bans=["禁止开药"])
 
 
 def _client():
-    return TestClient(create_app())
+    return TestClient(create_app(Settings(_env_file=None, review_mode="mock")))
 
 
 def _session_payload(session_id=None):

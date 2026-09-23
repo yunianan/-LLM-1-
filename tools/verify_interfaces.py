@@ -60,7 +60,7 @@ from layers.layer1.detector import safety_detect
 SP_KEYS = [
     "layer_id", "timestamp", "safety_flag", "risk_level", "risk_types",
     "crisis_flag", "sensitive_topics", "summary", "structured_labels",
-    "evidence_refs", "confidence", "flags", "instruction_to_next",
+    "evidence_refs", "confidence", "flags", "instruction_to_next", "execution", "guard",
 ]
 
 sp = safety_detect("最近工作压力很大，晚上总是睡不好。")
@@ -70,6 +70,8 @@ check("L1 safety_flag 枚举 pass/warn/block", sp["safety_flag"] in ("pass", "wa
 check("L1 evidence_refs 每项含 source/finding/basis",
       all({"source", "finding", "basis"} <= set(e) for e in sp["evidence_refs"]))
 check("L1 summary 为自然语言", isinstance(sp["summary"], str) and len(sp["summary"]) > 5)
+check("L1 pass 决定已执行且守卫允许进入L2",
+      sp["guard"]["status"] == "pass" and sp["guard"]["can_call_l2"] is True)
 
 sp_crisis = safety_detect("我不想活了，我想结束生命。")
 check("L1 危机级 risk_level>=3", sp_crisis["risk_level"] >= 3, f"got {sp_crisis['risk_level']}")
@@ -77,14 +79,21 @@ check("V1-2: risk_level=3 → crisis_flag=true",
       sp_crisis["risk_level"] >= 3 and sp_crisis["crisis_flag"] is True)
 check("V1-1 枚举: crisis → safety_flag=block",
       sp_crisis["safety_flag"] == "block", f"got {sp_crisis['safety_flag']}")
+check("L1 crisis 决定已执行并阻止进入L2",
+      sp_crisis["execution"]["terminal"] is True
+      and "do_not_call_l2" in sp_crisis["execution"]["applied_controls"]
+      and sp_crisis["guard"]["can_call_l2"] is False)
 
 sp_trauma = safety_detect("小时候家里经常吵架，爸妈关系很差。")
 check("L1 sensitive_topics 含 trauma", "trauma" in sp_trauma["sensitive_topics"],
       f"got {sp_trauma['sensitive_topics']}")
 check("L1 创伤标记 → avoid_trauma_probing",
       "avoid_trauma_probing" in sp_trauma["flags"])
+check("L1 创伤控制已执行并经守卫验证",
+      "skip_scale:PCL-5" in sp_trauma["guard"]["verified_controls"]
+      and "avoid_trauma_probing" in sp_trauma["guard"]["verified_controls"])
 
-from l4.schemas.instructions import SafetyPassport as L4SafetyPassport
+from layers.layer4.schemas.instructions import SafetyPassport as L4SafetyPassport
 
 L4SafetyPassport(
     risk_level=sp["risk_level"],
@@ -102,6 +111,16 @@ from layers.layer3.api import diagnose
 profile = {
     "PHQ9": 16, "GAD7": 9, "MDQ": 3, "PCL5": 18, "ISI": 14,
     "Y_BOCS": 0, "ADNM": 0,
+    "PHQ9_items": {
+        "item1": 3, "item2": 3, "item3": 2, "item4": 2, "item5": 0,
+        "item6": 2, "item7": 0, "item8": 0, "item9": 0,
+    },
+    "symptom_duration_days": 21,
+    "functional_impairment": True,
+    "mania_or_hypomania_history": False,
+    "substance_or_medical_cause": False,
+    "differential_diagnoses_assessed": ["Bipolar", "AdjustmentDisorder"],
+    "evidence_conflicts": [],
 }
 safety_ctx = {
     "risk_level": 1,
@@ -111,6 +130,9 @@ safety_ctx = {
 
 DR_KEYS = [
     "layer_id", "timestamp", "diagnosis", "verifier_score", "verifier_routing",
+    "candidate_confidence",
+    "l3_validation",
+    "verifier_checks", "verifier_fail_reasons",
     "recommended_therapy", "severity_level", "clinical_notes_for_L4", "summary",
     "structured_labels", "evidence_refs", "confidence", "flags", "instruction_to_next",
 ]
@@ -121,7 +143,17 @@ check("L3 layer_id == L3", report["layer_id"] == "L3")
 primary = report["diagnosis"]["primary"]
 check("L3 primary 含 disorder/confidence/severity/dsm5_criteria_met",
       {"disorder", "confidence", "severity", "dsm5_criteria_met"} <= set(primary))
-check("L3 verifier_routing 枚举", report["verifier_routing"] in ("pass", "conditional", "reject"))
+check("L3 verifier_routing 枚举", report["verifier_routing"] in (
+    "pass", "conditional", "reject", "return_to_l2", "manual_review"
+))
+check("L3 Verifier 独立执行六项复核", len(report["verifier_checks"]) == 6,
+      f"got {len(report['verifier_checks'])}")
+check("L3 Verifier 分数不是复制候选置信度",
+      report["verifier_score"] != report["candidate_confidence"],
+      f"both={report['verifier_score']}")
+check("L3 输出业务校验已在L3内通过",
+      report["l3_validation"]["passed"] is True
+      and report["l3_validation"]["route"] == "allow_l4")
 check("L3 recommended_therapy 含 primary/addon/contraindications",
       {"primary", "addon", "contraindications"} <= set(report["recommended_therapy"]))
 check("L3 structured_labels 含 therapy_routing/wording_constraint/risk_monitoring",
@@ -131,17 +163,25 @@ check("L3 wording_constraint 为'初步印象'", "初步印象" in report["struc
 met = primary["dsm5_criteria_met"]
 check("V3-1: primary.confidence >= 0.5", primary["confidence"] >= 0.5, f"got {primary['confidence']}")
 check("V3-2: MDD dsm5_criteria_met >= 5", len(met) >= 5, f"got {len(met)}: {met}")
+detail_by_code = {item["code"]: item for item in primary["dsm5_criteria_detail"]}
+check("L3 每个满足的DSM-5条目都有逐条证据绑定",
+      all(code in detail_by_code and detail_by_code[code]["evidence_refs"] for code in met))
 secondary = {s["disorder"] for s in report["diagnosis"]["secondary"]}
 ruled_out = {r["disorder"] for r in report["diagnosis"]["ruled_out"]}
 check("V3-3: ruled_out 不在 primary/secondary",
       ruled_out.isdisjoint({primary["disorder"]} | secondary))
 
-from l4.schemas.l3_report import DiagnosticReport
+from layers.layer4.schemas.l3_report import DiagnosticReport
+from layers.layer4.validation import L3ToL4Gate
 
 parsed = DiagnosticReport.model_validate(report)
 check("L3 输出可被 L4 DiagnosticReport schema 解析", parsed.diagnosis.primary.disorder == "MDD")
+check("L3→L4生产入口守卫允许合规报告", L3ToL4Gate().validate(parsed)["passed"])
 check("L4 anchor: therapy_type 取自 recommended_therapy.primary",
       parsed.to_anchor().therapy_type == report["recommended_therapy"]["primary"])
+check("L4 anchor 分开保留候选支持度和终验质量",
+      parsed.to_anchor().candidate_confidence == report["candidate_confidence"]
+      and parsed.to_anchor().verifier_score == report["verifier_score"])
 
 print("=" * 60)
 print("L5: ContextualSafetyContext 输入 → 文档输出格式（接口四）")
@@ -177,7 +217,7 @@ out_bad = review_response(ctx_bad)
 check("L5 越界输出被拦截 (boundary=fail)", out_bad["boundary"] == "fail", f"got {out_bad['boundary']}")
 check("L5 fail 时 flags 标记", "manual_review_required" in out_bad["flags"], f"got {out_bad['flags']}")
 
-from l4.schemas.review import ReviewResult
+from layers.layer4.schemas.review import ReviewResult
 
 ReviewResult(
     harm=out["harm"], boundary=out["boundary"], quality=out["quality"],
@@ -189,11 +229,11 @@ print("=" * 60)
 print("端到端：L1 → L3 → L4（含 L5 审核回环）")
 print("=" * 60)
 
-from l4.config import Settings
-from l4.llm.mock import MockBackend
-from l4.review import L5Reviewer
-from l4.service import L4Service, SessionRequest, TurnRequest
-from l4.schemas.instructions import (
+from layers.layer4.config import Settings
+from layers.layer4.llm.mock import MockBackend
+from layers.layer4.review import L5Reviewer
+from layers.layer4.service import L4Service, SessionRequest, TurnRequest
+from layers.layer4.schemas.instructions import (
     BoundaryInstruction, RoleInstruction, SafetyPassport, TurnInstruction,
 )
 

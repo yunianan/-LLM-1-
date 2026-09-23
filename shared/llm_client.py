@@ -9,7 +9,9 @@ client = OpenAI(
 
 
 def ask_llm(prompt, model="deepseek-chat", temperature=0):
-    response = client.chat.completions.create(
+    """统一 LLM 调用边界：10 秒超时，最多进行 1 次 SDK 重试。"""
+    bounded_client = client.with_options(timeout=10.0, max_retries=1)
+    response = bounded_client.chat.completions.create(
         model=model,
         messages=[{"role": "user", "content": prompt}],
         temperature=temperature,

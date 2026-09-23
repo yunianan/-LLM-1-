@@ -56,7 +56,7 @@ Layer 4/
 ├── pyproject.toml
 ├── README.md
 ├── .env.example
-├── l4/
+├── layers/layer4/
 │   ├── config.py
 │   ├── schemas/
 │   │   ├── instructions.py   # 输入契约：L1角色/L2诊断锚点/L3动态指令/L4防越界
@@ -265,8 +265,8 @@ pytest 单测（全部用 MockBackend + MockReviewer，无网络）：
 ```
 pip install -e .
 pytest
-python -m l4.cli.demo
-uvicorn l4.api.server:app --port 8000
+python -m layers.layer4.cli.demo
+uvicorn layers.layer4.api.server:app --port 8000
 ```
 
 层内自查指标（CBT 干预步骤完整性 >90%，参照 Rollwage 96%）：`test_prompt_assembler.py` 断言 L3 指定的技术步骤完整出现在系统 Prompt 中，逐步累积覆盖率。

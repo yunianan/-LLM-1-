@@ -38,7 +38,6 @@ def fuse_results(keyword_result, llm_result, jailbreak_result):
             sensitive_topics.append(rt)
 
     crisis_result = crisis_response(risk_level, risk_types, sensitive_topics)
-
     if risk_level >= 3:
         safety_flag = "block"
     elif risk_level == 2:
@@ -71,6 +70,12 @@ def fuse_results(keyword_result, llm_result, jailbreak_result):
     if jailbreak_result.get("jailbreak_flag"):
         summary += "检测到越狱/注入攻击。"
 
+    scale_skip_list = ["PCL-5"] if "trauma" in sensitive_topics else []
+    scale_skip_reason = (
+        "PCL-5可能触发创伤回忆，依据L1创伤敏感标记"
+        if scale_skip_list else ""
+    )
+
     return {
         "layer_id": "L1",
         "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
@@ -87,8 +92,8 @@ def fuse_results(keyword_result, llm_result, jailbreak_result):
                 "scale": scale_score,
                 "jailbreak": jailbreak_level
             },
-            "scale_skip_list": [],
-            "scale_skip_reason": ""
+            "scale_skip_list": scale_skip_list,
+            "scale_skip_reason": scale_skip_reason
         },
         "evidence_refs": evidence_refs,
         "confidence": llm_result["confidence"],

@@ -6,7 +6,14 @@
       "disorder": "MDD",
       "confidence": 0.87,
       "severity": "moderate",
-      "dsm5_criteria_met": ["A1", "A2", "A3", "A4", "A5"]
+      "dsm5_criteria_met": ["A1", "A2", "A3", "A4", "A5"],
+      "dsm5_criteria_detail": [
+        {"code": "A1", "name": "心境抑郁", "status": "met", "met": true, "evidence_refs": ["PHQ9_item2=3"]},
+        {"code": "A2", "name": "兴趣减退", "status": "met", "met": true, "evidence_refs": ["PHQ9_item1=3"]},
+        {"code": "A3", "name": "食欲/体重改变", "status": "met", "met": true, "evidence_refs": ["PHQ9_item5=2"]},
+        {"code": "A4", "name": "睡眠障碍", "status": "met", "met": true, "evidence_refs": ["PHQ9_item3=3", "patient_utterance_sleep"]},
+        {"code": "A5", "name": "精神运动性改变", "status": "met", "met": true, "evidence_refs": ["PHQ9_item8=2"]}
+      ]
     },
     "secondary": [
       {"disorder": "Insomnia Disorder", "confidence": 0.65, "evidence": "ISI=14接近重度阈值，入睡困难+早醒"}
@@ -17,6 +24,7 @@
     ]
   },
   "verifier_score": 0.87,
+  "candidate_confidence": 0.87,
   "verifier_routing": "pass",
   "recommended_therapy": {
     "primary": "CBT",
@@ -42,5 +50,17 @@
   ],
   "confidence": 0.87,
   "flags": ["passive_si_monitor", "trauma_sensitive", "insomnia_comorbid"],
-  "instruction_to_next": "CBT对话应聚焦行为激活和认知重构，避免涉及创伤暴露练习。L4-L2需温和反馈诊断，征求患者确认。L4-L3按行为激活→认知重构→睡眠卫生顺序推进。"
+  "instruction_to_next": "CBT对话应聚焦行为激活和认知重构，避免涉及创伤暴露练习。L4-L2需温和反馈诊断，征求患者确认。L4-L3按行为激活→认知重构→睡眠卫生顺序推进。",
+  "l3_validation": {
+    "passed": true,
+    "route": "allow_l4",
+    "checks": [
+      {"rule_id": "V3-CANDIDATE-CONFIDENCE", "status": "pass", "detail": "candidate confidence meets threshold"},
+      {"rule_id": "V3-PRIMARY-NOT-RULED-OUT", "status": "pass", "detail": "primary is not ruled out"},
+      {"rule_id": "V3-CRITERIA-EVIDENCE", "status": "pass", "detail": "all met criteria have evidence"},
+      {"rule_id": "V3-THERAPY-MATCH", "status": "pass", "detail": "therapy matches diagnosis"}
+    ],
+    "payload_hash": "c8adf7bb24f0b4dc64873ed3454c308ec2d431898e6b99167e2e1f410672141b",
+    "policy_version": "L3_OUTPUT_V1"
+  }
 }

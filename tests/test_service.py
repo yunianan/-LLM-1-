@@ -3,17 +3,17 @@ from pathlib import Path
 
 import pytest
 
-from l4.config import Settings
-from l4.llm.mock import MockBackend
-from l4.review.mock_reviewer import MockReviewer
-from l4.schemas.instructions import (
+from layers.layer4.config import Settings
+from layers.layer4.llm.mock import MockBackend
+from layers.layer4.review.mock_reviewer import MockReviewer
+from layers.layer4.schemas.instructions import (
     BoundaryInstruction,
     RoleInstruction,
     SafetyPassport,
     TurnInstruction,
 )
-from l4.schemas.l3_report import DiagnosticReport
-from l4.service import L4Service, SessionRequest, TurnRequest
+from layers.layer4.schemas.l3_report import DiagnosticReport, MissingDimension
+from layers.layer4.service import L4Service, SessionRequest, TurnRequest
 
 EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
 
@@ -46,6 +46,32 @@ def test_create_session_auto_id_and_explicit_id():
     assert len(sid) == 32
     sid2 = _new_session(service, "my-session")
     assert sid2 == "my-session"
+
+
+def test_create_session_blocks_report_that_must_return_to_l2():
+    service = _service()
+    report = _report().model_copy(update={
+        "verifier_routing": "return_to_l2",
+        "diagnosis": _report().diagnosis.model_copy(update={"primary": None}),
+        "missing_dimensions": [
+            MissingDimension(field="symptom_duration_days", purpose="确认持续时间")
+        ],
+    })
+
+    with pytest.raises(ValueError, match="return_to_l2"):
+        service.create_session(SessionRequest(
+            role=ROLE, report=report, boundary=BOUNDARY, safety=SAFETY
+        ))
+
+
+def test_create_session_blocks_report_that_requires_manual_review():
+    service = _service()
+    report = _report().model_copy(update={"verifier_routing": "manual_review"})
+
+    with pytest.raises(ValueError, match="manual_review"):
+        service.create_session(SessionRequest(
+            role=ROLE, report=report, boundary=BOUNDARY, safety=SAFETY
+        ))
 
 
 def test_turn_end_to_end():

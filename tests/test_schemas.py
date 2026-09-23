@@ -4,17 +4,17 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from l4.schemas.instructions import (
+from layers.layer4.schemas.instructions import (
     BoundaryInstruction,
     DiagnosticAnchor,
     RoleInstruction,
     SafetyPassport,
     TurnInstruction,
 )
-from l4.schemas.l3_report import DiagnosticReport
-from l4.schemas.l5_context import DiagnosisContext, L5Context, RiskContext
-from l4.schemas.review import ReviewResult
-from l4.schemas.summary import EvidenceRef, StructuredSummary
+from layers.layer4.schemas.l3_report import DiagnosticReport
+from layers.layer4.schemas.l5_context import DiagnosisContext, L5Context, RiskContext
+from layers.layer4.schemas.review import ReviewResult
+from layers.layer4.schemas.summary import EvidenceRef, StructuredSummary
 
 EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
 

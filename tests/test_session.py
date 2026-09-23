@@ -1,14 +1,14 @@
 import pytest
 
-from l4.llm.base import Message
-from l4.schemas.instructions import (
+from layers.layer4.llm.base import Message
+from layers.layer4.schemas.instructions import (
     BoundaryInstruction,
     RoleInstruction,
     SafetyPassport,
     TurnInstruction,
 )
-from l4.session.history import ConversationTurn, SessionData, SessionStore
-from l4.session.state_machine import SUBSTAGE_ORDER, SubstageMachine
+from layers.layer4.session.history import ConversationTurn, SessionData, SessionStore
+from layers.layer4.session.state_machine import SUBSTAGE_ORDER, SubstageMachine
 
 
 def test_substage_order():

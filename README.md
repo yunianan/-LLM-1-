@@ -12,8 +12,8 @@ L1 安全评估 → L2 MI评估 → L3 诊断推理(CLINICR) → L4 治疗对话
 ├── layers/                  # 各层实现（L2 待接入）
 │   ├── layer1/              # L1 安全评估层（关键词+LLM语义+越狱检测 → 风险融合）
 │   ├── layer3/              # L3 诊断推理层（CLINICR三步 + 疗法选择 + L1-L4指令生成）
+│   ├── layer4/              # L4 治疗对话层（状态机/回环A/prompt组装/FastAPI）
 │   └── layer5/              # L5 输出安全审核层（上下文规则生成 + 一次调用三检）
-├── l4/                      # L4 治疗对话层（状态机/回环A/prompt组装/FastAPI）
 ├── shared/                  # 公共模块
 │   ├── llm_client.py        # DeepSeek 客户端（DEEPSEEK_API_KEY 环境变量）
 │   ├── prompts/             # 共享 prompt 模板
@@ -32,9 +32,9 @@ L1 安全评估 → L2 MI评估 → L3 诊断推理(CLINICR) → L4 治疗对话
 | 接口一 L1→L2 | SafetyPassport（13 字段） | `layers/layer1/risk_fusion.py` |
 | 接口二 L2→L3 | ClinicalIntake | 待 L2 接入 |
 | 接口三 L3→L4 | DiagnosticReport（结构化诊断+疗法+证据链） | `layers/layer3/api.py` |
-| 接口四 L4+L3→L5 | ContextualSafetyContext → L5 审核输出 | `layers/layer5/reviewer.py`、`l4/schemas/l5_context.py` |
+| 接口四 L4+L3→L5 | ContextualSafetyContext → L5 审核输出 | `layers/layer5/reviewer.py`、`layers/layer4/schemas/l5_context.py` |
 
-L4 的 Pydantic schema（`l4/schemas/`）是各接口的权威契约；`l4/review/l5_adapter.py` 将真实 L5 包装为 Reviewer 协议，回环A（≤3 轮重写+兜底）在 L4 内编排。
+L4 的 Pydantic schema（`layers/layer4/schemas/`）是各接口的权威契约；`layers/layer4/review/l5_adapter.py` 将真实 L5 包装为 Reviewer 协议，回环A（≤3 轮重写+兜底）在 L4 内编排。
 
 ## 快速开始（无需 API 密钥）
 
@@ -53,7 +53,7 @@ python examples/demo_l1.py "我最近压力很大"          # L1 演示（调真
 python examples/demo_l5.py                            # L1+L5 演示
 ```
 
-L4 服务：`uvicorn l4.api.server:app --port 8000`（配 `L4_LLM_PROVIDER=openai_compat` 等环境变量）。
+L4 服务：`uvicorn layers.layer4.api.server:app --port 8000`（配 `L4_LLM_PROVIDER=openai_compat` 等环境变量）。
 
 ## 已实现的关键机制
 

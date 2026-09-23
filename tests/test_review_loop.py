@@ -1,17 +1,17 @@
-from l4.generation.responder import Responder
-from l4.generation.summary_builder import build_l5_context
-from l4.llm.base import Message
-from l4.llm.mock import MockBackend
-from l4.review.mock_reviewer import MockReviewer
-from l4.review.orchestrator import DEFAULT_FALLBACK, ReviewOrchestrator
-from l4.schemas.instructions import (
+from layers.layer4.generation.responder import Responder
+from layers.layer4.generation.summary_builder import build_l5_context
+from layers.layer4.llm.base import Message
+from layers.layer4.llm.mock import MockBackend
+from layers.layer4.review.mock_reviewer import MockReviewer
+from layers.layer4.review.orchestrator import DEFAULT_FALLBACK, ReviewOrchestrator
+from layers.layer4.schemas.instructions import (
     BoundaryInstruction,
     DiagnosticAnchor,
     RoleInstruction,
     SafetyPassport,
     TurnInstruction,
 )
-from l4.session.history import ConversationTurn
+from layers.layer4.session.history import ConversationTurn
 
 ROLE = RoleInstruction(identity="CBT治疗师", style="温暖")
 ANCHOR = DiagnosticAnchor(primary="MDD", confidence=0.87, therapy_type="CBT")

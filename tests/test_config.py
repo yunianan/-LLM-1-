@@ -2,13 +2,13 @@ import os
 
 import pytest
 
-from l4.config import Settings
+from layers.layer4.config import Settings
 
 
 def test_defaults():
     s = Settings(_env_file=None)
     assert s.llm_provider == "mock"
-    assert s.review_mode == "mock"
+    assert s.review_mode == "l5_local"
     assert s.llm_model == "deepseek-chat"
     assert s.max_rewrite_attempts == 3
     assert s.fallback_reply == "我可能需要重新整理一下思路，我们能换个角度聊吗？"

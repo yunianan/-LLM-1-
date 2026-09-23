@@ -1,25 +1,26 @@
-from l4.generation.prompt_assembler import assemble_prompt
-from l4.generation.responder import GenerationResult, Responder
-from l4.generation.summary_builder import (
+from layers.layer4.generation.prompt_assembler import assemble_prompt
+from layers.layer4.generation.responder import GenerationResult, Responder
+from layers.layer4.generation.summary_builder import (
     build_evidence_refs,
     build_l5_context,
     build_summary,
 )
-from l4.llm.base import Message
-from l4.llm.mock import MockBackend
-from l4.schemas.instructions import (
+from layers.layer4.llm.base import Message
+from layers.layer4.llm.mock import MockBackend
+from layers.layer4.schemas.instructions import (
     BoundaryInstruction,
     DiagnosticAnchor,
     RoleInstruction,
     SafetyPassport,
     TurnInstruction,
 )
-from l4.session.history import ConversationTurn
+from layers.layer4.session.history import ConversationTurn
 
 ROLE = RoleInstruction(identity="你是一名受过CBT训练的心理治疗师", style="温暖、共情、结构化")
 ANCHOR = DiagnosticAnchor(primary="MDD（置信度 0.87）", comorbidities=["Insomnia Disorder"],
-                          excluded=["Bipolar II", "PTSD"], plugins=["CBT-I"],
-                          confidence=0.87, therapy_type="CBT")
+                           excluded=["Bipolar II", "PTSD"], plugins=["CBT-I"],
+                          confidence=0.87, candidate_confidence=0.75,
+                          verifier_score=1.0, therapy_type="CBT")
 BOUNDARY = BoundaryInstruction(absolute_bans=["禁止开药", "禁止诊断新疾病", "禁止预测未来"],
                                safety_trigger="用户表达自杀意图→立即触发安全协议")
 
@@ -42,6 +43,8 @@ def test_assemble_prompt_four_sections():
     assert "你是一名受过CBT训练的心理治疗师" in sys_text
     # L2 诊断锚点
     assert "MDD（置信度 0.87）" in sys_text
+    assert "候选诊断支持度：0.75" in sys_text
+    assert "独立终验证据质量：1.0" in sys_text
     # L4 防越界
     assert "禁止开药" in sys_text
     user_text = msgs[1].content

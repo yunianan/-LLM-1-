@@ -1,12 +1,13 @@
 from datetime import datetime, timezone
-from typing import List, Literal, Optional
+from typing import Any, List, Literal, Optional
 
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .clinicr import CLINICR
 from .therapy_selector import TherapySelector
 from .instruction_generator import InstructionGenerator
+from .output_validator import L3OutputValidator
 
 app = FastAPI(title="Diagnosis Layer API")
 
@@ -36,6 +37,14 @@ class DiagnoseRequest(BaseModel):
     risk_level: int = 0
     sensitive_topics: List[str] = []
     l1_flags: List[str] = []
+    PHQ9_items: dict[str, float] = Field(default_factory=dict)
+    key_symptoms_extracted: list[dict[str, Any]] = Field(default_factory=list)
+    symptom_duration_days: int | None = None
+    functional_impairment: bool | None = None
+    mania_or_hypomania_history: bool | None = None
+    substance_or_medical_cause: bool | None = None
+    differential_diagnoses_assessed: list[str] | None = None
+    evidence_conflicts: list[dict[str, Any]] | None = None
 
 
 class DiagnoseResponse(BaseModel):
@@ -43,6 +52,7 @@ class DiagnoseResponse(BaseModel):
     timestamp: str
     diagnosis: dict
     verifier_score: float
+    candidate_confidence: float
     verifier_routing: str
     recommended_therapy: dict
     severity_level: int
@@ -54,6 +64,58 @@ class DiagnoseResponse(BaseModel):
     flags: list
     instruction_to_next: str
     instructions: dict
+    missing_dimensions: list[dict[str, str]] = Field(default_factory=list)
+    provisional_diagnosis: dict | None = None
+    verifier_checks: list[dict[str, Any]] = Field(default_factory=list)
+    verifier_fail_reasons: list[str] = Field(default_factory=list)
+    l3_validation: dict[str, Any]
+
+
+def build_blocked_report(clinicr_result):
+    missing = clinicr_result.get("missing_dimensions", [])
+    routing = clinicr_result["verifier_routing"]
+    if routing == "return_to_l2":
+        action = "collect_missing_dimensions"
+        instruction = "返回L2补充 Verifier 指定的缺失信息"
+    elif routing == "manual_review":
+        action = "manual_review"
+        instruction = "证据存在冲突，转人工复核，不进入L4"
+    else:
+        action = "stop_diagnostic_route"
+        instruction = "终验不支持当前诊断，停止进入L4"
+    return {
+        "layer_id": "L3",
+        "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "diagnosis": clinicr_result["diagnosis"],
+        "provisional_diagnosis": clinicr_result.get("provisional_diagnosis"),
+        "verifier_score": clinicr_result["verifier_score"],
+        "candidate_confidence": (
+            clinicr_result.get("provisional_diagnosis") or {}
+        ).get("confidence", 0.0),
+        "verifier_routing": routing,
+        "verifier_checks": clinicr_result.get("verifier_checks", []),
+        "verifier_fail_reasons": clinicr_result.get("verifier_fail_reasons", []),
+        "recommended_therapy": {"primary": "", "addon": [], "contraindications": []},
+        "severity_level": clinicr_result["severity_level"],
+        "clinical_notes_for_L4": "",
+        "summary": clinicr_result["summary"],
+        "structured_labels": {
+            "therapy_routing": {"primary": "", "addon": [], "l4_substage_priority": []},
+            "wording_constraint": "信息不足，不得形成诊断结论或进入治疗对话",
+            "risk_monitoring": [],
+        },
+        "evidence_refs": clinicr_result["evidence_refs"],
+        "confidence": 0.0,
+        "flags": clinicr_result["flags"],
+        "instruction_to_next": instruction,
+        "instructions": {
+            "L2": {
+                "action": action,
+                "missing_dimensions": missing,
+            }
+        },
+        "missing_dimensions": missing,
+    }
 
 
 THERAPY_SUBSTAGE_PRIORITY = {
@@ -149,7 +211,10 @@ def build_report(profile, clinicr_result, therapy, safety_context=None):
         "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "diagnosis": diagnosis,
         "verifier_score": clinicr_result["verifier_score"],
+        "candidate_confidence": primary["confidence"] if primary else 0.0,
         "verifier_routing": clinicr_result["verifier_routing"],
+        "verifier_checks": clinicr_result.get("verifier_checks", []),
+        "verifier_fail_reasons": clinicr_result.get("verifier_fail_reasons", []),
         "recommended_therapy": {
             "primary": therapy_type,
             "addon": therapy.get("plugins", []),
@@ -178,6 +243,11 @@ def diagnose(profile, safety_context=None):
     clinicr = CLINICR()
     result = clinicr.run(profile, safety_context=safety_context)
 
+    if result["verifier_routing"] not in {"pass", "conditional"}:
+        report = build_blocked_report(result)
+        report["l3_validation"] = L3OutputValidator().validate(report)
+        return report
+
     primary = result["diagnosis"]["primary"]
     if primary is None:
         raise HTTPException(status_code=400, detail="Cannot determine diagnosis")
@@ -186,6 +256,21 @@ def diagnose(profile, safety_context=None):
     therapy = selector.run(primary["disorder"], profile)
 
     report = build_report(profile, result, therapy, safety_context)
+
+    report["l3_validation"] = L3OutputValidator().validate(report)
+    if not report["l3_validation"]["passed"]:
+        report["flags"] = list(dict.fromkeys(report["flags"] + ["l3_output_validation_failed"]))
+        report["instruction_to_next"] = "L3输出校验失败，留在L3修正诊断或疗法，不进入L4"
+        report["instructions"] = {
+            "L3": {
+                "action": "correct_output",
+                "failed_checks": [
+                    item for item in report["l3_validation"]["checks"]
+                    if item["status"] == "fail"
+                ],
+            }
+        }
+        return report
 
     generator = InstructionGenerator()
     instructions = generator.generate(result["diagnosis"], therapy, profile)
@@ -218,6 +303,14 @@ def diagnose_endpoint(request: DiagnoseRequest):
         "psychotic_symptoms": request.psychotic_symptoms,
         "substance_active": request.substance_active,
         "severe_dissociation": request.severe_dissociation,
+        "PHQ9_items": request.PHQ9_items,
+        "key_symptoms_extracted": request.key_symptoms_extracted,
+        "symptom_duration_days": request.symptom_duration_days,
+        "functional_impairment": request.functional_impairment,
+        "mania_or_hypomania_history": request.mania_or_hypomania_history,
+        "substance_or_medical_cause": request.substance_or_medical_cause,
+        "differential_diagnoses_assessed": request.differential_diagnoses_assessed,
+        "evidence_conflicts": request.evidence_conflicts,
     }
     safety_context = {
         "risk_level": request.risk_level,
