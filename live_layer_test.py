@@ -435,6 +435,7 @@ def test_l3() -> None:
         fields = ", ".join(item["field"] for item in missing)
         raise RuntimeError(f"L3 固定画像未通过输入契约：{fields}")
     print("\n[L3 固定虚构患者画像]\n" + _json(profile))
+    started = time.perf_counter()
     report = _run_timed(
         "L3 完整诊断",
         lambda: diagnose(
@@ -447,7 +448,9 @@ def test_l3() -> None:
             },
         ),
     )
+    elapsed = time.perf_counter() - started
     print("\n[L3 出口：DiagnosticReport 已生成]\n" + _json(report))
+    print(f"\n[L3 运行摘要] 耗时约 {elapsed:.2f}s；路由：{report.get('verifier_routing', 'unknown')}")
 
 
 def _fictional_report():

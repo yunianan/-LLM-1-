@@ -58,6 +58,22 @@ def test_l3_independent_run_reports_invalid_fixture_before_model_call(monkeypatc
         live_layer_test.test_l3()
 
 
+def test_l3_independent_run_repeats_elapsed_summary_after_report(monkeypatch, capsys):
+    monkeypatch.setattr(
+        "layers.layer3.api.diagnose",
+        lambda *_args, **_kwargs: {"verifier_routing": "pass"},
+    )
+
+    live_layer_test.test_l3()
+
+    output = capsys.readouterr().out
+    assert "[L3 完整诊断] 完成，耗时" in output
+    assert output.rstrip().splitlines()[-1].startswith(
+        "[L3 运行摘要] 耗时约 "
+    )
+    assert "路由：pass" in output.rstrip().splitlines()[-1]
+
+
 def test_l1_independent_run_reaches_safety_exit_after_asq(monkeypatch, capsys):
     service = L1SafetyService()
 
