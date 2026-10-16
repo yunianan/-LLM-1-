@@ -198,7 +198,7 @@ profile = {
     "mania_or_hypomania_history": False,
     "substance_or_medical_cause": False,
     "psychotic_symptoms": False,
-    "differential_diagnoses_assessed": ["Bipolar", "AdjustmentDisorder"],
+    "differential_diagnoses_assessed": ["D009", "D020"],
     "evidence_conflicts": [],
     "evidence_nodes": [
         {
@@ -280,7 +280,7 @@ from layers.layer4.schemas.l3_report import DiagnosticReport
 from layers.layer4.validation import L3ToL4Gate
 
 parsed = DiagnosticReport.model_validate(report)
-check("L3 输出可被 L4 DiagnosticReport schema 解析", parsed.diagnosis.primary.disorder == "MDD")
+check("L3 输出可被 L4 DiagnosticReport schema 解析", parsed.diagnosis.primary.disorder == "D013")
 check("L3→L4生产入口守卫允许合规报告", L3ToL4Gate().validate(parsed)["passed"])
 check("L4 anchor: therapy_type 取自 recommended_therapy.primary",
       parsed.to_anchor().therapy_type == report["recommended_therapy"]["primary"])

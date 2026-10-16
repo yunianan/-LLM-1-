@@ -5,31 +5,43 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
-SupportedDisorder = Literal[
-    "MDD",
-    "GAD",
-    "PTSD",
-    "OCD",
-    "Insomnia",
-    "PanicDisorder",
-    "SocialAnxietyDisorder",
-    "AdjustmentDisorder",
-    "SomaticSymptomDisorder",
-    "Bipolar",
-]
+from shared.disorder_catalog import DISORDER_COUNT, SUPPORTED_DISORDERS
 
-SUPPORTED_DISORDERS: tuple[str, ...] = (
-    "MDD",
-    "GAD",
-    "PTSD",
-    "OCD",
-    "Insomnia",
-    "PanicDisorder",
-    "SocialAnxietyDisorder",
-    "AdjustmentDisorder",
-    "SomaticSymptomDisorder",
-    "Bipolar",
-)
+SupportedDisorder = Literal[*SUPPORTED_DISORDERS]
+
+
+class MissingDimension(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    field: str = Field(min_length=1)
+    purpose: str = Field(min_length=1)
+    suggested_question: str = Field(min_length=1)
+
+
+class TreeNodeJudgment(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    node_id: str = Field(min_length=1)
+    status: Literal["met", "not_met", "pending"]
+    rationale: str = Field(min_length=1)
+    evidence_refs: list[str] = Field(default_factory=list)
+    symptom_ids: list[str] = Field(default_factory=list)
+    confidence: float = Field(default=0.5, ge=0, le=1)
+
+
+class TreeDecisionRecord(TreeNodeJudgment):
+    question: str
+    source_refs: list[str]
+    stage: Literal["screening", "anchor", "exclusion", "criterion"]
+
+
+class CandidateDecisionPath(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    path_id: str
+    tree_refs: list[str]
+    provisional: bool
+    decisions: list[TreeDecisionRecord]
 
 
 class SymptomMatch(BaseModel):
@@ -54,21 +66,17 @@ class DiagnosticCandidate(BaseModel):
     core_evidence_summary: str = Field(min_length=1)
     evidence_refs: list[str] = Field(min_length=1)
     confidence: float = Field(ge=0.0, le=1.0)
+    decision_paths: list[CandidateDecisionPath] = Field(default_factory=list)
 
 
 class CandidateGeneration(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    considered_disorders: list[SupportedDisorder] = Field(min_length=10, max_length=10)
-    candidates: list[DiagnosticCandidate] = Field(min_length=3, max_length=5)
-
-
-class MissingDimension(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    field: str = Field(min_length=1)
-    purpose: str = Field(min_length=1)
-    suggested_question: str = Field(min_length=1)
+    considered_disorders: list[SupportedDisorder] = Field(min_length=DISORDER_COUNT, max_length=DISORDER_COUNT)
+    candidates: list[DiagnosticCandidate] = Field(default_factory=list, max_length=DISORDER_COUNT)
+    tree_trace: list[TreeDecisionRecord] = Field(default_factory=list)
+    missing_dimensions: list[MissingDimension] = Field(default_factory=list)
+    candidate_coverage: dict[str, str] = Field(default_factory=dict)
 
 
 class CriterionAssessment(BaseModel):

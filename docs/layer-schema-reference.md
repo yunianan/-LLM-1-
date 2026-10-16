@@ -314,12 +314,12 @@ L1 的 LLM 连续失败时返回的终止错误，不能传递给 L2。
 | 字段 | 类型 | 必填 | 默认值 | 约束 |
 |---|---|:---:|---|---|
 | `evidence_id` | `str` | 是 | — | — |
-| `source_type` | `Literal['patient_message', 'scale_item']` | 是 | — | 枚举='patient_message', 'scale_item' |
+| `source_type` | `Literal['patient_message', 'scale_item', 'benchmark_narrative']` | 是 | — | 枚举='patient_message', 'scale_item', 'benchmark_narrative' |
 | `message_id` | `str` | 是 | — | — |
 | `turn_index` | `int` | 是 | — | 最小=1 |
 | `quote` | `str` | 是 | — | — |
 | `target_path` | `str` | 是 | — | — |
-| `created_by` | `Literal['llm_candidate_rule_verified', 'scale_rule']` | 是 | — | 枚举='llm_candidate_rule_verified', 'scale_rule' |
+| `created_by` | `Literal['llm_candidate_rule_verified', 'scale_rule', 'offline_source_adapter']` | 是 | — | 枚举='llm_candidate_rule_verified', 'scale_rule', 'offline_source_adapter' |
 | `parent_ids` | `list[str]` | 否 | 工厂生成 | — |
 
 #### `SymptomEvidence` · 内部结构
@@ -417,11 +417,12 @@ L1 的 LLM 连续失败时返回的终止错误，不能传递给 L2。
 | `psychotic_symptoms` | `bool | NoneType` | 否 | `None` | — |
 | `substance_active` | `bool | NoneType` | 否 | `None` | — |
 | `severe_dissociation` | `bool | NoneType` | 否 | `None` | — |
+| `diagnostic_details` | `dict[str, Any]` | 否 | 工厂生成 | — |
 | `sources` | `dict[str, list[str]]` | 否 | 工厂生成 | — |
 
 #### `L2SessionState` · 内部结构
 
-源码：[`layers/layer2/schemas/models.py:204`](../layers/layer2/schemas/models.py#L204)
+源码：[`layers/layer2/schemas/models.py:205`](../layers/layer2/schemas/models.py#L205)
 
 !!! abstract "Usage Documentation"
 
@@ -454,7 +455,7 @@ L1 的 LLM 连续失败时返回的终止错误，不能传递给 L2。
 
 #### `StageDecision` · 内部结构
 
-源码：[`layers/layer2/schemas/models.py:233`](../layers/layer2/schemas/models.py#L233)
+源码：[`layers/layer2/schemas/models.py:234`](../layers/layer2/schemas/models.py#L234)
 
 !!! abstract "Usage Documentation"
 
@@ -470,7 +471,7 @@ L1 的 LLM 连续失败时返回的终止错误，不能传递给 L2。
 
 #### `L2Turn` · 内部结构
 
-源码：[`layers/layer2/schemas/models.py:245`](../layers/layer2/schemas/models.py#L245)
+源码：[`layers/layer2/schemas/models.py:246`](../layers/layer2/schemas/models.py#L246)
 
 !!! abstract "Usage Documentation"
 
@@ -487,7 +488,7 @@ L1 的 LLM 连续失败时返回的终止错误，不能传递给 L2。
 
 #### `DialogueResult` · 层间接口
 
-源码：[`layers/layer2/schemas/models.py:258`](../layers/layer2/schemas/models.py#L258)
+源码：[`layers/layer2/schemas/models.py:259`](../layers/layer2/schemas/models.py#L259)
 
 !!! abstract "Usage Documentation"
 
@@ -502,7 +503,7 @@ L1 的 LLM 连续失败时返回的终止错误，不能传递给 L2。
 
 #### `ClinicalIntake` · 层间接口
 
-源码：[`layers/layer2/schemas/models.py:269`](../layers/layer2/schemas/models.py#L269)
+源码：[`layers/layer2/schemas/models.py:270`](../layers/layer2/schemas/models.py#L270)
 
 !!! abstract "Usage Documentation"
 
@@ -538,9 +539,67 @@ L1 的 LLM 连续失败时返回的终止错误，不能传递给 L2。
 
 ### `layers.layer3.diagnosis.schemas`
 
+#### `MissingDimension` · 内部结构
+
+源码：[`layers/layer3/diagnosis/schemas.py:13`](../layers/layer3/diagnosis/schemas.py#L13)
+
+!!! abstract "Usage Documentation"
+
+| 字段 | 类型 | 必填 | 默认值 | 约束 |
+|---|---|:---:|---|---|
+| `field` | `str` | 是 | — | 最短长度=1 |
+| `purpose` | `str` | 是 | — | 最短长度=1 |
+| `suggested_question` | `str` | 是 | — | 最短长度=1 |
+
+#### `TreeNodeJudgment` · 内部结构
+
+源码：[`layers/layer3/diagnosis/schemas.py:21`](../layers/layer3/diagnosis/schemas.py#L21)
+
+!!! abstract "Usage Documentation"
+
+| 字段 | 类型 | 必填 | 默认值 | 约束 |
+|---|---|:---:|---|---|
+| `node_id` | `str` | 是 | — | 最短长度=1 |
+| `status` | `Literal['met', 'not_met', 'pending']` | 是 | — | 枚举='met', 'not_met', 'pending' |
+| `rationale` | `str` | 是 | — | 最短长度=1 |
+| `evidence_refs` | `list[str]` | 否 | 工厂生成 | — |
+| `symptom_ids` | `list[str]` | 否 | 工厂生成 | — |
+| `confidence` | `float` | 否 | `0.5` | 最小=0；最大=1 |
+
+#### `TreeDecisionRecord` · 内部结构
+
+源码：[`layers/layer3/diagnosis/schemas.py:32`](../layers/layer3/diagnosis/schemas.py#L32)
+
+!!! abstract "Usage Documentation"
+
+| 字段 | 类型 | 必填 | 默认值 | 约束 |
+|---|---|:---:|---|---|
+| `node_id` | `str` | 是 | — | 最短长度=1 |
+| `status` | `Literal['met', 'not_met', 'pending']` | 是 | — | 枚举='met', 'not_met', 'pending' |
+| `rationale` | `str` | 是 | — | 最短长度=1 |
+| `evidence_refs` | `list[str]` | 否 | 工厂生成 | — |
+| `symptom_ids` | `list[str]` | 否 | 工厂生成 | — |
+| `confidence` | `float` | 否 | `0.5` | 最小=0；最大=1 |
+| `question` | `str` | 是 | — | — |
+| `source_refs` | `list[str]` | 是 | — | — |
+| `stage` | `Literal['screening', 'anchor', 'exclusion', 'criterion']` | 是 | — | 枚举='screening', 'anchor', 'exclusion', 'criterion' |
+
+#### `CandidateDecisionPath` · 内部结构
+
+源码：[`layers/layer3/diagnosis/schemas.py:38`](../layers/layer3/diagnosis/schemas.py#L38)
+
+!!! abstract "Usage Documentation"
+
+| 字段 | 类型 | 必填 | 默认值 | 约束 |
+|---|---|:---:|---|---|
+| `path_id` | `str` | 是 | — | — |
+| `tree_refs` | `list[str]` | 是 | — | — |
+| `provisional` | `bool` | 是 | — | — |
+| `decisions` | `list[TreeDecisionRecord]` | 是 | — | — |
+
 #### `SymptomMatch` · 内部结构
 
-源码：[`layers/layer3/diagnosis/schemas.py:35`](../layers/layer3/diagnosis/schemas.py#L35)
+源码：[`layers/layer3/diagnosis/schemas.py:47`](../layers/layer3/diagnosis/schemas.py#L47)
 
 !!! abstract "Usage Documentation"
 
@@ -551,45 +610,37 @@ L1 的 LLM 连续失败时返回的终止错误，不能传递给 L2。
 
 #### `DiagnosticCandidate` · 内部结构
 
-源码：[`layers/layer3/diagnosis/schemas.py:48`](../layers/layer3/diagnosis/schemas.py#L48)
+源码：[`layers/layer3/diagnosis/schemas.py:60`](../layers/layer3/diagnosis/schemas.py#L60)
 
 !!! abstract "Usage Documentation"
 
 | 字段 | 类型 | 必填 | 默认值 | 约束 |
 |---|---|:---:|---|---|
-| `disorder` | `Literal['MDD', 'GAD', 'PTSD', 'OCD', 'Insomnia', 'PanicDisorder', 'SocialAnxietyDisorder', 'AdjustmentDisorder', 'SomaticSymptomDisorder', 'Bipolar']` | 是 | — | 枚举='MDD', 'GAD', 'PTSD', 'OCD', 'Insomnia', 'PanicDisorder', 'SocialAnxietyDisorder', 'AdjustmentDisorder', 'SomaticSymptomDisorder', 'Bipolar' |
+| `disorder` | `Literal['D001', 'D002', 'D003', 'D004', 'D005', 'D006', 'D007', 'D008', 'D009', 'D010', 'D011', 'D012', 'D013', 'D014', 'D015', 'D016', 'D017', 'D018', 'D019', 'D020', 'D021', 'D022', 'D023', 'Insomnia']` | 是 | — | 枚举='D001', 'D002', 'D003', 'D004', 'D005', 'D006', 'D007', 'D008', 'D009', 'D010', 'D011', 'D012', 'D013', 'D014', 'D015', 'D016', 'D017', 'D018', 'D019', 'D020', 'D021', 'D022', 'D023', 'Insomnia' |
 | `label` | `str` | 是 | — | 最短长度=1 |
 | `symptom_match` | `SymptomMatch` | 是 | — | — |
 | `core_evidence_summary` | `str` | 是 | — | 最短长度=1 |
 | `evidence_refs` | `list[str]` | 是 | — | 最少项=1 |
 | `confidence` | `float` | 是 | — | 最小=0.0；最大=1.0 |
+| `decision_paths` | `list[CandidateDecisionPath]` | 否 | 工厂生成 | — |
 
 #### `CandidateGeneration` · 内部结构
 
-源码：[`layers/layer3/diagnosis/schemas.py:59`](../layers/layer3/diagnosis/schemas.py#L59)
+源码：[`layers/layer3/diagnosis/schemas.py:72`](../layers/layer3/diagnosis/schemas.py#L72)
 
 !!! abstract "Usage Documentation"
 
 | 字段 | 类型 | 必填 | 默认值 | 约束 |
 |---|---|:---:|---|---|
-| `considered_disorders` | `list[Literal['MDD', 'GAD', 'PTSD', 'OCD', 'Insomnia', 'PanicDisorder', 'SocialAnxietyDisorder', 'AdjustmentDisorder', 'SomaticSymptomDisorder', 'Bipolar']]` | 是 | — | 最少项=10；最多项=10 |
-| `candidates` | `list[DiagnosticCandidate]` | 是 | — | 最少项=3；最多项=5 |
-
-#### `MissingDimension` · 内部结构
-
-源码：[`layers/layer3/diagnosis/schemas.py:66`](../layers/layer3/diagnosis/schemas.py#L66)
-
-!!! abstract "Usage Documentation"
-
-| 字段 | 类型 | 必填 | 默认值 | 约束 |
-|---|---|:---:|---|---|
-| `field` | `str` | 是 | — | 最短长度=1 |
-| `purpose` | `str` | 是 | — | 最短长度=1 |
-| `suggested_question` | `str` | 是 | — | 最短长度=1 |
+| `considered_disorders` | `list[Literal['D001', 'D002', 'D003', 'D004', 'D005', 'D006', 'D007', 'D008', 'D009', 'D010', 'D011', 'D012', 'D013', 'D014', 'D015', 'D016', 'D017', 'D018', 'D019', 'D020', 'D021', 'D022', 'D023', 'Insomnia']]` | 是 | — | 最少项=24；最多项=24 |
+| `candidates` | `list[DiagnosticCandidate]` | 否 | 工厂生成 | 最多项=24 |
+| `tree_trace` | `list[TreeDecisionRecord]` | 否 | 工厂生成 | — |
+| `missing_dimensions` | `list[MissingDimension]` | 否 | 工厂生成 | — |
+| `candidate_coverage` | `dict[str, str]` | 否 | 工厂生成 | — |
 
 #### `CriterionAssessment` · 内部结构
 
-源码：[`layers/layer3/diagnosis/schemas.py:74`](../layers/layer3/diagnosis/schemas.py#L74)
+源码：[`layers/layer3/diagnosis/schemas.py:82`](../layers/layer3/diagnosis/schemas.py#L82)
 
 !!! abstract "Usage Documentation"
 
@@ -603,13 +654,13 @@ L1 的 LLM 连续失败时返回的终止错误，不能传递给 L2。
 
 #### `EliminativeAssessment` · 内部结构
 
-源码：[`layers/layer3/diagnosis/schemas.py:84`](../layers/layer3/diagnosis/schemas.py#L84)
+源码：[`layers/layer3/diagnosis/schemas.py:92`](../layers/layer3/diagnosis/schemas.py#L92)
 
 !!! abstract "Usage Documentation"
 
 | 字段 | 类型 | 必填 | 默认值 | 约束 |
 |---|---|:---:|---|---|
-| `disorder` | `Literal['MDD', 'GAD', 'PTSD', 'OCD', 'Insomnia', 'PanicDisorder', 'SocialAnxietyDisorder', 'AdjustmentDisorder', 'SomaticSymptomDisorder', 'Bipolar']` | 是 | — | 枚举='MDD', 'GAD', 'PTSD', 'OCD', 'Insomnia', 'PanicDisorder', 'SocialAnxietyDisorder', 'AdjustmentDisorder', 'SomaticSymptomDisorder', 'Bipolar' |
+| `disorder` | `Literal['D001', 'D002', 'D003', 'D004', 'D005', 'D006', 'D007', 'D008', 'D009', 'D010', 'D011', 'D012', 'D013', 'D014', 'D015', 'D016', 'D017', 'D018', 'D019', 'D020', 'D021', 'D022', 'D023', 'Insomnia']` | 是 | — | 枚举='D001', 'D002', 'D003', 'D004', 'D005', 'D006', 'D007', 'D008', 'D009', 'D010', 'D011', 'D012', 'D013', 'D014', 'D015', 'D016', 'D017', 'D018', 'D019', 'D020', 'D021', 'D022', 'D023', 'Insomnia' |
 | `criteria_detail` | `list[CriterionAssessment]` | 是 | — | 最少项=1 |
 | `conclusion` | `Literal['meets_criteria', 'watch', 'ruled_out']` | 是 | — | 枚举='meets_criteria', 'watch', 'ruled_out' |
 | `conclusion_reason` | `str` | 是 | — | 最短长度=1 |
@@ -617,7 +668,7 @@ L1 的 LLM 连续失败时返回的终止错误，不能传递给 L2。
 
 #### `VerifierDimension` · 内部结构
 
-源码：[`layers/layer3/diagnosis/schemas.py:94`](../layers/layer3/diagnosis/schemas.py#L94)
+源码：[`layers/layer3/diagnosis/schemas.py:102`](../layers/layer3/diagnosis/schemas.py#L102)
 
 !!! abstract "Usage Documentation"
 
@@ -630,7 +681,7 @@ L1 的 LLM 连续失败时返回的终止错误，不能传递给 L2。
 
 #### `RewardModelAssessment` · 内部结构
 
-源码：[`layers/layer3/diagnosis/schemas.py:108`](../layers/layer3/diagnosis/schemas.py#L108)
+源码：[`layers/layer3/diagnosis/schemas.py:116`](../layers/layer3/diagnosis/schemas.py#L116)
 
 !!! abstract "Usage Documentation"
 
@@ -645,7 +696,7 @@ L1 的 LLM 连续失败时返回的终止错误，不能传递给 L2。
 
 #### `MotivationInput` · 内部结构
 
-源码：[`layers/layer3/api.py:21`](../layers/layer3/api.py#L21)
+源码：[`layers/layer3/api.py:24`](../layers/layer3/api.py#L24)
 
 !!! abstract "Usage Documentation"
 
@@ -657,7 +708,7 @@ L1 的 LLM 连续失败时返回的终止错误，不能传递给 L2。
 
 #### `DiagnoseRequest` · 层间接口
 
-源码：[`layers/layer3/api.py:27`](../layers/layer3/api.py#L27)
+源码：[`layers/layer3/api.py:30`](../layers/layer3/api.py#L30)
 
 !!! abstract "Usage Documentation"
 
@@ -696,6 +747,7 @@ L1 的 LLM 连续失败时返回的终止错误，不能传递给 L2。
 | `substance_or_medical_cause` | `bool | NoneType` | 否 | `None` | — |
 | `differential_diagnoses_assessed` | `list[str] | NoneType` | 否 | `None` | — |
 | `evidence_conflicts` | `list[dict[str, Any]] | NoneType` | 否 | `None` | — |
+| `diagnostic_details` | `dict[str, Any]` | 否 | 工厂生成 | — |
 | `emotions` | `list[dict[str, Any]]` | 否 | 工厂生成 | — |
 | `cognitive_patterns` | `list[dict[str, Any]]` | 否 | 工厂生成 | — |
 | `key_narratives` | `list[dict[str, Any]]` | 否 | 工厂生成 | — |
@@ -706,7 +758,7 @@ L1 的 LLM 连续失败时返回的终止错误，不能传递给 L2。
 
 #### `DiagnoseResponse` · 层间接口
 
-源码：[`layers/layer3/api.py:70`](../layers/layer3/api.py#L70)
+源码：[`layers/layer3/api.py:74`](../layers/layer3/api.py#L74)
 
 !!! abstract "Usage Documentation"
 
@@ -714,6 +766,16 @@ L1 的 LLM 连续失败时返回的终止错误，不能传递给 L2。
 |---|---|:---:|---|---|
 | `layer_id` | `Literal['L3']` | 否 | `'L3'` | — |
 | `timestamp` | `str` | 是 | — | — |
+| `diagnostic_standard` | `Literal['DSM-5']` | 否 | `'DSM-5'` | — |
+| `supported_disorders` | `list[str]` | 否 | 工厂生成 | — |
+| `diagnostic_catalog` | `list[dict[str, Any]]` | 否 | 工厂生成 | — |
+| `considered_disorders` | `list[str]` | 否 | 工厂生成 | — |
+| `candidates` | `list[dict[str, Any]]` | 否 | 工厂生成 | — |
+| `checked` | `list[dict[str, Any]]` | 否 | 工厂生成 | — |
+| `candidate_generation_method` | `str` | 否 | `'external_reasoner'` | — |
+| `tree_trace` | `list[dict[str, Any]]` | 否 | 工厂生成 | — |
+| `candidate_coverage` | `dict[str, str]` | 否 | 工厂生成 | — |
+| `candidate_missing_dimensions` | `list[dict[str, str]]` | 否 | 工厂生成 | — |
 | `diagnosis` | `dict` | 是 | — | — |
 | `verifier_score` | `float` | 是 | — | — |
 | `verifier_decision` | `str` | 是 | — | — |
@@ -925,7 +987,7 @@ L1 安全通行证中 L4 需要的部分（每轮复用）。
 | `met` | `bool` | 是 | — | — |
 | `evidence_refs` | `list[str]` | 否 | 工厂生成 | — |
 
-#### `PrimaryDiagnosis` · 内部结构
+#### `DiagnosticDisplay` · 内部结构
 
 源码：[`layers/layer4/schemas/l3_report.py:17`](../layers/layer4/schemas/l3_report.py#L17)
 
@@ -933,6 +995,27 @@ L1 安全通行证中 L4 需要的部分（每轮复用）。
 
 | 字段 | 类型 | 必填 | 默认值 | 约束 |
 |---|---|:---:|---|---|
+| `name` | `str` | 否 | `''` | — |
+| `label` | `str` | 否 | `''` | — |
+| `display_group` | `str` | 否 | `''` | — |
+| `display_group_label` | `str` | 否 | `''` | — |
+| `display_name` | `str` | 否 | `''` | — |
+| `knowledge_source` | `str` | 否 | `''` | — |
+
+#### `PrimaryDiagnosis` · 内部结构
+
+源码：[`layers/layer4/schemas/l3_report.py:26`](../layers/layer4/schemas/l3_report.py#L26)
+
+!!! abstract "Usage Documentation"
+
+| 字段 | 类型 | 必填 | 默认值 | 约束 |
+|---|---|:---:|---|---|
+| `name` | `str` | 否 | `''` | — |
+| `label` | `str` | 否 | `''` | — |
+| `display_group` | `str` | 否 | `''` | — |
+| `display_group_label` | `str` | 否 | `''` | — |
+| `display_name` | `str` | 否 | `''` | — |
+| `knowledge_source` | `str` | 否 | `''` | — |
 | `disorder` | `str` | 是 | — | — |
 | `confidence` | `float` | 否 | `0.0` | — |
 | `severity` | `str` | 否 | `''` | — |
@@ -942,36 +1025,54 @@ L1 安全通行证中 L4 需要的部分（每轮复用）。
 
 #### `SecondaryDiagnosis` · 内部结构
 
-源码：[`layers/layer4/schemas/l3_report.py:26`](../layers/layer4/schemas/l3_report.py#L26)
+源码：[`layers/layer4/schemas/l3_report.py:35`](../layers/layer4/schemas/l3_report.py#L35)
 
 !!! abstract "Usage Documentation"
 
 | 字段 | 类型 | 必填 | 默认值 | 约束 |
 |---|---|:---:|---|---|
+| `name` | `str` | 否 | `''` | — |
+| `label` | `str` | 否 | `''` | — |
+| `display_group` | `str` | 否 | `''` | — |
+| `display_group_label` | `str` | 否 | `''` | — |
+| `display_name` | `str` | 否 | `''` | — |
+| `knowledge_source` | `str` | 否 | `''` | — |
 | `disorder` | `str` | 是 | — | — |
 | `confidence` | `float` | 否 | `0.0` | — |
 | `evidence` | `str` | 否 | `''` | — |
 
 #### `RuledOutDiagnosis` · 内部结构
 
-源码：[`layers/layer4/schemas/l3_report.py:32`](../layers/layer4/schemas/l3_report.py#L32)
+源码：[`layers/layer4/schemas/l3_report.py:41`](../layers/layer4/schemas/l3_report.py#L41)
 
 !!! abstract "Usage Documentation"
 
 | 字段 | 类型 | 必填 | 默认值 | 约束 |
 |---|---|:---:|---|---|
+| `name` | `str` | 否 | `''` | — |
+| `label` | `str` | 否 | `''` | — |
+| `display_group` | `str` | 否 | `''` | — |
+| `display_group_label` | `str` | 否 | `''` | — |
+| `display_name` | `str` | 否 | `''` | — |
+| `knowledge_source` | `str` | 否 | `''` | — |
 | `disorder` | `str` | 是 | — | — |
 | `reason` | `str` | 否 | `''` | — |
 | `evidence_ref` | `str` | 否 | `''` | — |
 
 #### `UnderObservationDiagnosis` · 内部结构
 
-源码：[`layers/layer4/schemas/l3_report.py:38`](../layers/layer4/schemas/l3_report.py#L38)
+源码：[`layers/layer4/schemas/l3_report.py:47`](../layers/layer4/schemas/l3_report.py#L47)
 
 !!! abstract "Usage Documentation"
 
 | 字段 | 类型 | 必填 | 默认值 | 约束 |
 |---|---|:---:|---|---|
+| `name` | `str` | 否 | `''` | — |
+| `label` | `str` | 否 | `''` | — |
+| `display_group` | `str` | 否 | `''` | — |
+| `display_group_label` | `str` | 否 | `''` | — |
+| `display_name` | `str` | 否 | `''` | — |
+| `knowledge_source` | `str` | 否 | `''` | — |
 | `disorder` | `str` | 是 | — | — |
 | `confidence` | `float` | 否 | `0.0` | — |
 | `reason` | `str` | 否 | `''` | — |
@@ -979,7 +1080,7 @@ L1 安全通行证中 L4 需要的部分（每轮复用）。
 
 #### `Diagnosis` · 内部结构
 
-源码：[`layers/layer4/schemas/l3_report.py:45`](../layers/layer4/schemas/l3_report.py#L45)
+源码：[`layers/layer4/schemas/l3_report.py:54`](../layers/layer4/schemas/l3_report.py#L54)
 
 !!! abstract "Usage Documentation"
 
@@ -992,7 +1093,7 @@ L1 安全通行证中 L4 需要的部分（每轮复用）。
 
 #### `RecommendedTherapy` · 内部结构
 
-源码：[`layers/layer4/schemas/l3_report.py:52`](../layers/layer4/schemas/l3_report.py#L52)
+源码：[`layers/layer4/schemas/l3_report.py:61`](../layers/layer4/schemas/l3_report.py#L61)
 
 !!! abstract "Usage Documentation"
 
@@ -1006,7 +1107,7 @@ L1 安全通行证中 L4 需要的部分（每轮复用）。
 
 #### `TherapyRouting` · 内部结构
 
-源码：[`layers/layer4/schemas/l3_report.py:60`](../layers/layer4/schemas/l3_report.py#L60)
+源码：[`layers/layer4/schemas/l3_report.py:69`](../layers/layer4/schemas/l3_report.py#L69)
 
 !!! abstract "Usage Documentation"
 
@@ -1020,7 +1121,7 @@ L1 安全通行证中 L4 需要的部分（每轮复用）。
 
 #### `StructuredLabels` · 内部结构
 
-源码：[`layers/layer4/schemas/l3_report.py:68`](../layers/layer4/schemas/l3_report.py#L68)
+源码：[`layers/layer4/schemas/l3_report.py:77`](../layers/layer4/schemas/l3_report.py#L77)
 
 !!! abstract "Usage Documentation"
 
@@ -1032,7 +1133,7 @@ L1 安全通行证中 L4 需要的部分（每轮复用）。
 
 #### `EvidenceRefIn` · 内部结构
 
-源码：[`layers/layer4/schemas/l3_report.py:74`](../layers/layer4/schemas/l3_report.py#L74)
+源码：[`layers/layer4/schemas/l3_report.py:83`](../layers/layer4/schemas/l3_report.py#L83)
 
 !!! abstract "Usage Documentation"
 
@@ -1052,7 +1153,7 @@ L1 安全通行证中 L4 需要的部分（每轮复用）。
 
 #### `MissingDimension` · 内部结构
 
-源码：[`layers/layer4/schemas/l3_report.py:88`](../layers/layer4/schemas/l3_report.py#L88)
+源码：[`layers/layer4/schemas/l3_report.py:97`](../layers/layer4/schemas/l3_report.py#L97)
 
 !!! abstract "Usage Documentation"
 
@@ -1064,7 +1165,7 @@ L1 安全通行证中 L4 需要的部分（每轮复用）。
 
 #### `VerifierCheck` · 内部结构
 
-源码：[`layers/layer4/schemas/l3_report.py:94`](../layers/layer4/schemas/l3_report.py#L94)
+源码：[`layers/layer4/schemas/l3_report.py:103`](../layers/layer4/schemas/l3_report.py#L103)
 
 !!! abstract "Usage Documentation"
 
@@ -1079,7 +1180,7 @@ L1 安全通行证中 L4 需要的部分（每轮复用）。
 
 #### `L3ValidationCheck` · 内部结构
 
-源码：[`layers/layer4/schemas/l3_report.py:103`](../layers/layer4/schemas/l3_report.py#L103)
+源码：[`layers/layer4/schemas/l3_report.py:112`](../layers/layer4/schemas/l3_report.py#L112)
 
 !!! abstract "Usage Documentation"
 
@@ -1091,7 +1192,7 @@ L1 安全通行证中 L4 需要的部分（每轮复用）。
 
 #### `L3ValidationReceipt` · 内部结构
 
-源码：[`layers/layer4/schemas/l3_report.py:109`](../layers/layer4/schemas/l3_report.py#L109)
+源码：[`layers/layer4/schemas/l3_report.py:118`](../layers/layer4/schemas/l3_report.py#L118)
 
 !!! abstract "Usage Documentation"
 
@@ -1105,12 +1206,22 @@ L1 安全通行证中 L4 需要的部分（每轮复用）。
 
 #### `DiagnosticReport` · 层间接口
 
-源码：[`layers/layer4/schemas/l3_report.py:117`](../layers/layer4/schemas/l3_report.py#L117)
+源码：[`layers/layer4/schemas/l3_report.py:126`](../layers/layer4/schemas/l3_report.py#L126)
 
 接口三：L3 → L4 DiagnosticReport（诊断报告）。未知字段忽略，真实 L3 完整 JSON 可解析。
 
 | 字段 | 类型 | 必填 | 默认值 | 约束 |
 |---|---|:---:|---|---|
+| `diagnostic_standard` | `Literal['DSM-5']` | 否 | `'DSM-5'` | — |
+| `supported_disorders` | `list[str]` | 否 | 工厂生成 | — |
+| `diagnostic_catalog` | `list[dict[str, Any]]` | 否 | 工厂生成 | — |
+| `considered_disorders` | `list[str]` | 否 | 工厂生成 | — |
+| `candidates` | `list[dict[str, Any]]` | 否 | 工厂生成 | — |
+| `checked` | `list[dict[str, Any]]` | 否 | 工厂生成 | — |
+| `candidate_generation_method` | `str` | 否 | `'external_reasoner'` | — |
+| `tree_trace` | `list[dict[str, Any]]` | 否 | 工厂生成 | — |
+| `candidate_coverage` | `dict[str, str]` | 否 | 工厂生成 | — |
+| `candidate_missing_dimensions` | `list[dict[str, str]]` | 否 | 工厂生成 | — |
 | `layer_id` | `str` | 否 | `'L3'` | — |
 | `timestamp` | `str` | 否 | `''` | — |
 | `diagnosis` | `Diagnosis` | 否 | 有默认值 | — |

@@ -144,7 +144,7 @@ def test_l1_to_l5_complete_pipeline(monkeypatch):
     report = DiagnosticReport.model_validate(l3_raw)
     assert report.layer_id == "L3"
     assert report.diagnosis.primary is not None
-    assert report.diagnosis.primary.disorder == "MDD"
+    assert report.diagnosis.primary.disorder == "D013"
     assert report.verifier_routing == "pass"
     assert report.verifier_score == 0.87
     assert report.l3_validation is not None and report.l3_validation.passed

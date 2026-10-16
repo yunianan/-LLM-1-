@@ -221,7 +221,7 @@ def test_automatic_l1_to_l3_then_confirmation_and_l4(monkeypatch, tmp_path):
     patient_payload = json.dumps(awaiting.model_dump(mode="json"), ensure_ascii=False)
     for internal in (
         "developer_profile", "evidence_id", "verifier_score", "candidate_confidence",
-        "DSM", "MDD",
+        "DSM", "D013",
     ):
         assert internal not in patient_payload
 
@@ -230,7 +230,7 @@ def test_automatic_l1_to_l3_then_confirmation_and_l4(monkeypatch, tmp_path):
     developer_html = developer_path.read_text(encoding="utf-8")
     assert "仅限开发者调试" in developer_html
     assert "verifier_score" not in developer_html
-    assert "MDD" not in developer_html
+    assert "D013" not in developer_html
     assert "最近三周我每天都很低落" in developer_html
 
     confirmed = orchestrator.confirm_patient_profile("top-e2e", "continue")
@@ -240,7 +240,7 @@ def test_automatic_l1_to_l3_then_confirmation_and_l4(monkeypatch, tmp_path):
     assert developer_path is not None
     developer_html = developer_path.read_text(encoding="utf-8")
     assert "verifier_score" in developer_html
-    assert "MDD" in developer_html
+    assert "D013" in developer_html
 
     treatment = orchestrator.handle_message(
         "top-e2e", "我想先从今天完成一点工作开始。"

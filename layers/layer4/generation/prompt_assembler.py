@@ -1,4 +1,5 @@
 import json
+from shared.disorder_catalog import disorder_metadata
 
 from layers.layer4.llm.base import Message
 from layers.layer4.schemas.instructions import (
@@ -37,7 +38,7 @@ def assemble_prompt(
     system_parts.append(f"【角色定义】(L1)\n{role.identity}\n风格：{role.style}\n边界：{'；'.join(role.boundaries)}")
     system_parts.append(
         "【诊断锚点】(L2)\n"
-        f"主诊断：{anchor.primary}\n"
+        f"主诊断：{disorder_metadata(anchor.primary)['display_name']}（{anchor.primary}）\n"
         f"基础疗法：{anchor.therapy_type}\n"
         f"诊断与鉴别排除详情：{json.dumps(anchor.diagnosis_details, ensure_ascii=False)}\n"
         f"量表：{json.dumps(anchor.scale_scores, ensure_ascii=False)}\n"

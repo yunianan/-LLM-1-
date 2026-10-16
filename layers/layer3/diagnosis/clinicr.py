@@ -19,6 +19,8 @@ from .schemas import (
 from .verifier import IndependentVerifier
 
 
+from shared.disorder_catalog import DISORDER_COUNT, candidate_knowledge, disorder_metadata
+
 MIN_PRIMARY_CANDIDATE_CONFIDENCE = 0.5
 
 
@@ -33,12 +35,13 @@ def _step2_max_workers() -> int:
     return workers
 
 DISORDER_SEVERITY_SCALE = {
-    "MDD": "PHQ9",
-    "GAD": "GAD7",
-    "PTSD": "PCL5",
-    "OCD": "Y_BOCS",
+    "D013": "PHQ9",
+    "D011": "GAD7",
+    "D018": "PCL5",
+    "D016": "Y_BOCS",
     "Insomnia": "ISI",
-    "Bipolar": "MDQ",
+    "D008": "MDQ",
+    "D009": "MDQ",
 }
 
 SEVERITY_THRESHOLDS = {
@@ -81,11 +84,11 @@ class CLINICR:
             ALLOWED_EVIDENCE_REFS_KEY: sorted(known_refs),
         }
 
-        # Step 1: LLM同时考虑10种障碍并生成3-5个候选。
+        # Step 1: 完整考虑 MentalKG 23 个节点及失眠障碍，按患者证据保留候选。
         generation = self.reasoner.generate_candidates(model_profile)
         candidates = self._validate_generation(generation, known_refs)
 
-        # Step 2: LLM逐候选核对DSM-5/ICD-11标准。
+        # Step 2: LLM逐候选核对DSM-5标准。
         def evaluate(candidate: DiagnosticCandidate) -> EliminativeAssessment:
             assessment = self.reasoner.evaluate_candidate(model_profile, candidate)
             self._validate_eliminative(candidate, assessment, known_refs)
@@ -93,7 +96,7 @@ class CLINICR:
 
         # 各候选互不依赖；map 保留候选排名顺序，Verifier 仍在全部核对后运行。
         with ThreadPoolExecutor(
-            max_workers=min(_step2_max_workers(), len(candidates)),
+            max_workers=max(1, min(_step2_max_workers(), len(candidates))),
             thread_name_prefix="clinicr-step2",
         ) as executor:
             assessments = list(executor.map(evaluate, candidates))
@@ -123,7 +126,9 @@ class CLINICR:
         ]
 
         if not eligible:
-            missing = self._collect_missing(assessments)
+            missing = self._dedupe_missing(self._collect_missing(assessments) + [
+                item.model_dump(mode="json") for item in generation.missing_dimensions
+            ])
             if not missing:
                 missing = [{
                     "field": "diagnostic_evidence",
@@ -149,6 +154,7 @@ class CLINICR:
                     "missing_dimensions": missing,
                 },
                 safety_context=safety_context,
+                generation=generation,
             )
 
         top_candidate = eligible[0]
@@ -222,6 +228,7 @@ class CLINICR:
             severity_level=severity_level,
             verifier=verifier,
             safety_context=safety_context,
+            generation=generation,
         )
 
     @staticmethod
@@ -230,9 +237,9 @@ class CLINICR:
         known_refs: set[str],
     ) -> list[DiagnosticCandidate]:
         considered = generation.considered_disorders
-        if len(set(considered)) != 10 or set(considered) != set(SUPPORTED_DISORDERS):
+        if len(set(considered)) != DISORDER_COUNT or set(considered) != set(SUPPORTED_DISORDERS):
             raise CLINICRModelUnavailable(
-                "CLINICR Step 1没有完整且唯一地考虑规定的10种障碍"
+                f"CLINICR Step 1没有完整且唯一地考虑规定的{DISORDER_COUNT}种障碍"
             )
         disorders = [item.disorder for item in generation.candidates]
         if len(disorders) != len(set(disorders)):
@@ -243,6 +250,8 @@ class CLINICR:
                 known_refs,
                 f"Step 1候选{candidate.disorder}",
             )
+        for record in generation.tree_trace:
+            CLINICR._assert_known_refs(record.evidence_refs, known_refs, f"Step 1节点{record.node_id}")
         return sorted(
             generation.candidates,
             key=lambda item: item.confidence,
@@ -281,7 +290,7 @@ class CLINICR:
             raise CLINICRModelUnavailable(
                 f"Step 2候选{candidate.disorder}含待确认条目但没有给出L2追问"
             )
-        if assessment.disorder == "MDD" and assessment.conclusion == "meets_criteria":
+        if assessment.disorder in {"D013", "D015"} and assessment.conclusion == "meets_criteria":
             met = {
                 item.code
                 for item in assessment.criteria_detail
@@ -354,7 +363,7 @@ class CLINICR:
         met = [item["code"] for item in detail if item["status"] == "met"]
         scale = DISORDER_SEVERITY_SCALE.get(candidate.disorder)
         return {
-            "disorder": candidate.disorder,
+            **disorder_metadata(candidate.disorder),
             "confidence": candidate.confidence,
             "severity": severity.get(scale, "unknown"),
             "evidence": candidate.core_evidence_summary,
@@ -368,7 +377,7 @@ class CLINICR:
         assessment: EliminativeAssessment,
     ) -> dict[str, Any]:
         return {
-            "disorder": candidate.disorder,
+            **disorder_metadata(candidate.disorder),
             "confidence": candidate.confidence,
             "evidence": assessment.conclusion_reason,
         }
@@ -379,7 +388,7 @@ class CLINICR:
         assessment: EliminativeAssessment,
     ) -> dict[str, Any]:
         return {
-            "disorder": candidate.disorder,
+            **disorder_metadata(candidate.disorder),
             "confidence": candidate.confidence,
             "reason": assessment.conclusion_reason,
             "missing_dimensions": [
@@ -396,7 +405,7 @@ class CLINICR:
             for ref in item.evidence_refs
         ]
         return {
-            "disorder": assessment.disorder,
+            **disorder_metadata(assessment.disorder),
             "reason": assessment.conclusion_reason,
             "evidence_ref": ", ".join(dict.fromkeys(refs)),
         }
@@ -480,12 +489,13 @@ class CLINICR:
         severity_level: int,
         verifier: dict[str, Any],
         safety_context: dict[str, Any] | None,
+        generation: CandidateGeneration | None = None,
     ) -> dict[str, Any]:
         evidence_refs: list[dict[str, Any]] = []
         for candidate in candidates:
             evidence_refs.append({
                 "type": "CLINICR-step1",
-                "disorder": candidate.disorder,
+                **disorder_metadata(candidate.disorder),
                 "source": "L2 ClinicalIntake",
                 "threshold": (
                     f"symptom_match={candidate.symptom_match.matched}/"
@@ -497,14 +507,16 @@ class CLINICR:
             for criterion in assessment.criteria_detail:
                 evidence_refs.append({
                     "type": "DSM-5-criterion",
-                    "disorder": assessment.disorder,
+                    **disorder_metadata(assessment.disorder),
                     "criterion_code": criterion.code,
                     "criterion_name": criterion.name,
                     "status": (
                         "unknown" if criterion.status == "pending" else criterion.status
                     ),
                     "evidence_refs": criterion.evidence_refs,
-                    "source_doc": "DSM-5/ICD-11",
+                    "source_doc": candidate_knowledge(assessment.disorder).get(
+                        "criterion_source_refs", {}
+                    ).get(criterion.code, candidate_knowledge(assessment.disorder)["source_ref"]),
                 })
         if provisional_primary:
             evidence_refs.append({
@@ -531,7 +543,7 @@ class CLINICR:
 
         if primary:
             summary = (
-                f"CLINICR三步推理得到{primary['disorder']}，"
+                f"CLINICR三步推理得到{disorder_metadata(primary['disorder'])['display_name']}，"
                 f"候选置信度={primary['confidence']}，"
                 f"Verifier={verifier['score']}（{verifier['decision']}）。"
             )
@@ -560,7 +572,13 @@ class CLINICR:
             "missing_dimensions": verifier["missing_dimensions"],
             "severity": severity,
             "severity_level": severity_level,
-            "candidates": [item.model_dump(mode="json") for item in candidates],
+            "considered_disorders": list(SUPPORTED_DISORDERS),
+            "diagnostic_standard": "DSM-5",
+            "candidate_generation_method": "dsm5_decision_tree" if generation and generation.tree_trace else "external_reasoner",
+            "tree_trace": [item.model_dump(mode="json") for item in generation.tree_trace] if generation else [],
+            "candidate_coverage": generation.candidate_coverage if generation else {},
+            "candidate_missing_dimensions": [item.model_dump(mode="json") for item in generation.missing_dimensions] if generation else [],
+            "candidates": [{**item.model_dump(mode="json"), **disorder_metadata(item.disorder)} for item in candidates],
             "checked": [item.model_dump(mode="json") for item in assessments],
             "evidence_refs": evidence_refs,
             "confidence": verifier["score"],

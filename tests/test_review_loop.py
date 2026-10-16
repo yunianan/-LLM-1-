@@ -15,7 +15,7 @@ from layers.layer4.session.history import ConversationTurn
 from shared.schemas.treatment_instructions import TreatmentInstructions
 
 ROLE = RoleInstruction(identity="CBT治疗师", style="温暖")
-ANCHOR = DiagnosticAnchor(primary="MDD", confidence=0.87, therapy_type="CBT")
+ANCHOR = DiagnosticAnchor(primary="D013", confidence=0.87, therapy_type="CBT")
 BOUNDARY = BoundaryInstruction()
 SAFETY = SafetyPassport()
 

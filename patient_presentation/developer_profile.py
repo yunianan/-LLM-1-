@@ -6,6 +6,8 @@ import re
 from pathlib import Path
 from typing import Any
 
+from shared.disorder_catalog import grouped_catalog
+
 from orchestration.schemas import PipelineSession
 
 
@@ -77,6 +79,7 @@ details summary {{ cursor: pointer; font-weight: 700; }}
 {self._card("编排状态", overview)}
 {self._card("L1 安全通行证", l1)}
 {self._card("L2 患者画像", intake_data, wide=True)}
+{self._card("候选诊断范围：24项 / 9个展示类别", grouped_catalog(), wide=True) if report else ""}
 {self._card("L3 诊断与 Verifier", report_data, wide=True)}
 {self._card("L3→L2 待补充维度", session.pending_l3_dimensions, wide=True)}
 </div>

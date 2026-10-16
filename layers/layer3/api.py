@@ -15,6 +15,9 @@ from shared.l2_l3_contract import (
     missing_required_profile_fields,
 )
 
+from shared.disorder_catalog import (SUPPORTED_DISORDERS, TREATMENT_KEY_BY_NODE,
+                                     grouped_catalog, disorder_metadata)
+
 app = FastAPI(title="Diagnosis Layer API")
 
 
@@ -58,6 +61,7 @@ class DiagnoseRequest(BaseModel):
     substance_or_medical_cause: bool | None = None
     differential_diagnoses_assessed: list[str] | None = None
     evidence_conflicts: list[dict[str, Any]] | None = None
+    diagnostic_details: dict[str, Any] = Field(default_factory=dict)
     emotions: list[dict[str, Any]] = Field(default_factory=list)
     cognitive_patterns: list[dict[str, Any]] = Field(default_factory=list)
     key_narratives: list[dict[str, Any]] = Field(default_factory=list)
@@ -70,6 +74,16 @@ class DiagnoseRequest(BaseModel):
 class DiagnoseResponse(BaseModel):
     layer_id: Literal["L3"] = "L3"
     timestamp: str
+    diagnostic_standard: Literal["DSM-5"] = "DSM-5"
+    supported_disorders: list[str] = Field(default_factory=lambda: list(SUPPORTED_DISORDERS))
+    diagnostic_catalog: list[dict[str, Any]] = Field(default_factory=grouped_catalog)
+    considered_disorders: list[str] = Field(default_factory=list)
+    candidates: list[dict[str, Any]] = Field(default_factory=list)
+    checked: list[dict[str, Any]] = Field(default_factory=list)
+    candidate_generation_method: str = "external_reasoner"
+    tree_trace: list[dict[str, Any]] = Field(default_factory=list)
+    candidate_coverage: dict[str, str] = Field(default_factory=dict)
+    candidate_missing_dimensions: list[dict[str, str]] = Field(default_factory=list)
     diagnosis: dict
     verifier_score: float
     verifier_decision: str
@@ -92,6 +106,22 @@ class DiagnoseResponse(BaseModel):
     l3_validation: dict[str, Any]
 
 
+def _catalog_payload(result: dict[str, Any]) -> dict[str, Any]:
+    return {"diagnostic_standard": "DSM-5", "supported_disorders": list(SUPPORTED_DISORDERS),
+            "diagnostic_catalog": grouped_catalog(),
+            "considered_disorders": result.get("considered_disorders", []),
+            "candidates": result.get("candidates", []), "checked": result.get("checked", []),
+            "candidate_generation_method": result.get("candidate_generation_method", "external_reasoner"),
+            "tree_trace": result.get("tree_trace", []),
+            "candidate_coverage": result.get("candidate_coverage", {}),
+            "candidate_missing_dimensions": result.get("candidate_missing_dimensions", [])}
+
+
+@app.get("/diagnostic-catalog")
+def diagnostic_catalog():
+    return _catalog_payload({})
+
+
 def build_blocked_report(clinicr_result):
     missing = clinicr_result.get("missing_dimensions", [])
     routing = clinicr_result["verifier_routing"]
@@ -100,13 +130,14 @@ def build_blocked_report(clinicr_result):
         instruction = "返回L2补充 Verifier 指定的缺失信息"
     elif routing == "manual_review":
         action = "manual_review"
-        instruction = "证据存在冲突，转人工复核，不进入L4"
+        instruction = "转人工复核，不进入L4自动治疗"
     else:
         action = "stop_diagnostic_route"
         instruction = "终验不支持当前诊断，停止进入L4"
     return {
         "layer_id": "L3",
         "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        **_catalog_payload(clinicr_result),
         "diagnosis": clinicr_result["diagnosis"],
         "provisional_diagnosis": clinicr_result.get("provisional_diagnosis"),
         "verifier_score": clinicr_result["verifier_score"],
@@ -135,7 +166,8 @@ def build_blocked_report(clinicr_result):
                 "strategy_adjustments": {},
                 "l4_substage_priority": [],
             },
-            "wording_constraint": "信息不足，不得形成诊断结论或进入治疗对话",
+            "wording_constraint": ("诊断候选保留，治疗方案需人工复核，不进入自动治疗"
+                                   if routing == "manual_review" else "信息不足，不得形成诊断结论或进入治疗对话"),
             "risk_monitoring": [],
         },
         "evidence_refs": clinicr_result["evidence_refs"],
@@ -280,7 +312,7 @@ def build_report(profile, clinicr_result, therapy, safety_context=None):
     adjustment_text = "；".join(strategy_adjustments.get("instructions", []))
     clinical_notes = (
         f"L4治疗焦点按序推进：{'→'.join(priority)}。"
-        f"主诊断{primary['disorder']}（置信度{primary['confidence']}，"
+        f"主诊断{disorder_metadata(primary['disorder'])['display_name']}（置信度{primary['confidence']}，"
         f"严重度{primary.get('severity', 'unknown')}）。"
         f"方案微调：{adjustment_text or '无'}。"
     )
@@ -296,6 +328,7 @@ def build_report(profile, clinicr_result, therapy, safety_context=None):
     report = {
         "layer_id": "L3",
         "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        **_catalog_payload(clinicr_result),
         "diagnosis": diagnosis,
         "verifier_score": clinicr_result["verifier_score"],
         "verifier_decision": clinicr_result["verifier_decision"],
@@ -349,6 +382,14 @@ def diagnose(profile, safety_context=None, clinicr: CLINICR | None = None):
     primary = result["diagnosis"]["primary"]
     if primary is None:
         raise HTTPException(status_code=400, detail="Cannot determine diagnosis")
+
+    if primary["disorder"] not in TREATMENT_KEY_BY_NODE:
+        result = {**result, "verifier_routing": "manual_review",
+                  "flags": list(dict.fromkeys(result.get("flags", []) + ["treatment_mapping_unavailable"])),
+                  "summary": result["summary"] + "该诊断尚无项目治疗映射，保留诊断结果并转人工治疗方案复核。"}
+        report = build_blocked_report(result)
+        report["l3_validation"] = L3OutputValidator().validate(report)
+        return report
 
     selector = TherapySelector()
     confirmed_diagnoses = [primary["disorder"]] + [
@@ -414,6 +455,7 @@ def diagnose_endpoint(request: DiagnoseRequest):
         "substance_or_medical_cause": request.substance_or_medical_cause,
         "differential_diagnoses_assessed": request.differential_diagnoses_assessed,
         "evidence_conflicts": request.evidence_conflicts,
+        "diagnostic_details": request.diagnostic_details,
         "emotions": request.emotions,
         "cognitive_patterns": request.cognitive_patterns,
         "key_narratives": request.key_narratives,

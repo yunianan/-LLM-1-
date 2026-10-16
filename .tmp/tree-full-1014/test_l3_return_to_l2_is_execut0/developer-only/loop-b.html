@@ -1,0 +1,1530 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>开发者患者画像 · loop-b</title>
+<style>
+:root { color-scheme: light; font-family: Inter, "Microsoft YaHei", sans-serif; }
+body { margin: 0; background: #f4f7fb; color: #1f2937; }
+main { max-width: 1180px; margin: 0 auto; padding: 28px; }
+.warning { background: #2b1b1b; color: #fecaca; padding: 14px 18px; border-radius: 12px; font-weight: 700; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(320px,1fr)); gap: 16px; margin-top: 18px; }
+.card { background: white; border: 1px solid #dbe4ef; border-radius: 14px; padding: 18px; box-shadow: 0 4px 14px #1f29370d; }
+.wide { grid-column: 1 / -1; }
+h1 { margin-bottom: 8px; } h2 { margin: 0 0 12px; font-size: 18px; }
+.route { display: inline-block; padding: 5px 10px; border-radius: 999px; background: #dbeafe; color: #1d4ed8; font-weight: 700; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; background: #f8fafc; border-radius: 10px; padding: 14px; font-size: 12px; }
+details summary { cursor: pointer; font-weight: 700; }
+</style>
+</head>
+<body><main>
+<div class="warning">仅限开发者调试：包含患者原话、量表明细、内部评分和证据链，不得展示给患者。</div>
+<h1>患者画像调试视图</h1>
+<span class="route">MANUAL_REVIEW</span>
+<div class="grid">
+<section class="card"><h2>编排状态</h2><pre>{
+  &quot;session_id&quot;: &quot;loop-b&quot;,
+  &quot;route&quot;: &quot;MANUAL_REVIEW&quot;,
+  &quot;expected_input&quot;: &quot;profile_confirmation&quot;,
+  &quot;l3_to_l2_loop_count&quot;: 3,
+  &quot;updated_at&quot;: &quot;2026-10-14T14:27:55.963962Z&quot;,
+  &quot;stopped_reason&quot;: &quot;&quot;
+}</pre></section>
+<section class="card"><h2>L1 安全通行证</h2><pre>{
+  &quot;risk_level&quot;: 1,
+  &quot;safety_flag&quot;: &quot;pass&quot;,
+  &quot;crisis_flag&quot;: false,
+  &quot;sensitive_topics&quot;: [],
+  &quot;flags&quot;: [],
+  &quot;execution&quot;: {
+    &quot;route&quot;: &quot;l2&quot;,
+    &quot;terminal&quot;: false,
+    &quot;user_response&quot;: &quot;&quot;,
+    &quot;applied_controls&quot;: []
+  },
+  &quot;guard&quot;: {
+    &quot;status&quot;: &quot;pass&quot;,
+    &quot;can_call_l2&quot;: true
+  }
+}</pre></section>
+<section class="card wide"><h2>L2 患者画像</h2><pre>{
+  &quot;layer_id&quot;: &quot;L2&quot;,
+  &quot;timestamp&quot;: &quot;2026-10-14T14:27:55.962892Z&quot;,
+  &quot;session_id&quot;: &quot;loop-b&quot;,
+  &quot;current_stage&quot;: &quot;planning&quot;,
+  &quot;key_symptoms_extracted&quot;: [
+    {
+      &quot;symptom&quot;: &quot;depressed_mood&quot;,
+      &quot;sources&quot;: [
+        &quot;L2E-6fe04c2872804cacbb6b27ab6138b5b4&quot;,
+        &quot;L2E-d3b4c75654674e1a96a18aa1fe96878e&quot;,
+        &quot;L2E-dce02756d31b473b94f46d3fa76de39e&quot;,
+        &quot;L2E-9c3feba746f348f694b27c7a48dfea3a&quot;,
+        &quot;L2E-2e316e2054404860bd48cdd80aaf4312&quot;
+      ],
+      &quot;patient_quotes&quot;: [
+        &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;,
+        &quot;我想先从情绪低落和睡眠问题聊起。&quot;,
+        &quot;这些低落和睡不好已经明显影响了工作。&quot;,
+        &quot;低落和没兴趣已经持续三周。&quot;
+      ],
+      &quot;attributes&quot;: {}
+    },
+    {
+      &quot;symptom&quot;: &quot;anhedonia&quot;,
+      &quot;sources&quot;: [
+        &quot;L2E-8490ff5a099247a0a985c0257a8eeee2&quot;,
+        &quot;L2E-c6609c806261437fbaa2023d2eb62e41&quot;,
+        &quot;L2E-246b81bf037d47adb44dd092a2984ed6&quot;
+      ],
+      &quot;patient_quotes&quot;: [
+        &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;,
+        &quot;低落和没兴趣已经持续三周。&quot;
+      ],
+      &quot;attributes&quot;: {}
+    },
+    {
+      &quot;symptom&quot;: &quot;insomnia&quot;,
+      &quot;sources&quot;: [
+        &quot;L2E-909232bfd0df4b9ab2eb90e98954d133&quot;,
+        &quot;L2E-541b7297fffd46a58ada6100a247b2f3&quot;
+      ],
+      &quot;patient_quotes&quot;: [
+        &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;,
+        &quot;这些低落和睡不好已经明显影响了工作。&quot;
+      ],
+      &quot;attributes&quot;: {}
+    },
+    {
+      &quot;symptom&quot;: &quot;fatigue&quot;,
+      &quot;sources&quot;: [
+        &quot;L2E-d5531f191d264dbaaf528ed98715b1eb&quot;
+      ],
+      &quot;patient_quotes&quot;: [
+        &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;
+      ],
+      &quot;attributes&quot;: {}
+    },
+    {
+      &quot;symptom&quot;: &quot;worthlessness&quot;,
+      &quot;sources&quot;: [
+        &quot;L2E-d229bb069d7e4d868847af9fb27e6794&quot;
+      ],
+      &quot;patient_quotes&quot;: [
+        &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;
+      ],
+      &quot;attributes&quot;: {}
+    }
+  ],
+  &quot;emotions&quot;: [
+    {
+      &quot;value&quot;: &quot;低落&quot;,
+      &quot;sources&quot;: [
+        &quot;L2E-8bc2e2f5207d4257a42033901c00a7a2&quot;,
+        &quot;L2E-0d551820ca2f4a32864fe90122470f5e&quot;,
+        &quot;L2E-942a173d803b44178309cf778e48c251&quot;,
+        &quot;L2E-cf9c1eae02ef493dbded5a00af2eb477&quot;,
+        &quot;L2E-9a2a2f7ab1b74076b83dacd9daa00a9e&quot;
+      ],
+      &quot;patient_quotes&quot;: [
+        &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;,
+        &quot;我想先从情绪低落和睡眠问题聊起。&quot;,
+        &quot;这些低落和睡不好已经明显影响了工作。&quot;,
+        &quot;低落和没兴趣已经持续三周。&quot;
+      ]
+    }
+  ],
+  &quot;cognitive_patterns&quot;: [],
+  &quot;patient_goals&quot;: [
+    &quot;已经核对过双相障碍和适应障碍。&quot;,
+    &quot;我的目标是恢复工作状态和改善睡眠。&quot;
+  ],
+  &quot;patient_goal_facts&quot;: [
+    {
+      &quot;value&quot;: &quot;已经核对过双相障碍和适应障碍。&quot;,
+      &quot;sources&quot;: [
+        &quot;L2E-a00cc108853549aaa5a08e089cd5ede4&quot;
+      ],
+      &quot;patient_quotes&quot;: [
+        &quot;已经核对过双相障碍和适应障碍。&quot;
+      ]
+    },
+    {
+      &quot;value&quot;: &quot;我的目标是恢复工作状态和改善睡眠。&quot;,
+      &quot;sources&quot;: [
+        &quot;L2E-3d67227d78c24f539bbe2b29ffdd0494&quot;
+      ],
+      &quot;patient_quotes&quot;: [
+        &quot;我的目标是恢复工作状态和改善睡眠。&quot;
+      ]
+    }
+  ],
+  &quot;key_narratives&quot;: [
+    {
+      &quot;value&quot;: &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;,
+      &quot;sources&quot;: [
+        &quot;L2E-95abb2ecbd3749948510056ff1bde933&quot;
+      ],
+      &quot;patient_quotes&quot;: [
+        &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;
+      ]
+    },
+    {
+      &quot;value&quot;: &quot;我想先从情绪低落和睡眠问题聊起。&quot;,
+      &quot;sources&quot;: [
+        &quot;L2E-d371ae04ca2742d98baa5dfb48bb8faa&quot;
+      ],
+      &quot;patient_quotes&quot;: [
+        &quot;我想先从情绪低落和睡眠问题聊起。&quot;
+      ]
+    },
+    {
+      &quot;value&quot;: &quot;这些低落和睡不好已经明显影响了工作。&quot;,
+      &quot;sources&quot;: [
+        &quot;L2E-ee05f2c1cdbc4fca95f24ac1de4e00c6&quot;
+      ],
+      &quot;patient_quotes&quot;: [
+        &quot;这些低落和睡不好已经明显影响了工作。&quot;
+      ]
+    },
+    {
+      &quot;value&quot;: &quot;低落和没兴趣已经持续三周。&quot;,
+      &quot;sources&quot;: [
+        &quot;L2E-a8ec0df0b429432a9a701e1bc0886dd7&quot;,
+        &quot;L2E-dc26a77f29934ee1a8a4053aa5e5dcbb&quot;
+      ],
+      &quot;patient_quotes&quot;: [
+        &quot;低落和没兴趣已经持续三周。&quot;
+      ]
+    }
+  ],
+  &quot;functional_impairments&quot;: [],
+  &quot;focus_topics&quot;: [
+    &quot;我想先从情绪低落和睡眠问题聊起。&quot;
+  ],
+  &quot;focus_topic_facts&quot;: [
+    {
+      &quot;value&quot;: &quot;我想先从情绪低落和睡眠问题聊起。&quot;,
+      &quot;sources&quot;: [
+        &quot;L2E-2cbaa65e523341b3a4781b1a4d609769&quot;
+      ],
+      &quot;patient_quotes&quot;: [
+        &quot;我想先从情绪低落和睡眠问题聊起。&quot;
+      ]
+    }
+  ],
+  &quot;change_talk&quot;: [],
+  &quot;sustain_talk&quot;: [],
+  &quot;motivation&quot;: {
+    &quot;importance&quot;: 8,
+    &quot;confidence&quot;: 6,
+    &quot;readiness&quot;: 7,
+    &quot;sources&quot;: [
+      &quot;L2E-1ffac7a488cf407093e9fe70ed535caa&quot;,
+      &quot;L2E-77be567186c846caa9dc8914f0960baf&quot;,
+      &quot;L2E-bf427a3c251b4975897069d4a61210a0&quot;
+    ]
+  },
+  &quot;scale_results&quot;: {
+    &quot;PHQ-9&quot;: {
+      &quot;scale_name&quot;: &quot;PHQ-9&quot;,
+      &quot;status&quot;: &quot;completed&quot;,
+      &quot;items&quot;: {
+        &quot;1&quot;: 3,
+        &quot;2&quot;: 3,
+        &quot;3&quot;: 2,
+        &quot;4&quot;: 2,
+        &quot;5&quot;: 0,
+        &quot;6&quot;: 2,
+        &quot;7&quot;: 0,
+        &quot;8&quot;: 0,
+        &quot;9&quot;: 0
+      },
+      &quot;score&quot;: 12,
+      &quot;threshold&quot;: &quot;moderate&quot;,
+      &quot;evidence_ids&quot;: [
+        &quot;L2E-c7821a55b14a4981aeadf5d2fb53f63d&quot;,
+        &quot;L2E-83fd34adb66e42399aaa99ce9e1fee62&quot;,
+        &quot;L2E-9a6d53469fb546b6ae2f3e1a7133139a&quot;,
+        &quot;L2E-dd8b44d28bc74362b58ab69daff151bd&quot;,
+        &quot;L2E-11ef99989b8948de93f0ff3f03fac321&quot;,
+        &quot;L2E-5165ad3881674d5baa7a4cc782540b12&quot;,
+        &quot;L2E-c3baf3e4acc446c7b1bc6cc714ef744d&quot;,
+        &quot;L2E-5cb3616b4e7740a2a75ed71f8fb936e4&quot;,
+        &quot;L2E-10fea99e327444e283d49e8ea3120c85&quot;
+      ],
+      &quot;skip_reason&quot;: &quot;&quot;
+    }
+  },
+  &quot;diagnostic_context&quot;: {
+    &quot;symptom_duration_days&quot;: 21,
+    &quot;functional_impairment&quot;: true,
+    &quot;mania_or_hypomania_history&quot;: false,
+    &quot;substance_or_medical_cause&quot;: false,
+    &quot;differential_diagnoses_assessed&quot;: [
+      &quot;D009&quot;,
+      &quot;Adjustment&quot;
+    ],
+    &quot;evidence_conflicts&quot;: [],
+    &quot;relapse_count&quot;: null,
+    &quot;rhythm_disturbance&quot;: null,
+    &quot;exposure_avoidant&quot;: null,
+    &quot;ritual_behaviors&quot;: null,
+    &quot;insomnia_chief_complaint&quot;: null,
+    &quot;chronic_months&quot;: null,
+    &quot;interpersonal_conflicts&quot;: null,
+    &quot;interpersonal_impairment&quot;: null,
+    &quot;single_focus&quot;: null,
+    &quot;psychotic_symptoms&quot;: false,
+    &quot;substance_active&quot;: null,
+    &quot;severe_dissociation&quot;: null,
+    &quot;diagnostic_details&quot;: {},
+    &quot;sources&quot;: {
+      &quot;symptom_duration_days&quot;: [
+        &quot;L2E-4a24cdf7dd21452bacf54aeab478d926&quot;,
+        &quot;L2E-76731fefe01c4b1c818ea7d1bfe52bb7&quot;,
+        &quot;L2E-ff3b66ee63dd4f1fa45aa11667c4823d&quot;
+      ],
+      &quot;functional_impairment&quot;: [
+        &quot;L2E-3e90dab5541647acbf340fa31bef3f6e&quot;
+      ],
+      &quot;mania_or_hypomania_history&quot;: [
+        &quot;L2E-8c3a5a21888b46d197712731b1a466dc&quot;
+      ],
+      &quot;substance_or_medical_cause&quot;: [
+        &quot;L2E-fcd7f10e0c164af7bacfc4093c104fa7&quot;
+      ],
+      &quot;psychotic_symptoms&quot;: [
+        &quot;L2E-5817d2076b2e42a8acbfbf9b97cf8027&quot;
+      ],
+      &quot;differential_diagnoses_assessed&quot;: [
+        &quot;L2E-5822f6c5d92d4c069c740b17227726f2&quot;
+      ],
+      &quot;evidence_conflicts&quot;: [
+        &quot;L2E-64e57167d024485e80940629c96acf4a&quot;
+      ]
+    }
+  },
+  &quot;evidence_nodes&quot;: [
+    {
+      &quot;evidence_id&quot;: &quot;L2E-6fe04c2872804cacbb6b27ab6138b5b4&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;58a557a0de5440eaaa046f30e58de7a6&quot;,
+      &quot;turn_index&quot;: 1,
+      &quot;quote&quot;: &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;,
+      &quot;target_path&quot;: &quot;symptoms.depressed_mood&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-8490ff5a099247a0a985c0257a8eeee2&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;58a557a0de5440eaaa046f30e58de7a6&quot;,
+      &quot;turn_index&quot;: 1,
+      &quot;quote&quot;: &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;,
+      &quot;target_path&quot;: &quot;symptoms.anhedonia&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-909232bfd0df4b9ab2eb90e98954d133&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;58a557a0de5440eaaa046f30e58de7a6&quot;,
+      &quot;turn_index&quot;: 1,
+      &quot;quote&quot;: &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;,
+      &quot;target_path&quot;: &quot;symptoms.insomnia&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-d5531f191d264dbaaf528ed98715b1eb&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;58a557a0de5440eaaa046f30e58de7a6&quot;,
+      &quot;turn_index&quot;: 1,
+      &quot;quote&quot;: &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;,
+      &quot;target_path&quot;: &quot;symptoms.fatigue&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-d229bb069d7e4d868847af9fb27e6794&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;58a557a0de5440eaaa046f30e58de7a6&quot;,
+      &quot;turn_index&quot;: 1,
+      &quot;quote&quot;: &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;,
+      &quot;target_path&quot;: &quot;symptoms.worthlessness&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-8bc2e2f5207d4257a42033901c00a7a2&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;58a557a0de5440eaaa046f30e58de7a6&quot;,
+      &quot;turn_index&quot;: 1,
+      &quot;quote&quot;: &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;,
+      &quot;target_path&quot;: &quot;emotions.0&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-95abb2ecbd3749948510056ff1bde933&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;58a557a0de5440eaaa046f30e58de7a6&quot;,
+      &quot;turn_index&quot;: 1,
+      &quot;quote&quot;: &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;,
+      &quot;target_path&quot;: &quot;key_narratives.0&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-4a24cdf7dd21452bacf54aeab478d926&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;58a557a0de5440eaaa046f30e58de7a6&quot;,
+      &quot;turn_index&quot;: 1,
+      &quot;quote&quot;: &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;,
+      &quot;target_path&quot;: &quot;diagnostic_context.symptom_duration_days&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-d3b4c75654674e1a96a18aa1fe96878e&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;1ff3d5576f2142a1a2b4ec48abc97fd1&quot;,
+      &quot;turn_index&quot;: 2,
+      &quot;quote&quot;: &quot;我想先从情绪低落和睡眠问题聊起。&quot;,
+      &quot;target_path&quot;: &quot;symptoms.depressed_mood&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-0d551820ca2f4a32864fe90122470f5e&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;1ff3d5576f2142a1a2b4ec48abc97fd1&quot;,
+      &quot;turn_index&quot;: 2,
+      &quot;quote&quot;: &quot;我想先从情绪低落和睡眠问题聊起。&quot;,
+      &quot;target_path&quot;: &quot;emotions.0&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-d371ae04ca2742d98baa5dfb48bb8faa&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;1ff3d5576f2142a1a2b4ec48abc97fd1&quot;,
+      &quot;turn_index&quot;: 2,
+      &quot;quote&quot;: &quot;我想先从情绪低落和睡眠问题聊起。&quot;,
+      &quot;target_path&quot;: &quot;key_narratives.1&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-2cbaa65e523341b3a4781b1a4d609769&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;1ff3d5576f2142a1a2b4ec48abc97fd1&quot;,
+      &quot;turn_index&quot;: 2,
+      &quot;quote&quot;: &quot;我想先从情绪低落和睡眠问题聊起。&quot;,
+      &quot;target_path&quot;: &quot;focus_topics.0&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-dce02756d31b473b94f46d3fa76de39e&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;9582c656ad4448af97bf0484d818d155&quot;,
+      &quot;turn_index&quot;: 3,
+      &quot;quote&quot;: &quot;这些低落和睡不好已经明显影响了工作。&quot;,
+      &quot;target_path&quot;: &quot;symptoms.depressed_mood&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-541b7297fffd46a58ada6100a247b2f3&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;9582c656ad4448af97bf0484d818d155&quot;,
+      &quot;turn_index&quot;: 3,
+      &quot;quote&quot;: &quot;这些低落和睡不好已经明显影响了工作。&quot;,
+      &quot;target_path&quot;: &quot;symptoms.insomnia&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-942a173d803b44178309cf778e48c251&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;9582c656ad4448af97bf0484d818d155&quot;,
+      &quot;turn_index&quot;: 3,
+      &quot;quote&quot;: &quot;这些低落和睡不好已经明显影响了工作。&quot;,
+      &quot;target_path&quot;: &quot;emotions.0&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-ee05f2c1cdbc4fca95f24ac1de4e00c6&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;9582c656ad4448af97bf0484d818d155&quot;,
+      &quot;turn_index&quot;: 3,
+      &quot;quote&quot;: &quot;这些低落和睡不好已经明显影响了工作。&quot;,
+      &quot;target_path&quot;: &quot;key_narratives.2&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-3e90dab5541647acbf340fa31bef3f6e&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;9582c656ad4448af97bf0484d818d155&quot;,
+      &quot;turn_index&quot;: 3,
+      &quot;quote&quot;: &quot;这些低落和睡不好已经明显影响了工作。&quot;,
+      &quot;target_path&quot;: &quot;diagnostic_context.functional_impairment&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-c7821a55b14a4981aeadf5d2fb53f63d&quot;,
+      &quot;source_type&quot;: &quot;scale_item&quot;,
+      &quot;message_id&quot;: &quot;0d196afb107443a2b97c8d25ad107e16&quot;,
+      &quot;turn_index&quot;: 5,
+      &quot;quote&quot;: &quot;几乎每天没有兴趣。&quot;,
+      &quot;target_path&quot;: &quot;scale_results.PHQ-9.items.1&quot;,
+      &quot;created_by&quot;: &quot;scale_rule&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-83fd34adb66e42399aaa99ce9e1fee62&quot;,
+      &quot;source_type&quot;: &quot;scale_item&quot;,
+      &quot;message_id&quot;: &quot;8cf21e145f404acb89da5646f82f8e52&quot;,
+      &quot;turn_index&quot;: 6,
+      &quot;quote&quot;: &quot;几乎每天情绪低落。&quot;,
+      &quot;target_path&quot;: &quot;scale_results.PHQ-9.items.2&quot;,
+      &quot;created_by&quot;: &quot;scale_rule&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-9a6d53469fb546b6ae2f3e1a7133139a&quot;,
+      &quot;source_type&quot;: &quot;scale_item&quot;,
+      &quot;message_id&quot;: &quot;3a1cdc05a5f6438a852f623bb8cf5a40&quot;,
+      &quot;turn_index&quot;: 7,
+      &quot;quote&quot;: &quot;一半以上时间睡不好。&quot;,
+      &quot;target_path&quot;: &quot;scale_results.PHQ-9.items.3&quot;,
+      &quot;created_by&quot;: &quot;scale_rule&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-dd8b44d28bc74362b58ab69daff151bd&quot;,
+      &quot;source_type&quot;: &quot;scale_item&quot;,
+      &quot;message_id&quot;: &quot;60570822da114abe9fd397817bcb91bc&quot;,
+      &quot;turn_index&quot;: 8,
+      &quot;quote&quot;: &quot;一半以上时间没有精力。&quot;,
+      &quot;target_path&quot;: &quot;scale_results.PHQ-9.items.4&quot;,
+      &quot;created_by&quot;: &quot;scale_rule&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-11ef99989b8948de93f0ff3f03fac321&quot;,
+      &quot;source_type&quot;: &quot;scale_item&quot;,
+      &quot;message_id&quot;: &quot;79203cdfa77c4865b5587ee26ca01a3f&quot;,
+      &quot;turn_index&quot;: 9,
+      &quot;quote&quot;: &quot;完全没有食欲变化。&quot;,
+      &quot;target_path&quot;: &quot;scale_results.PHQ-9.items.5&quot;,
+      &quot;created_by&quot;: &quot;scale_rule&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-5165ad3881674d5baa7a4cc782540b12&quot;,
+      &quot;source_type&quot;: &quot;scale_item&quot;,
+      &quot;message_id&quot;: &quot;faa1f9324c7c4308878fc100297895f8&quot;,
+      &quot;turn_index&quot;: 10,
+      &quot;quote&quot;: &quot;一半以上时间觉得自己让人失望。&quot;,
+      &quot;target_path&quot;: &quot;scale_results.PHQ-9.items.6&quot;,
+      &quot;created_by&quot;: &quot;scale_rule&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-c3baf3e4acc446c7b1bc6cc714ef744d&quot;,
+      &quot;source_type&quot;: &quot;scale_item&quot;,
+      &quot;message_id&quot;: &quot;dc81c2c1c3214eaab2e6fe16840630eb&quot;,
+      &quot;turn_index&quot;: 11,
+      &quot;quote&quot;: &quot;完全没有注意力变化。&quot;,
+      &quot;target_path&quot;: &quot;scale_results.PHQ-9.items.7&quot;,
+      &quot;created_by&quot;: &quot;scale_rule&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-5cb3616b4e7740a2a75ed71f8fb936e4&quot;,
+      &quot;source_type&quot;: &quot;scale_item&quot;,
+      &quot;message_id&quot;: &quot;f2258cd1dccf4b20aba7d307457c49f1&quot;,
+      &quot;turn_index&quot;: 12,
+      &quot;quote&quot;: &quot;完全没有动作和说话变化。&quot;,
+      &quot;target_path&quot;: &quot;scale_results.PHQ-9.items.8&quot;,
+      &quot;created_by&quot;: &quot;scale_rule&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-10fea99e327444e283d49e8ea3120c85&quot;,
+      &quot;source_type&quot;: &quot;scale_item&quot;,
+      &quot;message_id&quot;: &quot;d91909ac1f064c9ea09b6fa660a1b4db&quot;,
+      &quot;turn_index&quot;: 13,
+      &quot;quote&quot;: &quot;完全没有伤害自己或不如死去的想法。&quot;,
+      &quot;target_path&quot;: &quot;scale_results.PHQ-9.items.9&quot;,
+      &quot;created_by&quot;: &quot;scale_rule&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-8c3a5a21888b46d197712731b1a466dc&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;b6a5c866f80a47f6ab7328c18db0398b&quot;,
+      &quot;turn_index&quot;: 14,
+      &quot;quote&quot;: &quot;从未有过少睡却不困的时期。&quot;,
+      &quot;target_path&quot;: &quot;diagnostic_context.mania_or_hypomania_history&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-fcd7f10e0c164af7bacfc4093c104fa7&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;b2bee7c6f5fc45bc84be60c639592738&quot;,
+      &quot;turn_index&quot;: 15,
+      &quot;quote&quot;: &quot;这并非药物、物质或身体疾病导致。&quot;,
+      &quot;target_path&quot;: &quot;diagnostic_context.substance_or_medical_cause&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-5817d2076b2e42a8acbfbf9b97cf8027&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;889525c4fc7f4129afee27bd5bcc3cfc&quot;,
+      &quot;turn_index&quot;: 16,
+      &quot;quote&quot;: &quot;最近没有听到别人听不到的声音，也没有感觉被监视。&quot;,
+      &quot;target_path&quot;: &quot;diagnostic_context.psychotic_symptoms&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-a00cc108853549aaa5a08e089cd5ede4&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;0c5ea79eeddb4609b185ad014918bb01&quot;,
+      &quot;turn_index&quot;: 17,
+      &quot;quote&quot;: &quot;已经核对过双相障碍和适应障碍。&quot;,
+      &quot;target_path&quot;: &quot;patient_goals.0&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-5822f6c5d92d4c069c740b17227726f2&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;0c5ea79eeddb4609b185ad014918bb01&quot;,
+      &quot;turn_index&quot;: 17,
+      &quot;quote&quot;: &quot;已经核对过双相障碍和适应障碍。&quot;,
+      &quot;target_path&quot;: &quot;diagnostic_context.differential_diagnoses_assessed&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-64e57167d024485e80940629c96acf4a&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;45636909d2714b3e994ce1d3263acd22&quot;,
+      &quot;turn_index&quot;: 18,
+      &quot;quote&quot;: &quot;量表结果和我的实际感受一致，没有矛盾。&quot;,
+      &quot;target_path&quot;: &quot;diagnostic_context.evidence_conflicts&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-3d67227d78c24f539bbe2b29ffdd0494&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;202bcca0347b4e0bbe7307352e4673b4&quot;,
+      &quot;turn_index&quot;: 19,
+      &quot;quote&quot;: &quot;我的目标是恢复工作状态和改善睡眠。&quot;,
+      &quot;target_path&quot;: &quot;patient_goals.1&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-1ffac7a488cf407093e9fe70ed535caa&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;2fc644705956440684bca74dffd987bf&quot;,
+      &quot;turn_index&quot;: 20,
+      &quot;quote&quot;: &quot;重要性8分，信心6分，准备度7分。&quot;,
+      &quot;target_path&quot;: &quot;diagnostic_context.motivation_importance&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-77be567186c846caa9dc8914f0960baf&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;2fc644705956440684bca74dffd987bf&quot;,
+      &quot;turn_index&quot;: 20,
+      &quot;quote&quot;: &quot;重要性8分，信心6分，准备度7分。&quot;,
+      &quot;target_path&quot;: &quot;diagnostic_context.motivation_confidence&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-bf427a3c251b4975897069d4a61210a0&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;2fc644705956440684bca74dffd987bf&quot;,
+      &quot;turn_index&quot;: 20,
+      &quot;quote&quot;: &quot;重要性8分，信心6分，准备度7分。&quot;,
+      &quot;target_path&quot;: &quot;diagnostic_context.motivation_readiness&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-9c3feba746f348f694b27c7a48dfea3a&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;ecd58088236c4e7dae192b2bac84b117&quot;,
+      &quot;turn_index&quot;: 21,
+      &quot;quote&quot;: &quot;低落和没兴趣已经持续三周。&quot;,
+      &quot;target_path&quot;: &quot;symptoms.depressed_mood&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-c6609c806261437fbaa2023d2eb62e41&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;ecd58088236c4e7dae192b2bac84b117&quot;,
+      &quot;turn_index&quot;: 21,
+      &quot;quote&quot;: &quot;低落和没兴趣已经持续三周。&quot;,
+      &quot;target_path&quot;: &quot;symptoms.anhedonia&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-cf9c1eae02ef493dbded5a00af2eb477&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;ecd58088236c4e7dae192b2bac84b117&quot;,
+      &quot;turn_index&quot;: 21,
+      &quot;quote&quot;: &quot;低落和没兴趣已经持续三周。&quot;,
+      &quot;target_path&quot;: &quot;emotions.0&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-a8ec0df0b429432a9a701e1bc0886dd7&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;ecd58088236c4e7dae192b2bac84b117&quot;,
+      &quot;turn_index&quot;: 21,
+      &quot;quote&quot;: &quot;低落和没兴趣已经持续三周。&quot;,
+      &quot;target_path&quot;: &quot;key_narratives.3&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-76731fefe01c4b1c818ea7d1bfe52bb7&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;ecd58088236c4e7dae192b2bac84b117&quot;,
+      &quot;turn_index&quot;: 21,
+      &quot;quote&quot;: &quot;低落和没兴趣已经持续三周。&quot;,
+      &quot;target_path&quot;: &quot;diagnostic_context.symptom_duration_days&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-2e316e2054404860bd48cdd80aaf4312&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;f03b4ec041a24a70929995099381b85b&quot;,
+      &quot;turn_index&quot;: 22,
+      &quot;quote&quot;: &quot;低落和没兴趣已经持续三周。&quot;,
+      &quot;target_path&quot;: &quot;symptoms.depressed_mood&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-246b81bf037d47adb44dd092a2984ed6&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;f03b4ec041a24a70929995099381b85b&quot;,
+      &quot;turn_index&quot;: 22,
+      &quot;quote&quot;: &quot;低落和没兴趣已经持续三周。&quot;,
+      &quot;target_path&quot;: &quot;symptoms.anhedonia&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-9a2a2f7ab1b74076b83dacd9daa00a9e&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;f03b4ec041a24a70929995099381b85b&quot;,
+      &quot;turn_index&quot;: 22,
+      &quot;quote&quot;: &quot;低落和没兴趣已经持续三周。&quot;,
+      &quot;target_path&quot;: &quot;emotions.0&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-dc26a77f29934ee1a8a4053aa5e5dcbb&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;f03b4ec041a24a70929995099381b85b&quot;,
+      &quot;turn_index&quot;: 22,
+      &quot;quote&quot;: &quot;低落和没兴趣已经持续三周。&quot;,
+      &quot;target_path&quot;: &quot;key_narratives.3&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-ff3b66ee63dd4f1fa45aa11667c4823d&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;f03b4ec041a24a70929995099381b85b&quot;,
+      &quot;turn_index&quot;: 22,
+      &quot;quote&quot;: &quot;低落和没兴趣已经持续三周。&quot;,
+      &quot;target_path&quot;: &quot;diagnostic_context.symptom_duration_days&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    }
+  ],
+  &quot;information_sufficiency&quot;: &quot;sufficient&quot;,
+  &quot;missing_dimensions&quot;: [],
+  &quot;patient_confirmation&quot;: &quot;confirmed&quot;,
+  &quot;safety_controls&quot;: [],
+  &quot;flags&quot;: [],
+  &quot;l2_validation&quot;: {
+    &quot;status&quot;: &quot;pass&quot;,
+    &quot;route&quot;: &quot;allow_l3&quot;,
+    &quot;violations&quot;: [],
+    &quot;evidence_node_count&quot;: 46
+  }
+}</pre></section>
+<section class="card wide"><h2>候选诊断范围：24项 / 8个展示类别</h2><pre>[
+  {
+    &quot;group&quot;: &quot;attention&quot;,
+    &quot;label&quot;: &quot;注意缺陷与多动相关&quot;,
+    &quot;disorders&quot;: [
+      {
+        &quot;disorder&quot;: &quot;D001&quot;,
+        &quot;name&quot;: &quot;Attention-Deficit/Hyperactivity Disorder (Combined Presentation)&quot;,
+        &quot;label&quot;: &quot;注意缺陷/多动障碍（混合表现）&quot;,
+        &quot;display_group&quot;: &quot;attention&quot;,
+        &quot;display_group_label&quot;: &quot;注意缺陷与多动相关&quot;,
+        &quot;display_name&quot;: &quot;注意缺陷与多动相关 · 注意缺陷/多动障碍（混合表现）&quot;,
+        &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+      },
+      {
+        &quot;disorder&quot;: &quot;D002&quot;,
+        &quot;name&quot;: &quot;Attention-Deficit/Hyperactivity Disorder (Predominantly Inattentive Presentation)&quot;,
+        &quot;label&quot;: &quot;注意缺陷/多动障碍（注意缺陷为主）&quot;,
+        &quot;display_group&quot;: &quot;attention&quot;,
+        &quot;display_group_label&quot;: &quot;注意缺陷与多动相关&quot;,
+        &quot;display_name&quot;: &quot;注意缺陷与多动相关 · 注意缺陷/多动障碍（注意缺陷为主）&quot;,
+        &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+      },
+      {
+        &quot;disorder&quot;: &quot;D003&quot;,
+        &quot;name&quot;: &quot;Attention-Deficit/Hyperactivity Disorder (Predominantly Hyperactive/Impulsive Presentation)&quot;,
+        &quot;label&quot;: &quot;注意缺陷/多动障碍（多动冲动为主）&quot;,
+        &quot;display_group&quot;: &quot;attention&quot;,
+        &quot;display_group_label&quot;: &quot;注意缺陷与多动相关&quot;,
+        &quot;display_name&quot;: &quot;注意缺陷与多动相关 · 注意缺陷/多动障碍（多动冲动为主）&quot;,
+        &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+      }
+    ]
+  },
+  {
+    &quot;group&quot;: &quot;psychotic&quot;,
+    &quot;label&quot;: &quot;精神病性及相关障碍&quot;,
+    &quot;disorders&quot;: [
+      {
+        &quot;disorder&quot;: &quot;D004&quot;,
+        &quot;name&quot;: &quot;Delusional Disorder&quot;,
+        &quot;label&quot;: &quot;妄想障碍&quot;,
+        &quot;display_group&quot;: &quot;psychotic&quot;,
+        &quot;display_group_label&quot;: &quot;精神病性及相关障碍&quot;,
+        &quot;display_name&quot;: &quot;精神病性及相关障碍 · 妄想障碍&quot;,
+        &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+      },
+      {
+        &quot;disorder&quot;: &quot;D005&quot;,
+        &quot;name&quot;: &quot;Schizophrenia&quot;,
+        &quot;label&quot;: &quot;精神分裂症&quot;,
+        &quot;display_group&quot;: &quot;psychotic&quot;,
+        &quot;display_group_label&quot;: &quot;精神病性及相关障碍&quot;,
+        &quot;display_name&quot;: &quot;精神病性及相关障碍 · 精神分裂症&quot;,
+        &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+      },
+      {
+        &quot;disorder&quot;: &quot;D006&quot;,
+        &quot;name&quot;: &quot;Schizoaffective Disorder (Bipolar Type)&quot;,
+        &quot;label&quot;: &quot;分裂情感性障碍（双相型）&quot;,
+        &quot;display_group&quot;: &quot;psychotic&quot;,
+        &quot;display_group_label&quot;: &quot;精神病性及相关障碍&quot;,
+        &quot;display_name&quot;: &quot;精神病性及相关障碍 · 分裂情感性障碍（双相型）&quot;,
+        &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+      },
+      {
+        &quot;disorder&quot;: &quot;D007&quot;,
+        &quot;name&quot;: &quot;Schizoaffective Disorder (Depressive Type)&quot;,
+        &quot;label&quot;: &quot;分裂情感性障碍（抑郁型）&quot;,
+        &quot;display_group&quot;: &quot;psychotic&quot;,
+        &quot;display_group_label&quot;: &quot;精神病性及相关障碍&quot;,
+        &quot;display_name&quot;: &quot;精神病性及相关障碍 · 分裂情感性障碍（抑郁型）&quot;,
+        &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+      }
+    ]
+  },
+  {
+    &quot;group&quot;: &quot;bipolar&quot;,
+    &quot;label&quot;: &quot;双相相关&quot;,
+    &quot;disorders&quot;: [
+      {
+        &quot;disorder&quot;: &quot;D008&quot;,
+        &quot;name&quot;: &quot;Bipolar I Disorder&quot;,
+        &quot;label&quot;: &quot;双相Ⅰ型障碍&quot;,
+        &quot;display_group&quot;: &quot;bipolar&quot;,
+        &quot;display_group_label&quot;: &quot;双相相关&quot;,
+        &quot;display_name&quot;: &quot;双相相关 · 双相Ⅰ型障碍&quot;,
+        &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+      },
+      {
+        &quot;disorder&quot;: &quot;D009&quot;,
+        &quot;name&quot;: &quot;Bipolar II Disorder&quot;,
+        &quot;label&quot;: &quot;双相Ⅱ型障碍&quot;,
+        &quot;display_group&quot;: &quot;bipolar&quot;,
+        &quot;display_group_label&quot;: &quot;双相相关&quot;,
+        &quot;display_name&quot;: &quot;双相相关 · 双相Ⅱ型障碍&quot;,
+        &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+      },
+      {
+        &quot;disorder&quot;: &quot;D010&quot;,
+        &quot;name&quot;: &quot;Bipolar I Disorder with Psychotic Features&quot;,
+        &quot;label&quot;: &quot;双相Ⅰ型障碍伴精神病性特征&quot;,
+        &quot;display_group&quot;: &quot;bipolar&quot;,
+        &quot;display_group_label&quot;: &quot;双相相关&quot;,
+        &quot;display_name&quot;: &quot;双相相关 · 双相Ⅰ型障碍伴精神病性特征&quot;,
+        &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+      }
+    ]
+  },
+  {
+    &quot;group&quot;: &quot;anxiety_sleep&quot;,
+    &quot;label&quot;: &quot;焦虑与睡眠相关&quot;,
+    &quot;disorders&quot;: [
+      {
+        &quot;disorder&quot;: &quot;D011&quot;,
+        &quot;name&quot;: &quot;Generalized Anxiety Disorder&quot;,
+        &quot;label&quot;: &quot;广泛性焦虑障碍&quot;,
+        &quot;display_group&quot;: &quot;anxiety_sleep&quot;,
+        &quot;display_group_label&quot;: &quot;焦虑与睡眠相关&quot;,
+        &quot;display_name&quot;: &quot;焦虑与睡眠相关 · 广泛性焦虑障碍&quot;,
+        &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+      },
+      {
+        &quot;disorder&quot;: &quot;D012&quot;,
+        &quot;name&quot;: &quot;Specific Phobia&quot;,
+        &quot;label&quot;: &quot;特定恐怖症&quot;,
+        &quot;display_group&quot;: &quot;anxiety_sleep&quot;,
+        &quot;display_group_label&quot;: &quot;焦虑与睡眠相关&quot;,
+        &quot;display_name&quot;: &quot;焦虑与睡眠相关 · 特定恐怖症&quot;,
+        &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+      },
+      {
+        &quot;disorder&quot;: &quot;Insomnia&quot;,
+        &quot;name&quot;: &quot;Insomnia Disorder&quot;,
+        &quot;label&quot;: &quot;失眠障碍&quot;,
+        &quot;display_group&quot;: &quot;anxiety_sleep&quot;,
+        &quot;display_group_label&quot;: &quot;焦虑与睡眠相关&quot;,
+        &quot;display_name&quot;: &quot;焦虑与睡眠相关 · 失眠障碍&quot;,
+        &quot;knowledge_source&quot;: &quot;knowledge/dsm5_supplement/EN/diagnostic_criteria.json#/Insomnia&quot;
+      }
+    ]
+  },
+  {
+    &quot;group&quot;: &quot;depressive&quot;,
+    &quot;label&quot;: &quot;抑郁相关&quot;,
+    &quot;disorders&quot;: [
+      {
+        &quot;disorder&quot;: &quot;D013&quot;,
+        &quot;name&quot;: &quot;Major Depressive Disorder&quot;,
+        &quot;label&quot;: &quot;重性抑郁障碍&quot;,
+        &quot;display_group&quot;: &quot;depressive&quot;,
+        &quot;display_group_label&quot;: &quot;抑郁相关&quot;,
+        &quot;display_name&quot;: &quot;抑郁相关 · 重性抑郁障碍&quot;,
+        &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+      },
+      {
+        &quot;disorder&quot;: &quot;D014&quot;,
+        &quot;name&quot;: &quot;Persistent Depressive Disorder&quot;,
+        &quot;label&quot;: &quot;持续性抑郁障碍&quot;,
+        &quot;display_group&quot;: &quot;depressive&quot;,
+        &quot;display_group_label&quot;: &quot;抑郁相关&quot;,
+        &quot;display_name&quot;: &quot;抑郁相关 · 持续性抑郁障碍&quot;,
+        &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+      },
+      {
+        &quot;disorder&quot;: &quot;D015&quot;,
+        &quot;name&quot;: &quot;Major Depressive Disorder with Psychotic Features&quot;,
+        &quot;label&quot;: &quot;重性抑郁障碍伴精神病性特征&quot;,
+        &quot;display_group&quot;: &quot;depressive&quot;,
+        &quot;display_group_label&quot;: &quot;抑郁相关&quot;,
+        &quot;display_name&quot;: &quot;抑郁相关 · 重性抑郁障碍伴精神病性特征&quot;,
+        &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+      }
+    ]
+  },
+  {
+    &quot;group&quot;: &quot;obsessive&quot;,
+    &quot;label&quot;: &quot;强迫及相关障碍&quot;,
+    &quot;disorders&quot;: [
+      {
+        &quot;disorder&quot;: &quot;D016&quot;,
+        &quot;name&quot;: &quot;Obsessive-Compulsive Disorder&quot;,
+        &quot;label&quot;: &quot;强迫症&quot;,
+        &quot;display_group&quot;: &quot;obsessive&quot;,
+        &quot;display_group_label&quot;: &quot;强迫及相关障碍&quot;,
+        &quot;display_name&quot;: &quot;强迫及相关障碍 · 强迫症&quot;,
+        &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+      },
+      {
+        &quot;disorder&quot;: &quot;D017&quot;,
+        &quot;name&quot;: &quot;Body Dysmorphic Disorder&quot;,
+        &quot;label&quot;: &quot;躯体变形障碍&quot;,
+        &quot;display_group&quot;: &quot;obsessive&quot;,
+        &quot;display_group_label&quot;: &quot;强迫及相关障碍&quot;,
+        &quot;display_name&quot;: &quot;强迫及相关障碍 · 躯体变形障碍&quot;,
+        &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+      }
+    ]
+  },
+  {
+    &quot;group&quot;: &quot;stress&quot;,
+    &quot;label&quot;: &quot;创伤与应激相关&quot;,
+    &quot;disorders&quot;: [
+      {
+        &quot;disorder&quot;: &quot;D018&quot;,
+        &quot;name&quot;: &quot;Posttraumatic Stress Disorder&quot;,
+        &quot;label&quot;: &quot;创伤后应激障碍&quot;,
+        &quot;display_group&quot;: &quot;stress&quot;,
+        &quot;display_group_label&quot;: &quot;创伤与应激相关&quot;,
+        &quot;display_name&quot;: &quot;创伤与应激相关 · 创伤后应激障碍&quot;,
+        &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+      },
+      {
+        &quot;disorder&quot;: &quot;D019&quot;,
+        &quot;name&quot;: &quot;Acute Stress Disorder&quot;,
+        &quot;label&quot;: &quot;急性应激障碍&quot;,
+        &quot;display_group&quot;: &quot;stress&quot;,
+        &quot;display_group_label&quot;: &quot;创伤与应激相关&quot;,
+        &quot;display_name&quot;: &quot;创伤与应激相关 · 急性应激障碍&quot;,
+        &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+      },
+      {
+        &quot;disorder&quot;: &quot;D020&quot;,
+        &quot;name&quot;: &quot;Adjustment Disorder&quot;,
+        &quot;label&quot;: &quot;适应障碍&quot;,
+        &quot;display_group&quot;: &quot;stress&quot;,
+        &quot;display_group_label&quot;: &quot;创伤与应激相关&quot;,
+        &quot;display_name&quot;: &quot;创伤与应激相关 · 适应障碍&quot;,
+        &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+      }
+    ]
+  },
+  {
+    &quot;group&quot;: &quot;eating&quot;,
+    &quot;label&quot;: &quot;进食相关&quot;,
+    &quot;disorders&quot;: [
+      {
+        &quot;disorder&quot;: &quot;D021&quot;,
+        &quot;name&quot;: &quot;Anorexia Nervosa&quot;,
+        &quot;label&quot;: &quot;神经性厌食&quot;,
+        &quot;display_group&quot;: &quot;eating&quot;,
+        &quot;display_group_label&quot;: &quot;进食相关&quot;,
+        &quot;display_name&quot;: &quot;进食相关 · 神经性厌食&quot;,
+        &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+      },
+      {
+        &quot;disorder&quot;: &quot;D022&quot;,
+        &quot;name&quot;: &quot;Bulimia Nervosa&quot;,
+        &quot;label&quot;: &quot;神经性贪食&quot;,
+        &quot;display_group&quot;: &quot;eating&quot;,
+        &quot;display_group_label&quot;: &quot;进食相关&quot;,
+        &quot;display_name&quot;: &quot;进食相关 · 神经性贪食&quot;,
+        &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+      },
+      {
+        &quot;disorder&quot;: &quot;D023&quot;,
+        &quot;name&quot;: &quot;Binge-Eating Disorder&quot;,
+        &quot;label&quot;: &quot;暴食障碍&quot;,
+        &quot;display_group&quot;: &quot;eating&quot;,
+        &quot;display_group_label&quot;: &quot;进食相关&quot;,
+        &quot;display_name&quot;: &quot;进食相关 · 暴食障碍&quot;,
+        &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+      }
+    ]
+  }
+]</pre></section>
+<section class="card wide"><h2>L3 诊断与 Verifier</h2><pre>{
+  &quot;diagnostic_standard&quot;: &quot;DSM-5&quot;,
+  &quot;supported_disorders&quot;: [
+    &quot;D001&quot;,
+    &quot;D002&quot;,
+    &quot;D003&quot;,
+    &quot;D004&quot;,
+    &quot;D005&quot;,
+    &quot;D006&quot;,
+    &quot;D007&quot;,
+    &quot;D008&quot;,
+    &quot;D009&quot;,
+    &quot;D010&quot;,
+    &quot;D011&quot;,
+    &quot;D012&quot;,
+    &quot;D013&quot;,
+    &quot;D014&quot;,
+    &quot;D015&quot;,
+    &quot;D016&quot;,
+    &quot;D017&quot;,
+    &quot;D018&quot;,
+    &quot;D019&quot;,
+    &quot;D020&quot;,
+    &quot;D021&quot;,
+    &quot;D022&quot;,
+    &quot;D023&quot;,
+    &quot;Insomnia&quot;
+  ],
+  &quot;diagnostic_catalog&quot;: [
+    {
+      &quot;group&quot;: &quot;attention&quot;,
+      &quot;label&quot;: &quot;注意缺陷与多动相关&quot;,
+      &quot;disorders&quot;: [
+        {
+          &quot;disorder&quot;: &quot;D001&quot;,
+          &quot;name&quot;: &quot;Attention-Deficit/Hyperactivity Disorder (Combined Presentation)&quot;,
+          &quot;label&quot;: &quot;注意缺陷/多动障碍（混合表现）&quot;,
+          &quot;display_group&quot;: &quot;attention&quot;,
+          &quot;display_group_label&quot;: &quot;注意缺陷与多动相关&quot;,
+          &quot;display_name&quot;: &quot;注意缺陷与多动相关 · 注意缺陷/多动障碍（混合表现）&quot;,
+          &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+        },
+        {
+          &quot;disorder&quot;: &quot;D002&quot;,
+          &quot;name&quot;: &quot;Attention-Deficit/Hyperactivity Disorder (Predominantly Inattentive Presentation)&quot;,
+          &quot;label&quot;: &quot;注意缺陷/多动障碍（注意缺陷为主）&quot;,
+          &quot;display_group&quot;: &quot;attention&quot;,
+          &quot;display_group_label&quot;: &quot;注意缺陷与多动相关&quot;,
+          &quot;display_name&quot;: &quot;注意缺陷与多动相关 · 注意缺陷/多动障碍（注意缺陷为主）&quot;,
+          &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+        },
+        {
+          &quot;disorder&quot;: &quot;D003&quot;,
+          &quot;name&quot;: &quot;Attention-Deficit/Hyperactivity Disorder (Predominantly Hyperactive/Impulsive Presentation)&quot;,
+          &quot;label&quot;: &quot;注意缺陷/多动障碍（多动冲动为主）&quot;,
+          &quot;display_group&quot;: &quot;attention&quot;,
+          &quot;display_group_label&quot;: &quot;注意缺陷与多动相关&quot;,
+          &quot;display_name&quot;: &quot;注意缺陷与多动相关 · 注意缺陷/多动障碍（多动冲动为主）&quot;,
+          &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+        }
+      ]
+    },
+    {
+      &quot;group&quot;: &quot;psychotic&quot;,
+      &quot;label&quot;: &quot;精神病性及相关障碍&quot;,
+      &quot;disorders&quot;: [
+        {
+          &quot;disorder&quot;: &quot;D004&quot;,
+          &quot;name&quot;: &quot;Delusional Disorder&quot;,
+          &quot;label&quot;: &quot;妄想障碍&quot;,
+          &quot;display_group&quot;: &quot;psychotic&quot;,
+          &quot;display_group_label&quot;: &quot;精神病性及相关障碍&quot;,
+          &quot;display_name&quot;: &quot;精神病性及相关障碍 · 妄想障碍&quot;,
+          &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+        },
+        {
+          &quot;disorder&quot;: &quot;D005&quot;,
+          &quot;name&quot;: &quot;Schizophrenia&quot;,
+          &quot;label&quot;: &quot;精神分裂症&quot;,
+          &quot;display_group&quot;: &quot;psychotic&quot;,
+          &quot;display_group_label&quot;: &quot;精神病性及相关障碍&quot;,
+          &quot;display_name&quot;: &quot;精神病性及相关障碍 · 精神分裂症&quot;,
+          &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+        },
+        {
+          &quot;disorder&quot;: &quot;D006&quot;,
+          &quot;name&quot;: &quot;Schizoaffective Disorder (Bipolar Type)&quot;,
+          &quot;label&quot;: &quot;分裂情感性障碍（双相型）&quot;,
+          &quot;display_group&quot;: &quot;psychotic&quot;,
+          &quot;display_group_label&quot;: &quot;精神病性及相关障碍&quot;,
+          &quot;display_name&quot;: &quot;精神病性及相关障碍 · 分裂情感性障碍（双相型）&quot;,
+          &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+        },
+        {
+          &quot;disorder&quot;: &quot;D007&quot;,
+          &quot;name&quot;: &quot;Schizoaffective Disorder (Depressive Type)&quot;,
+          &quot;label&quot;: &quot;分裂情感性障碍（抑郁型）&quot;,
+          &quot;display_group&quot;: &quot;psychotic&quot;,
+          &quot;display_group_label&quot;: &quot;精神病性及相关障碍&quot;,
+          &quot;display_name&quot;: &quot;精神病性及相关障碍 · 分裂情感性障碍（抑郁型）&quot;,
+          &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+        }
+      ]
+    },
+    {
+      &quot;group&quot;: &quot;bipolar&quot;,
+      &quot;label&quot;: &quot;双相相关&quot;,
+      &quot;disorders&quot;: [
+        {
+          &quot;disorder&quot;: &quot;D008&quot;,
+          &quot;name&quot;: &quot;Bipolar I Disorder&quot;,
+          &quot;label&quot;: &quot;双相Ⅰ型障碍&quot;,
+          &quot;display_group&quot;: &quot;bipolar&quot;,
+          &quot;display_group_label&quot;: &quot;双相相关&quot;,
+          &quot;display_name&quot;: &quot;双相相关 · 双相Ⅰ型障碍&quot;,
+          &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+        },
+        {
+          &quot;disorder&quot;: &quot;D009&quot;,
+          &quot;name&quot;: &quot;Bipolar II Disorder&quot;,
+          &quot;label&quot;: &quot;双相Ⅱ型障碍&quot;,
+          &quot;display_group&quot;: &quot;bipolar&quot;,
+          &quot;display_group_label&quot;: &quot;双相相关&quot;,
+          &quot;display_name&quot;: &quot;双相相关 · 双相Ⅱ型障碍&quot;,
+          &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+        },
+        {
+          &quot;disorder&quot;: &quot;D010&quot;,
+          &quot;name&quot;: &quot;Bipolar I Disorder with Psychotic Features&quot;,
+          &quot;label&quot;: &quot;双相Ⅰ型障碍伴精神病性特征&quot;,
+          &quot;display_group&quot;: &quot;bipolar&quot;,
+          &quot;display_group_label&quot;: &quot;双相相关&quot;,
+          &quot;display_name&quot;: &quot;双相相关 · 双相Ⅰ型障碍伴精神病性特征&quot;,
+          &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+        }
+      ]
+    },
+    {
+      &quot;group&quot;: &quot;anxiety_sleep&quot;,
+      &quot;label&quot;: &quot;焦虑与睡眠相关&quot;,
+      &quot;disorders&quot;: [
+        {
+          &quot;disorder&quot;: &quot;D011&quot;,
+          &quot;name&quot;: &quot;Generalized Anxiety Disorder&quot;,
+          &quot;label&quot;: &quot;广泛性焦虑障碍&quot;,
+          &quot;display_group&quot;: &quot;anxiety_sleep&quot;,
+          &quot;display_group_label&quot;: &quot;焦虑与睡眠相关&quot;,
+          &quot;display_name&quot;: &quot;焦虑与睡眠相关 · 广泛性焦虑障碍&quot;,
+          &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+        },
+        {
+          &quot;disorder&quot;: &quot;D012&quot;,
+          &quot;name&quot;: &quot;Specific Phobia&quot;,
+          &quot;label&quot;: &quot;特定恐怖症&quot;,
+          &quot;display_group&quot;: &quot;anxiety_sleep&quot;,
+          &quot;display_group_label&quot;: &quot;焦虑与睡眠相关&quot;,
+          &quot;display_name&quot;: &quot;焦虑与睡眠相关 · 特定恐怖症&quot;,
+          &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+        },
+        {
+          &quot;disorder&quot;: &quot;Insomnia&quot;,
+          &quot;name&quot;: &quot;Insomnia Disorder&quot;,
+          &quot;label&quot;: &quot;失眠障碍&quot;,
+          &quot;display_group&quot;: &quot;anxiety_sleep&quot;,
+          &quot;display_group_label&quot;: &quot;焦虑与睡眠相关&quot;,
+          &quot;display_name&quot;: &quot;焦虑与睡眠相关 · 失眠障碍&quot;,
+          &quot;knowledge_source&quot;: &quot;knowledge/dsm5_supplement/EN/diagnostic_criteria.json#/Insomnia&quot;
+        }
+      ]
+    },
+    {
+      &quot;group&quot;: &quot;depressive&quot;,
+      &quot;label&quot;: &quot;抑郁相关&quot;,
+      &quot;disorders&quot;: [
+        {
+          &quot;disorder&quot;: &quot;D013&quot;,
+          &quot;name&quot;: &quot;Major Depressive Disorder&quot;,
+          &quot;label&quot;: &quot;重性抑郁障碍&quot;,
+          &quot;display_group&quot;: &quot;depressive&quot;,
+          &quot;display_group_label&quot;: &quot;抑郁相关&quot;,
+          &quot;display_name&quot;: &quot;抑郁相关 · 重性抑郁障碍&quot;,
+          &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+        },
+        {
+          &quot;disorder&quot;: &quot;D014&quot;,
+          &quot;name&quot;: &quot;Persistent Depressive Disorder&quot;,
+          &quot;label&quot;: &quot;持续性抑郁障碍&quot;,
+          &quot;display_group&quot;: &quot;depressive&quot;,
+          &quot;display_group_label&quot;: &quot;抑郁相关&quot;,
+          &quot;display_name&quot;: &quot;抑郁相关 · 持续性抑郁障碍&quot;,
+          &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+        },
+        {
+          &quot;disorder&quot;: &quot;D015&quot;,
+          &quot;name&quot;: &quot;Major Depressive Disorder with Psychotic Features&quot;,
+          &quot;label&quot;: &quot;重性抑郁障碍伴精神病性特征&quot;,
+          &quot;display_group&quot;: &quot;depressive&quot;,
+          &quot;display_group_label&quot;: &quot;抑郁相关&quot;,
+          &quot;display_name&quot;: &quot;抑郁相关 · 重性抑郁障碍伴精神病性特征&quot;,
+          &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+        }
+      ]
+    },
+    {
+      &quot;group&quot;: &quot;obsessive&quot;,
+      &quot;label&quot;: &quot;强迫及相关障碍&quot;,
+      &quot;disorders&quot;: [
+        {
+          &quot;disorder&quot;: &quot;D016&quot;,
+          &quot;name&quot;: &quot;Obsessive-Compulsive Disorder&quot;,
+          &quot;label&quot;: &quot;强迫症&quot;,
+          &quot;display_group&quot;: &quot;obsessive&quot;,
+          &quot;display_group_label&quot;: &quot;强迫及相关障碍&quot;,
+          &quot;display_name&quot;: &quot;强迫及相关障碍 · 强迫症&quot;,
+          &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+        },
+        {
+          &quot;disorder&quot;: &quot;D017&quot;,
+          &quot;name&quot;: &quot;Body Dysmorphic Disorder&quot;,
+          &quot;label&quot;: &quot;躯体变形障碍&quot;,
+          &quot;display_group&quot;: &quot;obsessive&quot;,
+          &quot;display_group_label&quot;: &quot;强迫及相关障碍&quot;,
+          &quot;display_name&quot;: &quot;强迫及相关障碍 · 躯体变形障碍&quot;,
+          &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+        }
+      ]
+    },
+    {
+      &quot;group&quot;: &quot;stress&quot;,
+      &quot;label&quot;: &quot;创伤与应激相关&quot;,
+      &quot;disorders&quot;: [
+        {
+          &quot;disorder&quot;: &quot;D018&quot;,
+          &quot;name&quot;: &quot;Posttraumatic Stress Disorder&quot;,
+          &quot;label&quot;: &quot;创伤后应激障碍&quot;,
+          &quot;display_group&quot;: &quot;stress&quot;,
+          &quot;display_group_label&quot;: &quot;创伤与应激相关&quot;,
+          &quot;display_name&quot;: &quot;创伤与应激相关 · 创伤后应激障碍&quot;,
+          &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+        },
+        {
+          &quot;disorder&quot;: &quot;D019&quot;,
+          &quot;name&quot;: &quot;Acute Stress Disorder&quot;,
+          &quot;label&quot;: &quot;急性应激障碍&quot;,
+          &quot;display_group&quot;: &quot;stress&quot;,
+          &quot;display_group_label&quot;: &quot;创伤与应激相关&quot;,
+          &quot;display_name&quot;: &quot;创伤与应激相关 · 急性应激障碍&quot;,
+          &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+        },
+        {
+          &quot;disorder&quot;: &quot;D020&quot;,
+          &quot;name&quot;: &quot;Adjustment Disorder&quot;,
+          &quot;label&quot;: &quot;适应障碍&quot;,
+          &quot;display_group&quot;: &quot;stress&quot;,
+          &quot;display_group_label&quot;: &quot;创伤与应激相关&quot;,
+          &quot;display_name&quot;: &quot;创伤与应激相关 · 适应障碍&quot;,
+          &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+        }
+      ]
+    },
+    {
+      &quot;group&quot;: &quot;eating&quot;,
+      &quot;label&quot;: &quot;进食相关&quot;,
+      &quot;disorders&quot;: [
+        {
+          &quot;disorder&quot;: &quot;D021&quot;,
+          &quot;name&quot;: &quot;Anorexia Nervosa&quot;,
+          &quot;label&quot;: &quot;神经性厌食&quot;,
+          &quot;display_group&quot;: &quot;eating&quot;,
+          &quot;display_group_label&quot;: &quot;进食相关&quot;,
+          &quot;display_name&quot;: &quot;进食相关 · 神经性厌食&quot;,
+          &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+        },
+        {
+          &quot;disorder&quot;: &quot;D022&quot;,
+          &quot;name&quot;: &quot;Bulimia Nervosa&quot;,
+          &quot;label&quot;: &quot;神经性贪食&quot;,
+          &quot;display_group&quot;: &quot;eating&quot;,
+          &quot;display_group_label&quot;: &quot;进食相关&quot;,
+          &quot;display_name&quot;: &quot;进食相关 · 神经性贪食&quot;,
+          &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+        },
+        {
+          &quot;disorder&quot;: &quot;D023&quot;,
+          &quot;name&quot;: &quot;Binge-Eating Disorder&quot;,
+          &quot;label&quot;: &quot;暴食障碍&quot;,
+          &quot;display_group&quot;: &quot;eating&quot;,
+          &quot;display_group_label&quot;: &quot;进食相关&quot;,
+          &quot;display_name&quot;: &quot;进食相关 · 暴食障碍&quot;,
+          &quot;knowledge_source&quot;: &quot;MentalKG/DSM-5&quot;
+        }
+      ]
+    }
+  ],
+  &quot;considered_disorders&quot;: [],
+  &quot;candidates&quot;: [],
+  &quot;checked&quot;: [],
+  &quot;candidate_generation_method&quot;: &quot;external_reasoner&quot;,
+  &quot;tree_trace&quot;: [],
+  &quot;candidate_coverage&quot;: {},
+  &quot;candidate_missing_dimensions&quot;: [],
+  &quot;layer_id&quot;: &quot;L3&quot;,
+  &quot;timestamp&quot;: &quot;2026-10-14T14:27:55.905598Z&quot;,
+  &quot;diagnosis&quot;: {
+    &quot;primary&quot;: null,
+    &quot;secondary&quot;: [],
+    &quot;under_observation&quot;: [],
+    &quot;ruled_out&quot;: []
+  },
+  &quot;provisional_diagnosis&quot;: null,
+  &quot;verifier_score&quot;: 0.0,
+  &quot;verifier_decision&quot;: &quot;rejected&quot;,
+  &quot;candidate_confidence&quot;: 0.0,
+  &quot;verifier_routing&quot;: &quot;return_to_l2&quot;,
+  &quot;verifier_checks&quot;: [],
+  &quot;verifier_fail_reasons&quot;: [
+    &quot;L2→L3共享输入契约未满足，未调用CLINICR模型&quot;
+  ],
+  &quot;recommended_therapy&quot;: {
+    &quot;primary&quot;: &quot;&quot;,
+    &quot;addon&quot;: [],
+    &quot;plugin_triggers&quot;: [],
+    &quot;strategy_adjustments&quot;: {},
+    &quot;contraindications&quot;: []
+  },
+  &quot;severity_level&quot;: 1,
+  &quot;clinical_notes_for_L4&quot;: &quot;&quot;,
+  &quot;summary&quot;: &quot;患者画像缺少诊断所需字段或对应证据，返回L2补充信息。&quot;,
+  &quot;structured_labels&quot;: {
+    &quot;therapy_routing&quot;: {
+      &quot;primary&quot;: &quot;&quot;,
+      &quot;addon&quot;: [],
+      &quot;plugin_triggers&quot;: [],
+      &quot;strategy_adjustments&quot;: {},
+      &quot;l4_substage_priority&quot;: []
+    },
+    &quot;wording_constraint&quot;: &quot;信息不足，不得形成诊断结论或进入治疗对话&quot;,
+    &quot;risk_monitoring&quot;: []
+  },
+  &quot;evidence_refs&quot;: [],
+  &quot;confidence&quot;: 0.0,
+  &quot;flags&quot;: [
+    &quot;insufficient_diagnostic_evidence&quot;
+  ],
+  &quot;instruction_to_next&quot;: &quot;返回L2补充 Verifier 指定的缺失信息&quot;,
+  &quot;missing_dimensions&quot;: [
+    {
+      &quot;field&quot;: &quot;symptom_duration_days&quot;,
+      &quot;purpose&quot;: &quot;确认主要困扰的持续时间&quot;,
+      &quot;suggested_question&quot;: &quot;这些最主要的困扰大约持续多久了？&quot;
+    },
+    {
+      &quot;field&quot;: &quot;functional_impairment&quot;,
+      &quot;purpose&quot;: &quot;确认困扰是否影响工作、学习、人际或日常生活&quot;,
+      &quot;suggested_question&quot;: &quot;这些情况目前对工作、学习、人际或日常生活造成了哪些影响？&quot;
+    },
+    {
+      &quot;field&quot;: &quot;mania_or_hypomania_history&quot;,
+      &quot;purpose&quot;: &quot;补充鉴别双相障碍所需的既往情绪高涨与精力变化信息&quot;,
+      &quot;suggested_question&quot;: &quot;在这次低落之前或更早，是否有过连续几天异常兴奋、精力明显增多，或者睡得很少却不觉得疲倦的时期？&quot;
+    },
+    {
+      &quot;field&quot;: &quot;substance_or_medical_cause&quot;,
+      &quot;purpose&quot;: &quot;补充 DSM 排除物质、药物或躯体疾病所致症状需要的信息&quot;,
+      &quot;suggested_question&quot;: &quot;这些变化是否可能与饮酒、其他物质、正在使用的药物，或者身体疾病有关？&quot;
+    },
+    {
+      &quot;field&quot;: &quot;psychotic_symptoms&quot;,
+      &quot;purpose&quot;: &quot;补充鉴别精神病性症状所需的信息&quot;,
+      &quot;suggested_question&quot;: &quot;最近是否出现过别人听不到的声音、明显感觉自己正被伤害或监视，或者难以分辨现实的经历？&quot;
+    }
+  ],
+  &quot;l3_validation&quot;: {
+    &quot;passed&quot;: false,
+    &quot;route&quot;: &quot;reject&quot;,
+    &quot;checks&quot;: [
+      {
+        &quot;rule_id&quot;: &quot;V3-CANDIDATE-CONFIDENCE&quot;,
+        &quot;status&quot;: &quot;fail&quot;,
+        &quot;detail&quot;: &quot;缺少主诊断，无法执行该检查&quot;
+      },
+      {
+        &quot;rule_id&quot;: &quot;V3-CONTRAINDICATION-OVERRIDE&quot;,
+        &quot;status&quot;: &quot;fail&quot;,
+        &quot;detail&quot;: &quot;缺少主诊断，无法执行该检查&quot;
+      },
+      {
+        &quot;rule_id&quot;: &quot;V3-CRITERIA-EVIDENCE&quot;,
+        &quot;status&quot;: &quot;fail&quot;,
+        &quot;detail&quot;: &quot;缺少主诊断，无法执行该检查&quot;
+      },
+      {
+        &quot;rule_id&quot;: &quot;V3-PLUGIN-ROUTING&quot;,
+        &quot;status&quot;: &quot;fail&quot;,
+        &quot;detail&quot;: &quot;缺少主诊断，无法执行该检查&quot;
+      },
+      {
+        &quot;rule_id&quot;: &quot;V3-PRIMARY-NOT-RULED-OUT&quot;,
+        &quot;status&quot;: &quot;fail&quot;,
+        &quot;detail&quot;: &quot;缺少主诊断，无法执行该检查&quot;
+      },
+      {
+        &quot;rule_id&quot;: &quot;V3-THERAPY-ADJUSTMENT&quot;,
+        &quot;status&quot;: &quot;fail&quot;,
+        &quot;detail&quot;: &quot;缺少主诊断，无法执行该检查&quot;
+      },
+      {
+        &quot;rule_id&quot;: &quot;V3-THERAPY-MATCH&quot;,
+        &quot;status&quot;: &quot;fail&quot;,
+        &quot;detail&quot;: &quot;缺少主诊断，无法执行该检查&quot;
+      },
+      {
+        &quot;rule_id&quot;: &quot;V3-TREATMENT-INSTRUCTIONS&quot;,
+        &quot;status&quot;: &quot;fail&quot;,
+        &quot;detail&quot;: &quot;缺少主诊断，无法执行该检查&quot;
+      }
+    ],
+    &quot;payload_hash&quot;: &quot;cd5f45ea4cb27cb6d3ee5cffa993bcc117cbe3775339e7ccd73f00e263dfda82&quot;,
+    &quot;policy_version&quot;: &quot;L3_OUTPUT_V1&quot;
+  },
+  &quot;instructions&quot;: {
+    &quot;L2&quot;: {
+      &quot;action&quot;: &quot;collect_missing_dimensions&quot;,
+      &quot;missing_dimensions&quot;: [
+        {
+          &quot;field&quot;: &quot;symptom_duration_days&quot;,
+          &quot;purpose&quot;: &quot;确认主要困扰的持续时间&quot;,
+          &quot;suggested_question&quot;: &quot;这些最主要的困扰大约持续多久了？&quot;
+        },
+        {
+          &quot;field&quot;: &quot;functional_impairment&quot;,
+          &quot;purpose&quot;: &quot;确认困扰是否影响工作、学习、人际或日常生活&quot;,
+          &quot;suggested_question&quot;: &quot;这些情况目前对工作、学习、人际或日常生活造成了哪些影响？&quot;
+        },
+        {
+          &quot;field&quot;: &quot;mania_or_hypomania_history&quot;,
+          &quot;purpose&quot;: &quot;补充鉴别双相障碍所需的既往情绪高涨与精力变化信息&quot;,
+          &quot;suggested_question&quot;: &quot;在这次低落之前或更早，是否有过连续几天异常兴奋、精力明显增多，或者睡得很少却不觉得疲倦的时期？&quot;
+        },
+        {
+          &quot;field&quot;: &quot;substance_or_medical_cause&quot;,
+          &quot;purpose&quot;: &quot;补充 DSM 排除物质、药物或躯体疾病所致症状需要的信息&quot;,
+          &quot;suggested_question&quot;: &quot;这些变化是否可能与饮酒、其他物质、正在使用的药物，或者身体疾病有关？&quot;
+        },
+        {
+          &quot;field&quot;: &quot;psychotic_symptoms&quot;,
+          &quot;purpose&quot;: &quot;补充鉴别精神病性症状所需的信息&quot;,
+          &quot;suggested_question&quot;: &quot;最近是否出现过别人听不到的声音、明显感觉自己正被伤害或监视，或者难以分辨现实的经历？&quot;
+        }
+      ]
+    }
+  }
+}</pre></section>
+<section class="card wide"><h2>L3→L2 待补充维度</h2><pre>[
+  {
+    &quot;field&quot;: &quot;symptom_duration_days&quot;,
+    &quot;purpose&quot;: &quot;确认主要困扰的持续时间&quot;,
+    &quot;suggested_question&quot;: &quot;这些最主要的困扰大约持续多久了？&quot;
+  },
+  {
+    &quot;field&quot;: &quot;functional_impairment&quot;,
+    &quot;purpose&quot;: &quot;确认困扰是否影响工作、学习、人际或日常生活&quot;,
+    &quot;suggested_question&quot;: &quot;这些情况目前对工作、学习、人际或日常生活造成了哪些影响？&quot;
+  },
+  {
+    &quot;field&quot;: &quot;mania_or_hypomania_history&quot;,
+    &quot;purpose&quot;: &quot;补充鉴别双相障碍所需的既往情绪高涨与精力变化信息&quot;,
+    &quot;suggested_question&quot;: &quot;在这次低落之前或更早，是否有过连续几天异常兴奋、精力明显增多，或者睡得很少却不觉得疲倦的时期？&quot;
+  },
+  {
+    &quot;field&quot;: &quot;substance_or_medical_cause&quot;,
+    &quot;purpose&quot;: &quot;补充 DSM 排除物质、药物或躯体疾病所致症状需要的信息&quot;,
+    &quot;suggested_question&quot;: &quot;这些变化是否可能与饮酒、其他物质、正在使用的药物，或者身体疾病有关？&quot;
+  },
+  {
+    &quot;field&quot;: &quot;psychotic_symptoms&quot;,
+    &quot;purpose&quot;: &quot;补充鉴别精神病性症状所需的信息&quot;,
+    &quot;suggested_question&quot;: &quot;最近是否出现过别人听不到的声音、明显感觉自己正被伤害或监视，或者难以分辨现实的经历？&quot;
+  }
+]</pre></section>
+</div>
+</main></body></html>

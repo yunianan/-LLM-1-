@@ -3,7 +3,7 @@
   "timestamp": "2026-07-28T14:52:00Z",
   "diagnosis": {
     "primary": {
-      "disorder": "MDD",
+      "disorder": "D013",
       "confidence": 0.87,
       "severity": "moderate",
       "dsm5_criteria_met": [
@@ -60,25 +60,49 @@
             "PHQ9_item8=2"
           ]
         }
-      ]
+      ],
+      "name": "Major Depressive Disorder",
+      "label": "重性抑郁障碍",
+      "display_group": "depressive",
+      "display_group_label": "抑郁相关",
+      "display_name": "抑郁相关 · 重性抑郁障碍",
+      "knowledge_source": "MentalKG/DSM-5"
     },
     "secondary": [
       {
-        "disorder": "Insomnia Disorder",
+        "disorder": "Insomnia",
         "confidence": 0.65,
-        "evidence": "ISI=14接近重度阈值，入睡困难+早醒"
+        "evidence": "ISI=14接近重度阈值，入睡困难+早醒",
+        "name": "Insomnia Disorder",
+        "label": "失眠障碍",
+        "display_group": "sleep",
+        "display_group_label": "睡眠相关",
+        "display_name": "睡眠相关 · 失眠障碍",
+        "knowledge_source": "knowledge/dsm5_supplement/EN/diagnostic_criteria.json#/Insomnia"
       }
     ],
     "ruled_out": [
       {
-        "disorder": "Bipolar II",
+        "disorder": "D009",
         "reason": "MDQ=3<7阈值，无轻躁狂/躁狂发作史",
-        "evidence_ref": "MDQ筛查指南"
+        "evidence_ref": "MDQ筛查指南",
+        "name": "Bipolar II Disorder",
+        "label": "双相Ⅱ型障碍",
+        "display_group": "bipolar",
+        "display_group_label": "双相相关",
+        "display_name": "双相相关 · 双相Ⅱ型障碍",
+        "knowledge_source": "MentalKG/DSM-5"
       },
       {
-        "disorder": "PTSD",
+        "disorder": "D018",
         "reason": "PCL-5 skipped per L1 safety flag",
-        "evidence_ref": "L1 SafetyPassport"
+        "evidence_ref": "L1 SafetyPassport",
+        "name": "Posttraumatic Stress Disorder",
+        "label": "创伤后应激障碍",
+        "display_group": "stress",
+        "display_group_label": "创伤与应激相关",
+        "display_name": "创伤与应激相关 · 创伤后应激障碍",
+        "knowledge_source": "MentalKG/DSM-5"
       }
     ]
   },
@@ -184,13 +208,13 @@
   "evidence_refs": [
     {
       "type": "DSM-5",
-      "disorder": "MDD",
+      "disorder": "D013",
       "criteria_met": "A1-A5 (5/9 >= 5)",
       "source_doc": "DSM-5_TR_zh_v1.0"
     },
     {
       "type": "scale",
-      "disorder": "MDD",
+      "disorder": "D013",
       "source": "PHQ-9",
       "threshold": ">=15中重度"
     },
@@ -224,7 +248,7 @@
       {
         "rule_id": "V3-PRIMARY-NOT-RULED-OUT",
         "status": "pass",
-        "detail": "主诊断=MDD，排除诊断=['BIPOLAR', 'PTSD']"
+        "detail": "主诊断=D013，排除诊断=['D009', 'D018']"
       },
       {
         "rule_id": "V3-CRITERIA-EVIDENCE",
@@ -234,7 +258,7 @@
       {
         "rule_id": "V3-THERAPY-MATCH",
         "status": "pass",
-        "detail": "主诊断=MDD，疗法=CBT，允许值=['CBT', 'CBT+BA']"
+        "detail": "主诊断=D013，疗法=CBT，允许值=['CBT', 'CBT+BA']"
       },
       {
         "rule_id": "V3-PLUGIN-ROUTING",
@@ -252,7 +276,7 @@
         "detail": "暴露禁用=False，暴露插件=[]，成瘾优先=False"
       }
     ],
-    "payload_hash": "5bcbbcd53d4e08c9e558396a0fd3b2b79684b583205d94c809421262ec3bf1a8",
+    "payload_hash": "67765aa9aaf5a525da2bac86fba383c52fe2a2fca992910c9c589b88b58a1f36",
     "policy_version": "L3_OUTPUT_V1"
   },
   "verifier_decision": "confirmed",
@@ -271,13 +295,13 @@
       ]
     },
     "L2": {
-      "primary": "MDD",
+      "primary": "D013",
       "comorbidities": [
-        "Insomnia Disorder"
+        "Insomnia"
       ],
       "excluded": [
-        "Bipolar II",
-        "PTSD"
+        "D009",
+        "D018"
       ],
       "core_beliefs": [],
       "plugins": [
@@ -327,7 +351,7 @@
       "verifier_decision": "confirmed",
       "diagnosis_details": {
         "primary": {
-          "disorder": "MDD",
+          "disorder": "D013",
           "confidence": 0.87,
           "severity": "moderate",
           "dsm5_criteria_met": [
@@ -384,25 +408,49 @@
                 "PHQ9_item8=2"
               ]
             }
-          ]
+          ],
+          "name": "Major Depressive Disorder",
+          "label": "重性抑郁障碍",
+          "display_group": "depressive",
+          "display_group_label": "抑郁相关",
+          "display_name": "抑郁相关 · 重性抑郁障碍",
+          "knowledge_source": "MentalKG/DSM-5"
         },
         "secondary": [
           {
-            "disorder": "Insomnia Disorder",
+            "disorder": "Insomnia",
             "confidence": 0.65,
-            "evidence": "ISI=14接近重度阈值，入睡困难+早醒"
+            "evidence": "ISI=14接近重度阈值，入睡困难+早醒",
+            "name": "Insomnia Disorder",
+            "label": "失眠障碍",
+            "display_group": "sleep",
+            "display_group_label": "睡眠相关",
+            "display_name": "睡眠相关 · 失眠障碍",
+            "knowledge_source": "knowledge/dsm5_supplement/EN/diagnostic_criteria.json#/Insomnia"
           }
         ],
         "ruled_out": [
           {
-            "disorder": "Bipolar II",
+            "disorder": "D009",
             "reason": "MDQ=3<7阈值，无轻躁狂/躁狂发作史",
-            "evidence_ref": "MDQ筛查指南"
+            "evidence_ref": "MDQ筛查指南",
+            "name": "Bipolar II Disorder",
+            "label": "双相Ⅱ型障碍",
+            "display_group": "bipolar",
+            "display_group_label": "双相相关",
+            "display_name": "双相相关 · 双相Ⅱ型障碍",
+            "knowledge_source": "MentalKG/DSM-5"
           },
           {
-            "disorder": "PTSD",
+            "disorder": "D018",
             "reason": "PCL-5 skipped per L1 safety flag",
-            "evidence_ref": "L1 SafetyPassport"
+            "evidence_ref": "L1 SafetyPassport",
+            "name": "Posttraumatic Stress Disorder",
+            "label": "创伤后应激障碍",
+            "display_group": "stress",
+            "display_group_label": "创伤与应激相关",
+            "display_name": "创伤与应激相关 · 创伤后应激障碍",
+            "knowledge_source": "MentalKG/DSM-5"
           }
         ]
       },
@@ -439,5 +487,304 @@
       ],
       "safety_trigger": "表达主动自伤、自杀或伤人意图时立即停止普通治疗并触发 L1 安全协议；不得自行解除 L1 限制"
     }
-  }
+  },
+  "diagnostic_standard": "DSM-5",
+  "supported_disorders": [
+    "D001",
+    "D002",
+    "D003",
+    "D004",
+    "D005",
+    "D006",
+    "D007",
+    "D008",
+    "D009",
+    "D010",
+    "D011",
+    "D012",
+    "D013",
+    "D014",
+    "D015",
+    "D016",
+    "D017",
+    "D018",
+    "D019",
+    "D020",
+    "D021",
+    "D022",
+    "D023",
+    "Insomnia"
+  ],
+  "diagnostic_catalog": [
+    {
+      "group": "attention",
+      "label": "注意缺陷与多动相关",
+      "disorders": [
+        {
+          "disorder": "D001",
+          "name": "Attention-Deficit/Hyperactivity Disorder (Combined Presentation)",
+          "label": "注意缺陷/多动障碍（混合表现）",
+          "display_group": "attention",
+          "display_group_label": "注意缺陷与多动相关",
+          "display_name": "注意缺陷与多动相关 · 注意缺陷/多动障碍（混合表现）",
+          "knowledge_source": "MentalKG/DSM-5"
+        },
+        {
+          "disorder": "D002",
+          "name": "Attention-Deficit/Hyperactivity Disorder (Predominantly Inattentive Presentation)",
+          "label": "注意缺陷/多动障碍（注意缺陷为主）",
+          "display_group": "attention",
+          "display_group_label": "注意缺陷与多动相关",
+          "display_name": "注意缺陷与多动相关 · 注意缺陷/多动障碍（注意缺陷为主）",
+          "knowledge_source": "MentalKG/DSM-5"
+        },
+        {
+          "disorder": "D003",
+          "name": "Attention-Deficit/Hyperactivity Disorder (Predominantly Hyperactive/Impulsive Presentation)",
+          "label": "注意缺陷/多动障碍（多动冲动为主）",
+          "display_group": "attention",
+          "display_group_label": "注意缺陷与多动相关",
+          "display_name": "注意缺陷与多动相关 · 注意缺陷/多动障碍（多动冲动为主）",
+          "knowledge_source": "MentalKG/DSM-5"
+        }
+      ]
+    },
+    {
+      "group": "psychotic",
+      "label": "精神病性及相关障碍",
+      "disorders": [
+        {
+          "disorder": "D004",
+          "name": "Delusional Disorder",
+          "label": "妄想障碍",
+          "display_group": "psychotic",
+          "display_group_label": "精神病性及相关障碍",
+          "display_name": "精神病性及相关障碍 · 妄想障碍",
+          "knowledge_source": "MentalKG/DSM-5"
+        },
+        {
+          "disorder": "D005",
+          "name": "Schizophrenia",
+          "label": "精神分裂症",
+          "display_group": "psychotic",
+          "display_group_label": "精神病性及相关障碍",
+          "display_name": "精神病性及相关障碍 · 精神分裂症",
+          "knowledge_source": "MentalKG/DSM-5"
+        },
+        {
+          "disorder": "D006",
+          "name": "Schizoaffective Disorder (Bipolar Type)",
+          "label": "分裂情感性障碍（双相型）",
+          "display_group": "psychotic",
+          "display_group_label": "精神病性及相关障碍",
+          "display_name": "精神病性及相关障碍 · 分裂情感性障碍（双相型）",
+          "knowledge_source": "MentalKG/DSM-5"
+        },
+        {
+          "disorder": "D007",
+          "name": "Schizoaffective Disorder (Depressive Type)",
+          "label": "分裂情感性障碍（抑郁型）",
+          "display_group": "psychotic",
+          "display_group_label": "精神病性及相关障碍",
+          "display_name": "精神病性及相关障碍 · 分裂情感性障碍（抑郁型）",
+          "knowledge_source": "MentalKG/DSM-5"
+        }
+      ]
+    },
+    {
+      "group": "bipolar",
+      "label": "双相相关",
+      "disorders": [
+        {
+          "disorder": "D008",
+          "name": "Bipolar I Disorder",
+          "label": "双相Ⅰ型障碍",
+          "display_group": "bipolar",
+          "display_group_label": "双相相关",
+          "display_name": "双相相关 · 双相Ⅰ型障碍",
+          "knowledge_source": "MentalKG/DSM-5"
+        },
+        {
+          "disorder": "D009",
+          "name": "Bipolar II Disorder",
+          "label": "双相Ⅱ型障碍",
+          "display_group": "bipolar",
+          "display_group_label": "双相相关",
+          "display_name": "双相相关 · 双相Ⅱ型障碍",
+          "knowledge_source": "MentalKG/DSM-5"
+        },
+        {
+          "disorder": "D010",
+          "name": "Bipolar I Disorder with Psychotic Features",
+          "label": "双相Ⅰ型障碍伴精神病性特征",
+          "display_group": "bipolar",
+          "display_group_label": "双相相关",
+          "display_name": "双相相关 · 双相Ⅰ型障碍伴精神病性特征",
+          "knowledge_source": "MentalKG/DSM-5"
+        }
+      ]
+    },
+    {
+      "group": "anxiety",
+      "label": "焦虑相关",
+      "disorders": [
+        {
+          "disorder": "D011",
+          "name": "Generalized Anxiety Disorder",
+          "label": "广泛性焦虑障碍",
+          "display_group": "anxiety",
+          "display_group_label": "焦虑相关",
+          "display_name": "焦虑相关 · 广泛性焦虑障碍",
+          "knowledge_source": "MentalKG/DSM-5"
+        },
+        {
+          "disorder": "D012",
+          "name": "Specific Phobia",
+          "label": "特定恐怖症",
+          "display_group": "anxiety",
+          "display_group_label": "焦虑相关",
+          "display_name": "焦虑相关 · 特定恐怖症",
+          "knowledge_source": "MentalKG/DSM-5"
+        }
+      ]
+    },
+    {
+      "group": "sleep",
+      "label": "睡眠相关",
+      "disorders": [
+        {
+          "disorder": "Insomnia",
+          "name": "Insomnia Disorder",
+          "label": "失眠障碍",
+          "display_group": "sleep",
+          "display_group_label": "睡眠相关",
+          "display_name": "睡眠相关 · 失眠障碍",
+          "knowledge_source": "knowledge/dsm5_supplement/EN/diagnostic_criteria.json#/Insomnia"
+        }
+      ]
+    },
+    {
+      "group": "depressive",
+      "label": "抑郁相关",
+      "disorders": [
+        {
+          "disorder": "D013",
+          "name": "Major Depressive Disorder",
+          "label": "重性抑郁障碍",
+          "display_group": "depressive",
+          "display_group_label": "抑郁相关",
+          "display_name": "抑郁相关 · 重性抑郁障碍",
+          "knowledge_source": "MentalKG/DSM-5"
+        },
+        {
+          "disorder": "D014",
+          "name": "Persistent Depressive Disorder",
+          "label": "持续性抑郁障碍",
+          "display_group": "depressive",
+          "display_group_label": "抑郁相关",
+          "display_name": "抑郁相关 · 持续性抑郁障碍",
+          "knowledge_source": "MentalKG/DSM-5"
+        },
+        {
+          "disorder": "D015",
+          "name": "Major Depressive Disorder with Psychotic Features",
+          "label": "重性抑郁障碍伴精神病性特征",
+          "display_group": "depressive",
+          "display_group_label": "抑郁相关",
+          "display_name": "抑郁相关 · 重性抑郁障碍伴精神病性特征",
+          "knowledge_source": "MentalKG/DSM-5"
+        }
+      ]
+    },
+    {
+      "group": "obsessive",
+      "label": "强迫及相关障碍",
+      "disorders": [
+        {
+          "disorder": "D016",
+          "name": "Obsessive-Compulsive Disorder",
+          "label": "强迫症",
+          "display_group": "obsessive",
+          "display_group_label": "强迫及相关障碍",
+          "display_name": "强迫及相关障碍 · 强迫症",
+          "knowledge_source": "MentalKG/DSM-5"
+        },
+        {
+          "disorder": "D017",
+          "name": "Body Dysmorphic Disorder",
+          "label": "躯体变形障碍",
+          "display_group": "obsessive",
+          "display_group_label": "强迫及相关障碍",
+          "display_name": "强迫及相关障碍 · 躯体变形障碍",
+          "knowledge_source": "MentalKG/DSM-5"
+        }
+      ]
+    },
+    {
+      "group": "stress",
+      "label": "创伤与应激相关",
+      "disorders": [
+        {
+          "disorder": "D018",
+          "name": "Posttraumatic Stress Disorder",
+          "label": "创伤后应激障碍",
+          "display_group": "stress",
+          "display_group_label": "创伤与应激相关",
+          "display_name": "创伤与应激相关 · 创伤后应激障碍",
+          "knowledge_source": "MentalKG/DSM-5"
+        },
+        {
+          "disorder": "D019",
+          "name": "Acute Stress Disorder",
+          "label": "急性应激障碍",
+          "display_group": "stress",
+          "display_group_label": "创伤与应激相关",
+          "display_name": "创伤与应激相关 · 急性应激障碍",
+          "knowledge_source": "MentalKG/DSM-5"
+        },
+        {
+          "disorder": "D020",
+          "name": "Adjustment Disorder",
+          "label": "适应障碍",
+          "display_group": "stress",
+          "display_group_label": "创伤与应激相关",
+          "display_name": "创伤与应激相关 · 适应障碍",
+          "knowledge_source": "MentalKG/DSM-5"
+        }
+      ]
+    },
+    {
+      "group": "eating",
+      "label": "进食相关",
+      "disorders": [
+        {
+          "disorder": "D021",
+          "name": "Anorexia Nervosa",
+          "label": "神经性厌食",
+          "display_group": "eating",
+          "display_group_label": "进食相关",
+          "display_name": "进食相关 · 神经性厌食",
+          "knowledge_source": "MentalKG/DSM-5"
+        },
+        {
+          "disorder": "D022",
+          "name": "Bulimia Nervosa",
+          "label": "神经性贪食",
+          "display_group": "eating",
+          "display_group_label": "进食相关",
+          "display_name": "进食相关 · 神经性贪食",
+          "knowledge_source": "MentalKG/DSM-5"
+        },
+        {
+          "disorder": "D023",
+          "name": "Binge-Eating Disorder",
+          "label": "暴食障碍",
+          "display_group": "eating",
+          "display_group_label": "进食相关",
+          "display_name": "进食相关 · 暴食障碍",
+          "knowledge_source": "MentalKG/DSM-5"
+        }
+      ]
+    }
+  ]
 }

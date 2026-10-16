@@ -4,6 +4,7 @@ import pytest
 
 from layers.layer3.diagnosis.clinicr import CLINICR
 from layers.layer3.llm import client
+from tests.tree_test_support import node_payload
 
 
 def test_production_clinicr_uses_api_for_all_three_steps(monkeypatch):
@@ -21,41 +22,8 @@ def test_production_clinicr_uses_api_for_all_three_steps(monkeypatch):
             "item5": 2,
         },
     }
-    candidate_generation = {
-        "considered_disorders": [
-            "MDD", "GAD", "PTSD", "OCD", "Insomnia", "PanicDisorder",
-            "SocialAnxietyDisorder", "AdjustmentDisorder",
-            "SomaticSymptomDisorder", "Bipolar",
-        ],
-        "candidates": [
-            {
-                "disorder": "MDD",
-                "label": "重性抑郁障碍",
-                "symptom_match": {"matched": 5, "total": 9},
-                "core_evidence_summary": "五项症状证据",
-                "evidence_refs": ["PHQ9=16"],
-                "confidence": 0.75,
-            },
-            {
-                "disorder": "GAD",
-                "label": "广泛性焦虑障碍",
-                "symptom_match": {"matched": 2, "total": 6},
-                "core_evidence_summary": "少量焦虑线索",
-                "evidence_refs": ["PHQ9=16"],
-                "confidence": 0.45,
-            },
-            {
-                "disorder": "Bipolar",
-                "label": "双相Ⅱ型",
-                "symptom_match": {"matched": 1, "total": 7},
-                "core_evidence_summary": "重要排除诊断",
-                "evidence_refs": ["MDQ=3"],
-                "confidence": 0.15,
-            },
-        ],
-    }
     mdd = {
-        "disorder": "MDD",
+        "disorder": "D013",
         "criteria_detail": [
             {
                 "code": f"A{index}",
@@ -71,7 +39,7 @@ def test_production_clinicr_uses_api_for_all_three_steps(monkeypatch):
         "missing_dimensions": [],
     }
     gad = {
-        "disorder": "GAD",
+        "disorder": "D011",
         "criteria_detail": [{
             "code": "C1",
             "name": "过度担忧",
@@ -88,7 +56,7 @@ def test_production_clinicr_uses_api_for_all_three_steps(monkeypatch):
         }],
     }
     bipolar = {
-        "disorder": "Bipolar",
+        "disorder": "D009",
         "criteria_detail": [{
             "code": "CORE",
             "name": "轻躁狂史",
@@ -119,7 +87,7 @@ def test_production_clinicr_uses_api_for_all_three_steps(monkeypatch):
         "fail_reasons": [],
         "missing_dimensions": [],
     }
-    candidate_results = {"MDD": mdd, "GAD": gad, "Bipolar": bipolar}
+    candidate_results = {"D013": mdd, "D011": gad, "D009": bipolar}
     calls = []
 
     def controlled_api(
@@ -139,8 +107,8 @@ def test_production_clinicr_uses_api_for_all_three_steps(monkeypatch):
             "extra_body": extra_body,
             "response_format": response_format,
         })
-        if "CLINICR 鉴别诊断生成器" in prompt:
-            response = candidate_generation
+        if "DSM-5 决策树节点判定器" in prompt:
+            response = node_payload(prompt, ["D013", "D011", "D009"], "PHQ9_item2=3")
         elif "Reward Model Verifier" in prompt:
             response = verifier
         else:
@@ -155,17 +123,19 @@ def test_production_clinicr_uses_api_for_all_three_steps(monkeypatch):
 
     result = CLINICR().run(profile)
 
-    assert result["diagnosis"]["primary"]["disorder"] == "MDD"
+    assert result["diagnosis"]["primary"]["disorder"] == "D013"
     assert result["verifier_score"] == 0.87
-    assert len(calls) == 5
-    assert calls[0]["temperature"] == 0.3
-    assert all(call["temperature"] == 0 for call in calls[1:])
-    assert [call["timeout"] for call in calls] == [60.0] * 5
+    assert len(calls) > 5
+    assert len([call for call in calls if "ELIMINATIVE" in call["prompt"]]) == 3
+    assert result["candidate_generation_method"] == "dsm5_decision_tree"
+    assert result["tree_trace"]
+    assert all(call["temperature"] == 0 for call in calls)
+    assert all(call["timeout"] == 60.0 for call in calls)
     assert all(call["extra_body"] == {
         "enable_thinking": True,
         "reasoning_effort": "medium",
     } for call in calls)
-    assert calls[0]["response_format"] is None
+    assert calls[0]["response_format"] == {"type": "json_object"}
     assert all(
         call["response_format"] == {"type": "json_object"}
         for call in calls[1:4]
@@ -188,35 +158,23 @@ def test_step1_maps_exact_scalar_field_alias_to_traceable_evidence_node(monkeypa
         }],
         client.ALLOWED_EVIDENCE_REFS_KEY: ["ev-duration"],
     }
-    response = {
-        "considered_disorders": [
-            "MDD", "GAD", "PTSD", "OCD", "Insomnia", "PanicDisorder",
-            "SocialAnxietyDisorder", "AdjustmentDisorder",
-            "SomaticSymptomDisorder", "Bipolar",
-        ],
-        "candidates": [
-            {
-                "disorder": disorder,
-                "label": disorder,
-                "symptom_match": {"matched": 1, "total": 9},
-                "core_evidence_summary": "症状已持续约45天",
-                "evidence_refs": ["symptom_duration_days=45"],
-                "confidence": confidence,
-            }
-            for disorder, confidence in (("MDD", 0.7), ("GAD", 0.4), ("Bipolar", 0.2))
-        ],
-    }
     prompts = []
 
     def controlled_api(prompt, **kwargs):
         prompts.append(prompt)
-        return json.dumps(response, ensure_ascii=False)
+        return json.dumps({"nodes": [{"node_id": "criterion.D013.depressive_episode/min_duration",
+                          "status": "met", "rationale": "45天病程",
+                          "evidence_refs": ["symptom_duration_days=45"],
+                          "symptom_ids": [], "confidence": 0.7}]}, ensure_ascii=False)
 
     monkeypatch.setattr("layers.layer3.llm.client.ask_llm_stream", controlled_api)
 
-    result = client.APICLINICRReasoner(model="deepseek-chat").generate_candidates(profile)
+    result = client.APICLINICRReasoner(model="deepseek-chat")._evaluate_tree_nodes(profile, [{
+        "node_id": "criterion.D013.depressive_episode/min_duration", "stage": "criterion", "disorders": ["D013"],
+        "symptom_pool": [], "question": "是否达到来源规定病程？",
+    }])
 
-    assert all(item.evidence_refs == ["ev-duration"] for item in result.candidates)
+    assert all(item.evidence_refs == ["ev-duration"] for item in result)
     assert '"ref": "ev-duration"' in prompts[0]
     assert '"target_path": "diagnostic_context.symptom_duration_days"' in prompts[0]
     assert '"patient_quote": "这一个多月"' in prompts[0]
@@ -255,7 +213,7 @@ def test_invalid_qwen_reasoning_effort_is_rejected(monkeypatch):
 
 def _step2_candidate():
     return client.DiagnosticCandidate.model_validate({
-        "disorder": "MDD",
+        "disorder": "D013",
         "label": "重性抑郁障碍",
         "symptom_match": {"matched": 1, "total": 9},
         "core_evidence_summary": "情绪低落",
@@ -266,7 +224,7 @@ def _step2_candidate():
 
 def _valid_step2_payload():
     return {
-        "disorder": "MDD",
+        "disorder": "D013",
         "criteria_detail": [{
             "code": "A1",
             "name": "情绪低落",
@@ -286,7 +244,7 @@ def _valid_step2_payload():
 
 def test_step2_retries_once_when_first_json_is_malformed(monkeypatch):
     responses = iter([
-        '{"disorder":"MDD" "criteria_detail":[]}',
+        '{"disorder":"D013" "criteria_detail":[]}',
         json.dumps(_valid_step2_payload(), ensure_ascii=False),
     ])
     calls = []
@@ -309,7 +267,7 @@ def test_step2_retries_once_when_first_json_is_malformed(monkeypatch):
         profile, _step2_candidate()
     )
 
-    assert result.disorder == "MDD"
+    assert result.disorder == "D013"
     assert len(calls) == 2
     assert all(call["response_format"] == {"type": "json_object"} for call in calls)
     assert "上一次回答不是" not in calls[0]["prompt"]
@@ -321,7 +279,7 @@ def test_step2_fails_closed_after_one_invalid_json_retry(monkeypatch):
 
     def controlled_api(prompt, **kwargs):
         calls.append(prompt)
-        return '{"disorder":"MDD" "criteria_detail":[]}'
+        return '{"disorder":"D013" "criteria_detail":[]}'
 
     monkeypatch.setattr(client, "ask_llm_stream", controlled_api)
     profile = {client.ALLOWED_EVIDENCE_REFS_KEY: []}
@@ -409,7 +367,7 @@ def test_step2_retries_provider_structured_json_api_error_once(monkeypatch):
         profile, _step2_candidate()
     )
 
-    assert result.disorder == "MDD"
+    assert result.disorder == "D013"
     assert len(calls) == 2
 
 
@@ -473,9 +431,9 @@ def _score_with_test_inputs(model):
     assessment = client.EliminativeAssessment.model_validate(_valid_step2_payload())
     return model.score_reasoning(
         profile,
-        {"disorder": "MDD", "evidence_refs": ["ev-mood"]},
+        {"disorder": "D013", "evidence_refs": ["ev-mood"]},
         assessment,
-        [{"disorder": "GAD", "conclusion": "watch"}],
+        [{"disorder": "D011", "conclusion": "watch"}],
     )
 
 

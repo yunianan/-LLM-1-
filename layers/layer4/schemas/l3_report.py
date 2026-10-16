@@ -14,7 +14,16 @@ class DSMCriterionEvidence(BaseModel):
     evidence_refs: list[str] = Field(default_factory=list)
 
 
-class PrimaryDiagnosis(BaseModel):
+class DiagnosticDisplay(BaseModel):
+    name: str = ""
+    label: str = ""
+    display_group: str = ""
+    display_group_label: str = ""
+    display_name: str = ""
+    knowledge_source: str = ""
+
+
+class PrimaryDiagnosis(DiagnosticDisplay):
     disorder: str
     confidence: float = 0.0
     severity: str = ""
@@ -23,19 +32,19 @@ class PrimaryDiagnosis(BaseModel):
     dsm5_criteria_detail: list[DSMCriterionEvidence] = Field(default_factory=list)
 
 
-class SecondaryDiagnosis(BaseModel):
+class SecondaryDiagnosis(DiagnosticDisplay):
     disorder: str
     confidence: float = 0.0
     evidence: str = ""
 
 
-class RuledOutDiagnosis(BaseModel):
+class RuledOutDiagnosis(DiagnosticDisplay):
     disorder: str
     reason: str = ""
     evidence_ref: str = ""
 
 
-class UnderObservationDiagnosis(BaseModel):
+class UnderObservationDiagnosis(DiagnosticDisplay):
     disorder: str
     confidence: float = 0.0
     reason: str = ""
@@ -117,6 +126,16 @@ class L3ValidationReceipt(BaseModel):
 class DiagnosticReport(BaseModel):
     """接口三：L3 → L4 DiagnosticReport（诊断报告）。未知字段忽略，真实 L3 完整 JSON 可解析。"""
 
+    diagnostic_standard: Literal["DSM-5"] = "DSM-5"
+    supported_disorders: list[str] = Field(default_factory=list)
+    diagnostic_catalog: list[dict[str, Any]] = Field(default_factory=list)
+    considered_disorders: list[str] = Field(default_factory=list)
+    candidates: list[dict[str, Any]] = Field(default_factory=list)
+    checked: list[dict[str, Any]] = Field(default_factory=list)
+    candidate_generation_method: str = "external_reasoner"
+    tree_trace: list[dict[str, Any]] = Field(default_factory=list)
+    candidate_coverage: dict[str, str] = Field(default_factory=dict)
+    candidate_missing_dimensions: list[dict[str, str]] = Field(default_factory=list)
     layer_id: str = "L3"
     timestamp: str = ""
     diagnosis: Diagnosis = Diagnosis()

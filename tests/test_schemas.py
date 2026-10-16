@@ -35,7 +35,7 @@ def test_turn_instruction_force_substage_enum():
 
 
 def test_anchor_therapy_type():
-    a = DiagnosticAnchor(primary="MDD", therapy_type="CBT")
+    a = DiagnosticAnchor(primary="D013", therapy_type="CBT")
     assert a.therapy_type == "CBT"
 
 
@@ -56,14 +56,14 @@ def test_review_result_passed():
 def test_l5_context_substage_enum():
     instructions = TreatmentInstructions(
         L1=RoleInstruction(identity="CBT治疗师", style="温暖"),
-        L2=DiagnosticAnchor(primary="MDD", therapy_type="CBT"),
+        L2=DiagnosticAnchor(primary="D013", therapy_type="CBT"),
         L3=TurnInstruction(goal="探索困扰", technique="反映"),
         L4=BoundaryInstruction(),
     )
     ctx = L5Context(l4_raw_output="你好", l4_substage="L4-L3",
                     user_message="我很难过", history=[], instructions=instructions,
                     therapy_type="CBT",
-                    diagnosis_context=DiagnosisContext(primary="MDD"),
+                    diagnosis_context=DiagnosisContext(primary="D013"),
                     risk_context=RiskContext())
     assert ctx.l4_substage == "L4-L3"
     with pytest.raises(ValidationError):
@@ -87,7 +87,7 @@ def test_structured_summary_defaults():
 def test_diagnostic_report_parses_sample_and_ignores_extra():
     raw = json.loads((EXAMPLES / "sample_diagnostic_report.json").read_text(encoding="utf-8"))
     report = DiagnosticReport.model_validate(raw)
-    assert report.diagnosis.primary.disorder == "MDD"
+    assert report.diagnosis.primary.disorder == "D013"
     assert report.diagnosis.primary.confidence == 0.87
     assert report.recommended_therapy.primary == "CBT"
     assert report.recommended_therapy.addon == ["CBT-I"]
@@ -96,5 +96,5 @@ def test_diagnostic_report_parses_sample_and_ignores_extra():
     assert anchor.therapy_type == "CBT"
     assert "CBT-I" in anchor.plugins
     assert anchor.contraindications == report.recommended_therapy.contraindications
-    assert "Insomnia Disorder" in anchor.comorbidities
-    assert "Bipolar II" in anchor.excluded
+    assert "Insomnia" in anchor.comorbidities
+    assert "D009" in anchor.excluded

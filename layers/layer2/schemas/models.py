@@ -119,12 +119,12 @@ class EvidenceNode(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     evidence_id: str
-    source_type: Literal["patient_message", "scale_item"]
+    source_type: Literal["patient_message", "scale_item", "benchmark_narrative"]
     message_id: str
     turn_index: int = Field(ge=1)
     quote: str
     target_path: str
-    created_by: Literal["llm_candidate_rule_verified", "scale_rule"]
+    created_by: Literal["llm_candidate_rule_verified", "scale_rule", "offline_source_adapter"]
     parent_ids: list[str] = Field(default_factory=list)
 
 
@@ -198,6 +198,7 @@ class DiagnosticContext(BaseModel):
     psychotic_symptoms: bool | None = None
     substance_active: bool | None = None
     severe_dissociation: bool | None = None
+    diagnostic_details: dict[str, Any] = Field(default_factory=dict)
     sources: dict[str, list[str]] = Field(default_factory=dict)
 
 

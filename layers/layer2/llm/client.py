@@ -10,6 +10,8 @@ from pydantic import ValidationError
 
 from shared.llm_client import ask_llm, ask_llm_stream, get_base_url, get_model
 
+from shared.disorder_catalog import symptom_catalog
+
 from layers.layer2.schemas import SemanticAnalysis, StageDecision
 from .mi_response_prompt import build_mi_response_prompt, validate_mi_response_output
 from .debug_output import debug_output_enabled, record_mi_output
@@ -86,17 +88,21 @@ goal_statement, motivation_rating, profile_confirmation, correction, refusal, pa
 症状 value 只能使用：depressed_mood, anhedonia, appetite_or_weight_change,
 insomnia, fatigue, psychomotor_change, worthlessness, concentration_difficulty,
 anxiety, trauma_related, obsession_compulsion, elevated_mood, passive_si。
+还允许使用以下 MentalKG 原始症状ID作为 value：{json.dumps(symptom_catalog(), ensure_ascii=False)}。
+已有通用标签能够准确表达时保留通用标签；新增症状使用原始ID。
+attributes 可记录患者明确提供的症状频率、病程、起病时间和情境，必须有原话支持，不推断诊断。
 possible_scale_domains 只能使用：PHQ-9, GAD-7, PCL-5, Y-BOCS, ISI, MDQ。
 它必须是字符串数组，例如 ["PHQ-9", "ISI"]；禁止使用 PHQ9、中文量表名、对象或带解释的名称；没有明确触发信号时返回 []。
 structured_fields 允许：symptom_duration_days, functional_impairment,
 mania_or_hypomania_history, substance_or_medical_cause,
-differential_diagnoses_assessed, evidence_conflicts,
+differential_diagnoses_assessed, evidence_conflicts, diagnostic_details,
 relapse_count, rhythm_disturbance, exposure_avoidant, ritual_behaviors,
 insomnia_chief_complaint, chronic_months, interpersonal_conflicts,
 interpersonal_impairment, single_focus, psychotic_symptoms,
 substance_active, severe_dissociation,
 motivation_importance, motivation_confidence, motivation_readiness,
 scale_consent, scale_answer_score, confirmation_decision。
+diagnostic_details 的 value 是对象，记录患者明确提供的具体诊断背景，如发作时间线、症状共现、起病年龄、应激事件及进食行为。必须引用原话；未知信息不填，不能推断医学阈值或诊断标签。
 confirmation_decision 只能是 continue/revise/pause。
 structured_fields 必须是对象数组，每个对象只能包含 field、value、evidence_quote，例如：
 [{{"field":"functional_impairment","value":true,"evidence_quote":"工作不想做"}}]。

@@ -229,3 +229,6 @@ diagnosis_output.json
 # Local L2 diagnostic responses may contain patient information.
 /artifacts/debug/
 
+# Reproducible local MentalBench narrative/profile exports.
+/artifacts/datasets/mentalbench_l2_format/
+

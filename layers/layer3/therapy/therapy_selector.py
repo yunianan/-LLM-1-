@@ -3,16 +3,15 @@ from __future__ import annotations
 from typing import Any, Iterable
 
 
+from shared.disorder_catalog import treatment_key
+
 BASE_THERAPY_BY_DIAGNOSIS = {
     "MDD": "CBT+BA",
     "GAD": "CBT",
     "PTSD": "CBT-TF",
     "OCD": "CBT",
     "Insomnia": "CBT-I",
-    "PanicDisorder": "CBT",
-    "SocialAnxietyDisorder": "CBT",
     "AdjustmentDisorder": "CBT/SFBT",
-    "SomaticSymptomDisorder": "CBT",
     "Bipolar": "CBT+IPSRT",
 }
 
@@ -35,7 +34,7 @@ class TherapySelector:
 
     def select_basic(self, diagnosis: str) -> str:
         try:
-            return BASE_THERAPY_BY_DIAGNOSIS[diagnosis]
+            return BASE_THERAPY_BY_DIAGNOSIS[treatment_key(diagnosis)]
         except KeyError as exc:
             raise ValueError(f"不支持的主诊断：{diagnosis}") from exc
 
@@ -63,7 +62,7 @@ class TherapySelector:
             })
 
         if (
-            diagnosis == "Bipolar"
+            treatment_key(diagnosis) == "Bipolar"
             and self._score(profile, "MDQ") >= 7
             and bool(profile.get("rhythm_disturbance"))
         ):
@@ -178,7 +177,7 @@ class TherapySelector:
             confirmed_diagnoses,
             verifier_decision,
         )
-        if diagnosis == "Bipolar":
+        if treatment_key(diagnosis) == "Bipolar":
             contraindications.append("双相障碍建议同时就医")
         if "PTSD" not in confirmed and self._score(profile, "PCL5") >= 33:
             contraindications.append("不推荐EMDR（无PTSD诊断证据）")
@@ -378,9 +377,9 @@ class TherapySelector:
     ) -> set[str]:
         if verifier_decision != "confirmed":
             return set()
-        confirmed = set(confirmed_diagnoses or ())
+        confirmed = {treatment_key(item) for item in confirmed_diagnoses or ()}
         if not confirmed:
-            confirmed.add(diagnosis)
+            confirmed.add(treatment_key(diagnosis))
         return confirmed
 
     @staticmethod

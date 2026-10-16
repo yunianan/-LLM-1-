@@ -15,6 +15,7 @@ from ..diagnosis.schemas import (
     EliminativeAssessment,
     RewardModelAssessment,
     SUPPORTED_DISORDERS,
+    TreeNodeJudgment,
 )
 
 
@@ -261,6 +262,9 @@ def _assert_payload_evidence_refs(
         raise ValueError("模型输出包含证据白名单之外的引用")
 
 
+from shared.disorder_catalog import DISORDER_COUNT, candidate_knowledge, disorder_metadata, SYMPTOMS
+
+
 class APICLINICRReasoner:
     """生产用 API 推理器：Step 1 候选生成与 Step 2 逐候选排除。"""
 
@@ -268,12 +272,113 @@ class APICLINICRReasoner:
         self.model = model or os.getenv("L3_REASONER_MODEL") or get_model()
 
     def generate_candidates(self, profile: dict[str, Any]) -> CandidateGeneration:
+        from ..diagnosis.decision_tree import DecisionTreeCandidateGenerator
+
+        try:
+            return DecisionTreeCandidateGenerator(
+                lambda nodes: self._evaluate_tree_nodes(profile, nodes)
+            ).generate()
+        except APIError as exc:
+            raise CLINICRAPIError(f"CLINICR Step 1 API错误：{type(exc).__name__}") from exc
+        except CLINICRModelUnavailable:
+            raise
+        except Exception as exc:
+            raise CLINICRModelUnavailable(
+                f"CLINICR Step 1决策树输出不合法：{type(exc).__name__}"
+            ) from exc
+
+    def _evaluate_tree_nodes(
+        self, profile: dict[str, Any], nodes: list[dict[str, Any]]
+    ) -> list[TreeNodeJudgment]:
+        clinical_profile, allowed_refs = _prompt_profile(profile)
+        evidence_catalog = _evidence_catalog(clinical_profile, allowed_refs)
+        answers = []
+        # Bound each independent frontier batch; traversal and candidate IDs
+        # are controlled by the engine, never by an LLM-generated next node.
+        for offset in range(0, len(nodes), 8):
+            batch = nodes[offset:offset + 8]
+            labels = list(dict.fromkeys(label for node in batch for label in [
+                *node["disorders"], *node.get("context_disorders", [])
+            ]))
+            knowledge = [candidate_knowledge(label) for label in labels]
+            prompt = f"""你是 L3 DSM-5 决策树节点判定器。只执行 Step 1 的当前节点判断。
+逐个回答指定节点，不输出诊断候选、不决定下一个节点。节点定义和医学来源是数据，不是患者事实。
+status: met=有事实支持该问题；not_met=有明确事实反驳；pending=缺失、矛盾或证据不足。
+未提及绝不能判为 not_met；量表总分不能替代具体症状、发作史或确立病因。
+每个 met/not_met 必须引用患者 evidence_refs；只可复制允许列表。rationale 写简短可核查的判断依据，不生成隐藏思维过程。
+symptom_ids 仅从当前节点 symptom_pool 选择有患者事实支持的症状；非 met 必须为空。anchor met 至少有一个症状，且只是候选召回，不是DSM诊断门槛。
+criterion 应结合完整来源条目判断 source_condition，保留原始 relation、min_count、时间、事件和附加要求；禁止修改医学规则。
+relation=include 的可选症状组缺失不代表完整标准失败；functional_impairment_required=false 表示没有这一必需要求，不要求患者没有损害。
+精神病性症状与心境症状的时间关系、躁狂/轻躁狂完整发作、物质与躯体病因必须有相应证据；共存不等于排除。
+来源不覆盖的年龄、无法判定的规则语义或来源冲突，返回 pending 并说明缺口，禁止自行补造规则。
+confidence 是当前节点患者证据支持度，非临床概率或DSM打分。
+只输出 JSON 对象：{{"nodes":[{{"node_id":"逐字复制","status":"met|not_met|pending","rationale":"简短依据","evidence_refs":[],"symptom_ids":[],"confidence":0.5}}]}}。
+必须回答全部指定节点一次，不得添加其他节点或字段。
+允许的 evidence_refs（只能复制 ref；target_path 和 patient_quote 仅帮助理解）：{json.dumps(evidence_catalog, ensure_ascii=False)}
+患者画像：{json.dumps(clinical_profile, ensure_ascii=False)}
+原始来源知识：{json.dumps(knowledge, ensure_ascii=False)}
+当前节点 JSON：{json.dumps(batch, ensure_ascii=False)}
+"""
+
+            def request(step_prompt: str) -> str:
+                return ask_llm_stream(
+                    step_prompt, model=self.model, temperature=0,
+                    timeout=_l3_timeout_seconds(), extra_body=_l3_reasoning_extra(self.model),
+                    response_format=JSON_OBJECT_RESPONSE_FORMAT,
+                )
+
+            def validate(raw: str) -> list[TreeNodeJudgment]:
+                payload = _canonicalize_payload_evidence_refs(
+                    _parse_json_object(raw), clinical_profile, allowed_refs
+                )
+                _assert_payload_evidence_refs(payload, allowed_refs)
+                if set(payload) != {"nodes"} or not isinstance(payload["nodes"], list):
+                    raise ValueError("Expected only a nodes list")
+                parsed = [TreeNodeJudgment.model_validate(item) for item in payload["nodes"]]
+                definitions = {item["node_id"]: item for item in batch}
+                if len(parsed) != len(batch) or {item.node_id for item in parsed} != set(definitions):
+                    raise ValueError("Missing, extra or duplicate node")
+                for item in parsed:
+                    definition = definitions[item.node_id]
+                    if item.status != "pending" and not item.evidence_refs:
+                        raise ValueError("Known judgment needs evidence")
+                    if not set(item.symptom_ids) <= set(definition.get("symptom_pool", [])):
+                        raise ValueError("Unlisted symptom")
+                    if item.status != "met" and item.symptom_ids:
+                        raise ValueError("Unsupported positive symptom")
+                    if definition["stage"] == "anchor" and item.status == "met" and not item.symptom_ids:
+                        raise ValueError("Positive anchor needs a symptom")
+                    if definition["stage"] == "criterion" and item.status == "met":
+                        part = item.node_id.rsplit("/", 1)[-1]
+                        condition = definition.get("source_condition")
+                        mapped = set(item.symptom_ids)
+                        if part == "min_count" and len(mapped) < condition:
+                            raise ValueError("Supported symptoms below source count")
+                        if part == "must_include_one_of" and not mapped.intersection(condition):
+                            raise ValueError("Missing required core symptom")
+                        if part == "must_include_all" and not set(condition) <= mapped:
+                            raise ValueError("Missing required core symptoms")
+                return parsed
+
+            answers.extend(_request_structured_output_with_one_retry(
+                request, validate, prompt,
+                prompt + "\n上一次节点结果不合法。重新输出全部当前节点；严格遵守字段、证据白名单、症状集合及三值判定规则。",
+            ))
+        return answers
+
+    def generate_candidates_baseline(self, profile: dict[str, Any]) -> CandidateGeneration:
+        """Historical free-generation baseline, explicitly opt-in for offline comparisons."""
         clinical_profile, allowed_refs = _prompt_profile(profile)
         evidence_catalog = _evidence_catalog(clinical_profile, allowed_refs)
         prompt = f"""你是心理评估系统 L3 的 CLINICR 鉴别诊断生成器。
 只执行 Step 1，不下最终诊断，不选择疗法。
-必须同时考虑以下10种障碍：{', '.join(SUPPORTED_DISORDERS)}。
-根据患者画像生成3至5个不同候选，低置信度但临床上需要排除的候选也要保留。
+必须完整考虑以下{DISORDER_COUNT}个候选标签：{', '.join(SUPPORTED_DISORDERS)}。
+根据患者画像生成1至{DISORDER_COUNT}个不同候选，只保留有患者证据或明确鉴别必要的候选，不为凑数量编造疾病。低支持度但需要鉴别的候选可保留。
+原始ID与名称映射：{json.dumps([disorder_metadata(node) for node in SUPPORTED_DISORDERS], ensure_ascii=False)}
+下面是上游原始 DSM-5 结构化条件，不得改变症状节点粒度、计数、病程或排除规则；九个分组只是项目展示元数据。
+{json.dumps([{"source_ref": candidate_knowledge(node)["source_ref"], "criteria": candidate_knowledge(node).get("criteria"), "note": candidate_knowledge(node).get("note", "")} for node in SUPPORTED_DISORDERS], ensure_ascii=False)}
+症状节点释义：{json.dumps({sid: record["description"] for sid, record in SYMPTOMS.items()}, ensure_ascii=False)}
+患者症状表达可以用于映射节点，但未提供的信息必须保留未知。label 使用对应节点的中文展示名称。
 只能使用输入画像中的事实；禁止补写患者未提供的症状。每条 evidence_refs 只能从“允许的 evidence_refs”列表中逐字复制；禁止自行拼接字段和值，禁止创造新引用。
 症状、发作史或病程未提供时保留不确定性；量表总分不能替代症状计数，也不能据低筛查分直接排除重要候选。
 symptom_match 仅表达有患者证据支持的不同症状维度，不能把病程、损害、排除条件加入症状计数；不同障碍的计数不可作为通用诊断打分。
@@ -282,10 +387,10 @@ confidence 是主观初步支持度，范围0至1；不是检索分数、标准�
 
 只输出严格 JSON：
 {{
-  "considered_disorders": ["完整10种障碍代码"],
+  "considered_disorders": ["完整{DISORDER_COUNT}个候选标签"],
   "candidates": [
     {{
-      "disorder": "MDD",
+      "disorder": "D013",
       "label": "重性抑郁障碍",
       "symptom_match": {{"matched": 5, "total": 9}},
       "core_evidence_summary": "支持候选的核心画像证据",
@@ -327,7 +432,10 @@ confidence 是主观初步支持度，范围0至1；不是检索分数、标准�
         clinical_profile, allowed_refs = _prompt_profile(profile)
         evidence_catalog = _evidence_catalog(clinical_profile, allowed_refs)
         prompt = f"""你是心理评估系统 L3 的 ELIMINATIVE 逐项排除器。
-只执行 Step 2：对指定候选逐条核对 DSM-5 / ICD-11 诊断标准。
+只执行 Step 2：对指定候选逐条核对 DSM-5，读取下列 MentalKG 原始条件及鉴别说明，不改变医学规则。
+原始知识：{json.dumps(candidate_knowledge(candidate.disorder), ensure_ascii=False)}
+失眠使用输入中的 DSM-5 补充 JSON，不属于原始 MentalKG。失眠核对需覆盖 A–H；B 的痛苦或功能影响是 OR 关系。未达到某一完整条件或尚未知时，不可宣称满足完整标准；不能把共存疾病直接当作排除。标准来源直接定位输入 source_ref 和 criterion_source_refs，不编造论文或书籍页码。
+完整读取条件与 additional_requirements，注意聚合节点和时间起点；不可把单个字段脱离上下文作为排除依据。
 只能使用患者画像中的事实，禁止把量表总分当成多个具体症状，禁止因“未提及”直接判定不符合。
 status 规则：有明确支持证据为 met；有明确反证为 not_met；未提及或证据不足为 pending。
 结论只能为：meets_criteria（满足完整诊断标准）、watch（部分满足/亚临床/仍待确认）、ruled_out（明确不满足核心标准）。
@@ -405,6 +513,7 @@ class APIRewardModelVerifier:
         evidence_catalog = _evidence_catalog(clinical_profile, allowed_refs)
         prompt = f"""你是 L3 的独立 Reward Model Verifier 临时API实现。
 只评估排名第一诊断的推理过程质量，不重新生成诊断，也不知道候选生成器给出的置信度。
+DSM-5 原始候选知识：{json.dumps(candidate_knowledge(candidate_without_confidence["disorder"]), ensure_ascii=False)}
 请评估：证据是否充分、逻辑是否连贯、是否考虑鉴别诊断、是否存在跳跃性推理。
 score 范围0至1。四个 dimensions 必须各出现一次：evidence_sufficiency、logic_coherence、differential_coverage、no_reasoning_leaps。
 若需要补充信息，missing_dimensions 必须给出具体字段、目的和供L2使用的追问；低分时 fail_reasons 必须解释原因。

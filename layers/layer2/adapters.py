@@ -25,6 +25,15 @@ class L2ToL3Adapter:
 
     def to_profile(self, intake: ClinicalIntake) -> dict[str, Any]:
         self.assert_valid(intake)
+        return self.serialize_profile(intake)
+
+    @staticmethod
+    def serialize_profile(intake: ClinicalIntake) -> dict[str, Any]:
+        """Serialize the shared shape; this alone does not grant L2 exit permission.
+
+        Offline benchmark preparation may serialize an explicitly incomplete
+        intake. Production callers must continue using guarded ``to_profile``.
+        """
         profile: dict[str, Any] = {
             "key_symptoms_extracted": [
                 item.model_dump(mode="json") for item in intake.key_symptoms_extracted
@@ -35,6 +44,7 @@ class L2ToL3Adapter:
             "substance_or_medical_cause": intake.diagnostic_context.substance_or_medical_cause,
             "differential_diagnoses_assessed": intake.diagnostic_context.differential_diagnoses_assessed,
             "evidence_conflicts": intake.diagnostic_context.evidence_conflicts,
+            "diagnostic_details": intake.diagnostic_context.diagnostic_details,
             "patient_goals": intake.patient_goals,
             "emotions": [
                 item.model_dump(mode="json") for item in intake.emotions

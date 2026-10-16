@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>开发者患者画像 · confirm-pause</title>
+<style>
+:root { color-scheme: light; font-family: Inter, "Microsoft YaHei", sans-serif; }
+body { margin: 0; background: #f4f7fb; color: #1f2937; }
+main { max-width: 1180px; margin: 0 auto; padding: 28px; }
+.warning { background: #2b1b1b; color: #fecaca; padding: 14px 18px; border-radius: 12px; font-weight: 700; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(320px,1fr)); gap: 16px; margin-top: 18px; }
+.card { background: white; border: 1px solid #dbe4ef; border-radius: 14px; padding: 18px; box-shadow: 0 4px 14px #1f29370d; }
+.wide { grid-column: 1 / -1; }
+h1 { margin-bottom: 8px; } h2 { margin: 0 0 12px; font-size: 18px; }
+.route { display: inline-block; padding: 5px 10px; border-radius: 999px; background: #dbeafe; color: #1d4ed8; font-weight: 700; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; background: #f8fafc; border-radius: 10px; padding: 14px; font-size: 12px; }
+details summary { cursor: pointer; font-weight: 700; }
+</style>
+</head>
+<body><main>
+<div class="warning">仅限开发者调试：包含患者原话、量表明细、内部评分和证据链，不得展示给患者。</div>
+<h1>患者画像调试视图</h1>
+<span class="route">PAUSED_BY_PATIENT</span>
+<div class="grid">
+<section class="card"><h2>编排状态</h2><pre>{
+  &quot;session_id&quot;: &quot;confirm-pause&quot;,
+  &quot;route&quot;: &quot;PAUSED_BY_PATIENT&quot;,
+  &quot;expected_input&quot;: &quot;profile_confirmation&quot;,
+  &quot;l3_to_l2_loop_count&quot;: 0,
+  &quot;updated_at&quot;: &quot;2026-10-14T14:27:55.902878Z&quot;,
+  &quot;stopped_reason&quot;: &quot;&quot;
+}</pre></section>
+<section class="card"><h2>L1 安全通行证</h2><pre>{
+  &quot;risk_level&quot;: 1,
+  &quot;safety_flag&quot;: &quot;pass&quot;,
+  &quot;crisis_flag&quot;: false,
+  &quot;sensitive_topics&quot;: [],
+  &quot;flags&quot;: [],
+  &quot;execution&quot;: {
+    &quot;route&quot;: &quot;l2&quot;,
+    &quot;terminal&quot;: false,
+    &quot;user_response&quot;: &quot;&quot;,
+    &quot;applied_controls&quot;: []
+  },
+  &quot;guard&quot;: {
+    &quot;status&quot;: &quot;pass&quot;,
+    &quot;can_call_l2&quot;: true
+  }
+}</pre></section>
+<section class="card wide"><h2>L2 患者画像</h2><pre>{
+  &quot;layer_id&quot;: &quot;L2&quot;,
+  &quot;timestamp&quot;: &quot;2026-10-14T14:27:55.902878Z&quot;,
+  &quot;session_id&quot;: &quot;confirm-pause&quot;,
+  &quot;current_stage&quot;: &quot;planning&quot;,
+  &quot;key_symptoms_extracted&quot;: [
+    {
+      &quot;symptom&quot;: &quot;depressed_mood&quot;,
+      &quot;sources&quot;: [
+        &quot;L2E-c92d0d6dd1b74795be905b8908c68364&quot;,
+        &quot;L2E-0feee8c365524124ac1349c8ac47263e&quot;,
+        &quot;L2E-e45b694010d04e79a224b6ec07ee9175&quot;
+      ],
+      &quot;patient_quotes&quot;: [
+        &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;,
+        &quot;我想先从情绪低落和睡眠问题聊起。&quot;,
+        &quot;这些低落和睡不好已经明显影响了工作。&quot;
+      ],
+      &quot;attributes&quot;: {}
+    },
+    {
+      &quot;symptom&quot;: &quot;anhedonia&quot;,
+      &quot;sources&quot;: [
+        &quot;L2E-987a198afc5b49ce86765f81be0164ff&quot;
+      ],
+      &quot;patient_quotes&quot;: [
+        &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;
+      ],
+      &quot;attributes&quot;: {}
+    },
+    {
+      &quot;symptom&quot;: &quot;insomnia&quot;,
+      &quot;sources&quot;: [
+        &quot;L2E-441a77a2d32d4f709b5f5ea3a60651f7&quot;,
+        &quot;L2E-434744a40ebb43f8b4553d64750477c0&quot;
+      ],
+      &quot;patient_quotes&quot;: [
+        &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;,
+        &quot;这些低落和睡不好已经明显影响了工作。&quot;
+      ],
+      &quot;attributes&quot;: {}
+    },
+    {
+      &quot;symptom&quot;: &quot;fatigue&quot;,
+      &quot;sources&quot;: [
+        &quot;L2E-45bbc1516fec4adc941797a976e9d66f&quot;
+      ],
+      &quot;patient_quotes&quot;: [
+        &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;
+      ],
+      &quot;attributes&quot;: {}
+    },
+    {
+      &quot;symptom&quot;: &quot;worthlessness&quot;,
+      &quot;sources&quot;: [
+        &quot;L2E-3506744ef2be4543b63c12299043ceae&quot;
+      ],
+      &quot;patient_quotes&quot;: [
+        &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;
+      ],
+      &quot;attributes&quot;: {}
+    }
+  ],
+  &quot;emotions&quot;: [
+    {
+      &quot;value&quot;: &quot;低落&quot;,
+      &quot;sources&quot;: [
+        &quot;L2E-4e5d7c93c8774b12bf24e4baefb1375e&quot;,
+        &quot;L2E-99f5d79ea3984922a8a1b5d274c7f82a&quot;,
+        &quot;L2E-fb1aef70c0c640019837414d122e5aba&quot;
+      ],
+      &quot;patient_quotes&quot;: [
+        &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;,
+        &quot;我想先从情绪低落和睡眠问题聊起。&quot;,
+        &quot;这些低落和睡不好已经明显影响了工作。&quot;
+      ]
+    }
+  ],
+  &quot;cognitive_patterns&quot;: [],
+  &quot;patient_goals&quot;: [
+    &quot;已经核对过双相障碍和适应障碍。&quot;,
+    &quot;我的目标是恢复工作状态和改善睡眠。&quot;
+  ],
+  &quot;patient_goal_facts&quot;: [
+    {
+      &quot;value&quot;: &quot;已经核对过双相障碍和适应障碍。&quot;,
+      &quot;sources&quot;: [
+        &quot;L2E-55b6a3b4b28c4983a17eeca154041d0c&quot;
+      ],
+      &quot;patient_quotes&quot;: [
+        &quot;已经核对过双相障碍和适应障碍。&quot;
+      ]
+    },
+    {
+      &quot;value&quot;: &quot;我的目标是恢复工作状态和改善睡眠。&quot;,
+      &quot;sources&quot;: [
+        &quot;L2E-f82c9eda95aa44c19326ef5d1b154ce0&quot;
+      ],
+      &quot;patient_quotes&quot;: [
+        &quot;我的目标是恢复工作状态和改善睡眠。&quot;
+      ]
+    }
+  ],
+  &quot;key_narratives&quot;: [
+    {
+      &quot;value&quot;: &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;,
+      &quot;sources&quot;: [
+        &quot;L2E-10394a41d43542e0beb64a60bd251c4d&quot;
+      ],
+      &quot;patient_quotes&quot;: [
+        &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;
+      ]
+    },
+    {
+      &quot;value&quot;: &quot;我想先从情绪低落和睡眠问题聊起。&quot;,
+      &quot;sources&quot;: [
+        &quot;L2E-988427418a654e358ee7c5c3368efd56&quot;
+      ],
+      &quot;patient_quotes&quot;: [
+        &quot;我想先从情绪低落和睡眠问题聊起。&quot;
+      ]
+    },
+    {
+      &quot;value&quot;: &quot;这些低落和睡不好已经明显影响了工作。&quot;,
+      &quot;sources&quot;: [
+        &quot;L2E-5e235ffe556848fd9e6bc7f14072c61d&quot;
+      ],
+      &quot;patient_quotes&quot;: [
+        &quot;这些低落和睡不好已经明显影响了工作。&quot;
+      ]
+    }
+  ],
+  &quot;functional_impairments&quot;: [],
+  &quot;focus_topics&quot;: [
+    &quot;我想先从情绪低落和睡眠问题聊起。&quot;
+  ],
+  &quot;focus_topic_facts&quot;: [
+    {
+      &quot;value&quot;: &quot;我想先从情绪低落和睡眠问题聊起。&quot;,
+      &quot;sources&quot;: [
+        &quot;L2E-501ef6ecc8604acbbbf05c3b25c60363&quot;
+      ],
+      &quot;patient_quotes&quot;: [
+        &quot;我想先从情绪低落和睡眠问题聊起。&quot;
+      ]
+    }
+  ],
+  &quot;change_talk&quot;: [],
+  &quot;sustain_talk&quot;: [],
+  &quot;motivation&quot;: {
+    &quot;importance&quot;: 8,
+    &quot;confidence&quot;: 6,
+    &quot;readiness&quot;: 7,
+    &quot;sources&quot;: [
+      &quot;L2E-0ec94fb7b31746a1b43ae3e1fa516b4d&quot;,
+      &quot;L2E-d81118def7a24430b1d0a9f436e0e361&quot;,
+      &quot;L2E-994d13782be14e7383570e22a2c73160&quot;
+    ]
+  },
+  &quot;scale_results&quot;: {
+    &quot;PHQ-9&quot;: {
+      &quot;scale_name&quot;: &quot;PHQ-9&quot;,
+      &quot;status&quot;: &quot;completed&quot;,
+      &quot;items&quot;: {
+        &quot;1&quot;: 3,
+        &quot;2&quot;: 3,
+        &quot;3&quot;: 2,
+        &quot;4&quot;: 2,
+        &quot;5&quot;: 0,
+        &quot;6&quot;: 2,
+        &quot;7&quot;: 0,
+        &quot;8&quot;: 0,
+        &quot;9&quot;: 0
+      },
+      &quot;score&quot;: 12,
+      &quot;threshold&quot;: &quot;moderate&quot;,
+      &quot;evidence_ids&quot;: [
+        &quot;L2E-54fc67f3d4cc40caba78bd05956d3e51&quot;,
+        &quot;L2E-cbdfe2be55f744d0ba29fc22298b3bbd&quot;,
+        &quot;L2E-5a9494853777429e9a44ded4b24d80e8&quot;,
+        &quot;L2E-6284f769fbb64c728e79230525fd1605&quot;,
+        &quot;L2E-a9ac8089168d4d43a65661416fca5cbb&quot;,
+        &quot;L2E-49a62f6f21b14674930e357734cee96f&quot;,
+        &quot;L2E-f33108aea7884340814986e26e42268c&quot;,
+        &quot;L2E-6287c9d0c1cc4bcdb86a4ddb520a05a0&quot;,
+        &quot;L2E-32526b38a6804060b8325f820cadabf2&quot;
+      ],
+      &quot;skip_reason&quot;: &quot;&quot;
+    }
+  },
+  &quot;diagnostic_context&quot;: {
+    &quot;symptom_duration_days&quot;: 21,
+    &quot;functional_impairment&quot;: true,
+    &quot;mania_or_hypomania_history&quot;: false,
+    &quot;substance_or_medical_cause&quot;: false,
+    &quot;differential_diagnoses_assessed&quot;: [
+      &quot;D009&quot;,
+      &quot;Adjustment&quot;
+    ],
+    &quot;evidence_conflicts&quot;: [],
+    &quot;relapse_count&quot;: null,
+    &quot;rhythm_disturbance&quot;: null,
+    &quot;exposure_avoidant&quot;: null,
+    &quot;ritual_behaviors&quot;: null,
+    &quot;insomnia_chief_complaint&quot;: null,
+    &quot;chronic_months&quot;: null,
+    &quot;interpersonal_conflicts&quot;: null,
+    &quot;interpersonal_impairment&quot;: null,
+    &quot;single_focus&quot;: null,
+    &quot;psychotic_symptoms&quot;: false,
+    &quot;substance_active&quot;: null,
+    &quot;severe_dissociation&quot;: null,
+    &quot;diagnostic_details&quot;: {},
+    &quot;sources&quot;: {
+      &quot;symptom_duration_days&quot;: [
+        &quot;L2E-0f281b90655a4c19888a405f49851d62&quot;
+      ],
+      &quot;functional_impairment&quot;: [
+        &quot;L2E-26d2aedffc5d4fe8a27bc1d85d740e9d&quot;
+      ],
+      &quot;mania_or_hypomania_history&quot;: [
+        &quot;L2E-5f141bce446b4ffaa32cca306fcb4c84&quot;
+      ],
+      &quot;substance_or_medical_cause&quot;: [
+        &quot;L2E-805e95fab12247fc9f68a9e1013cba77&quot;
+      ],
+      &quot;psychotic_symptoms&quot;: [
+        &quot;L2E-ea25cb10aa4f43889514333f7a41d022&quot;
+      ],
+      &quot;differential_diagnoses_assessed&quot;: [
+        &quot;L2E-451cdb17a7aa4099adda14c4397158b1&quot;
+      ],
+      &quot;evidence_conflicts&quot;: [
+        &quot;L2E-1c9d223fac2c41b897938341dc9a4f91&quot;
+      ]
+    }
+  },
+  &quot;evidence_nodes&quot;: [
+    {
+      &quot;evidence_id&quot;: &quot;L2E-c92d0d6dd1b74795be905b8908c68364&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;3b9688a9b8184fa0b6d205369684cf08&quot;,
+      &quot;turn_index&quot;: 1,
+      &quot;quote&quot;: &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;,
+      &quot;target_path&quot;: &quot;symptoms.depressed_mood&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-987a198afc5b49ce86765f81be0164ff&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;3b9688a9b8184fa0b6d205369684cf08&quot;,
+      &quot;turn_index&quot;: 1,
+      &quot;quote&quot;: &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;,
+      &quot;target_path&quot;: &quot;symptoms.anhedonia&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-441a77a2d32d4f709b5f5ea3a60651f7&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;3b9688a9b8184fa0b6d205369684cf08&quot;,
+      &quot;turn_index&quot;: 1,
+      &quot;quote&quot;: &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;,
+      &quot;target_path&quot;: &quot;symptoms.insomnia&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-45bbc1516fec4adc941797a976e9d66f&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;3b9688a9b8184fa0b6d205369684cf08&quot;,
+      &quot;turn_index&quot;: 1,
+      &quot;quote&quot;: &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;,
+      &quot;target_path&quot;: &quot;symptoms.fatigue&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-3506744ef2be4543b63c12299043ceae&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;3b9688a9b8184fa0b6d205369684cf08&quot;,
+      &quot;turn_index&quot;: 1,
+      &quot;quote&quot;: &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;,
+      &quot;target_path&quot;: &quot;symptoms.worthlessness&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-4e5d7c93c8774b12bf24e4baefb1375e&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;3b9688a9b8184fa0b6d205369684cf08&quot;,
+      &quot;turn_index&quot;: 1,
+      &quot;quote&quot;: &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;,
+      &quot;target_path&quot;: &quot;emotions.0&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-10394a41d43542e0beb64a60bd251c4d&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;3b9688a9b8184fa0b6d205369684cf08&quot;,
+      &quot;turn_index&quot;: 1,
+      &quot;quote&quot;: &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;,
+      &quot;target_path&quot;: &quot;key_narratives.0&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-0f281b90655a4c19888a405f49851d62&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;3b9688a9b8184fa0b6d205369684cf08&quot;,
+      &quot;turn_index&quot;: 1,
+      &quot;quote&quot;: &quot;最近三周我每天都很低落，对以前喜欢的事情没兴趣，晚上睡不好，也没有精力，觉得自己让人失望。&quot;,
+      &quot;target_path&quot;: &quot;diagnostic_context.symptom_duration_days&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-0feee8c365524124ac1349c8ac47263e&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;7d405bd0b28c4401b4683de48575a925&quot;,
+      &quot;turn_index&quot;: 2,
+      &quot;quote&quot;: &quot;我想先从情绪低落和睡眠问题聊起。&quot;,
+      &quot;target_path&quot;: &quot;symptoms.depressed_mood&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-99f5d79ea3984922a8a1b5d274c7f82a&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;7d405bd0b28c4401b4683de48575a925&quot;,
+      &quot;turn_index&quot;: 2,
+      &quot;quote&quot;: &quot;我想先从情绪低落和睡眠问题聊起。&quot;,
+      &quot;target_path&quot;: &quot;emotions.0&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-988427418a654e358ee7c5c3368efd56&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;7d405bd0b28c4401b4683de48575a925&quot;,
+      &quot;turn_index&quot;: 2,
+      &quot;quote&quot;: &quot;我想先从情绪低落和睡眠问题聊起。&quot;,
+      &quot;target_path&quot;: &quot;key_narratives.1&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-501ef6ecc8604acbbbf05c3b25c60363&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;7d405bd0b28c4401b4683de48575a925&quot;,
+      &quot;turn_index&quot;: 2,
+      &quot;quote&quot;: &quot;我想先从情绪低落和睡眠问题聊起。&quot;,
+      &quot;target_path&quot;: &quot;focus_topics.0&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-e45b694010d04e79a224b6ec07ee9175&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;dfa5071081734a8486ad4a832cc90cd8&quot;,
+      &quot;turn_index&quot;: 3,
+      &quot;quote&quot;: &quot;这些低落和睡不好已经明显影响了工作。&quot;,
+      &quot;target_path&quot;: &quot;symptoms.depressed_mood&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-434744a40ebb43f8b4553d64750477c0&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;dfa5071081734a8486ad4a832cc90cd8&quot;,
+      &quot;turn_index&quot;: 3,
+      &quot;quote&quot;: &quot;这些低落和睡不好已经明显影响了工作。&quot;,
+      &quot;target_path&quot;: &quot;symptoms.insomnia&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-fb1aef70c0c640019837414d122e5aba&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;dfa5071081734a8486ad4a832cc90cd8&quot;,
+      &quot;turn_index&quot;: 3,
+      &quot;quote&quot;: &quot;这些低落和睡不好已经明显影响了工作。&quot;,
+      &quot;target_path&quot;: &quot;emotions.0&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-5e235ffe556848fd9e6bc7f14072c61d&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;dfa5071081734a8486ad4a832cc90cd8&quot;,
+      &quot;turn_index&quot;: 3,
+      &quot;quote&quot;: &quot;这些低落和睡不好已经明显影响了工作。&quot;,
+      &quot;target_path&quot;: &quot;key_narratives.2&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-26d2aedffc5d4fe8a27bc1d85d740e9d&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;dfa5071081734a8486ad4a832cc90cd8&quot;,
+      &quot;turn_index&quot;: 3,
+      &quot;quote&quot;: &quot;这些低落和睡不好已经明显影响了工作。&quot;,
+      &quot;target_path&quot;: &quot;diagnostic_context.functional_impairment&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-54fc67f3d4cc40caba78bd05956d3e51&quot;,
+      &quot;source_type&quot;: &quot;scale_item&quot;,
+      &quot;message_id&quot;: &quot;84726d732e6b4718b70e1f833d00ed3e&quot;,
+      &quot;turn_index&quot;: 5,
+      &quot;quote&quot;: &quot;几乎每天没有兴趣。&quot;,
+      &quot;target_path&quot;: &quot;scale_results.PHQ-9.items.1&quot;,
+      &quot;created_by&quot;: &quot;scale_rule&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-cbdfe2be55f744d0ba29fc22298b3bbd&quot;,
+      &quot;source_type&quot;: &quot;scale_item&quot;,
+      &quot;message_id&quot;: &quot;978a3211a1ba40fc9124bc452a758953&quot;,
+      &quot;turn_index&quot;: 6,
+      &quot;quote&quot;: &quot;几乎每天情绪低落。&quot;,
+      &quot;target_path&quot;: &quot;scale_results.PHQ-9.items.2&quot;,
+      &quot;created_by&quot;: &quot;scale_rule&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-5a9494853777429e9a44ded4b24d80e8&quot;,
+      &quot;source_type&quot;: &quot;scale_item&quot;,
+      &quot;message_id&quot;: &quot;a8ef09d3e8c64b91b8c88fd8817d2679&quot;,
+      &quot;turn_index&quot;: 7,
+      &quot;quote&quot;: &quot;一半以上时间睡不好。&quot;,
+      &quot;target_path&quot;: &quot;scale_results.PHQ-9.items.3&quot;,
+      &quot;created_by&quot;: &quot;scale_rule&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-6284f769fbb64c728e79230525fd1605&quot;,
+      &quot;source_type&quot;: &quot;scale_item&quot;,
+      &quot;message_id&quot;: &quot;fdec66bfb9404be282cf16a8956deae4&quot;,
+      &quot;turn_index&quot;: 8,
+      &quot;quote&quot;: &quot;一半以上时间没有精力。&quot;,
+      &quot;target_path&quot;: &quot;scale_results.PHQ-9.items.4&quot;,
+      &quot;created_by&quot;: &quot;scale_rule&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-a9ac8089168d4d43a65661416fca5cbb&quot;,
+      &quot;source_type&quot;: &quot;scale_item&quot;,
+      &quot;message_id&quot;: &quot;e22cae3432f143d8806d2f68bd7ca493&quot;,
+      &quot;turn_index&quot;: 9,
+      &quot;quote&quot;: &quot;完全没有食欲变化。&quot;,
+      &quot;target_path&quot;: &quot;scale_results.PHQ-9.items.5&quot;,
+      &quot;created_by&quot;: &quot;scale_rule&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-49a62f6f21b14674930e357734cee96f&quot;,
+      &quot;source_type&quot;: &quot;scale_item&quot;,
+      &quot;message_id&quot;: &quot;1fe23a96d7b545a58543bc9fe0949c6f&quot;,
+      &quot;turn_index&quot;: 10,
+      &quot;quote&quot;: &quot;一半以上时间觉得自己让人失望。&quot;,
+      &quot;target_path&quot;: &quot;scale_results.PHQ-9.items.6&quot;,
+      &quot;created_by&quot;: &quot;scale_rule&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-f33108aea7884340814986e26e42268c&quot;,
+      &quot;source_type&quot;: &quot;scale_item&quot;,
+      &quot;message_id&quot;: &quot;75c22f948634489da351a66e3ac30a80&quot;,
+      &quot;turn_index&quot;: 11,
+      &quot;quote&quot;: &quot;完全没有注意力变化。&quot;,
+      &quot;target_path&quot;: &quot;scale_results.PHQ-9.items.7&quot;,
+      &quot;created_by&quot;: &quot;scale_rule&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-6287c9d0c1cc4bcdb86a4ddb520a05a0&quot;,
+      &quot;source_type&quot;: &quot;scale_item&quot;,
+      &quot;message_id&quot;: &quot;0eeaec5d32dc4eadb35e7bdc3cf72b80&quot;,
+      &quot;turn_index&quot;: 12,
+      &quot;quote&quot;: &quot;完全没有动作和说话变化。&quot;,
+      &quot;target_path&quot;: &quot;scale_results.PHQ-9.items.8&quot;,
+      &quot;created_by&quot;: &quot;scale_rule&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-32526b38a6804060b8325f820cadabf2&quot;,
+      &quot;source_type&quot;: &quot;scale_item&quot;,
+      &quot;message_id&quot;: &quot;3f7c96c0c9c54c6792c17445944e7ca5&quot;,
+      &quot;turn_index&quot;: 13,
+      &quot;quote&quot;: &quot;完全没有伤害自己或不如死去的想法。&quot;,
+      &quot;target_path&quot;: &quot;scale_results.PHQ-9.items.9&quot;,
+      &quot;created_by&quot;: &quot;scale_rule&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-5f141bce446b4ffaa32cca306fcb4c84&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;2bdfad9935ca4b3898d3cf78aef807ba&quot;,
+      &quot;turn_index&quot;: 14,
+      &quot;quote&quot;: &quot;从未有过少睡却不困的时期。&quot;,
+      &quot;target_path&quot;: &quot;diagnostic_context.mania_or_hypomania_history&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-805e95fab12247fc9f68a9e1013cba77&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;eca1f070ee824112a6659d5f08d3a346&quot;,
+      &quot;turn_index&quot;: 15,
+      &quot;quote&quot;: &quot;这并非药物、物质或身体疾病导致。&quot;,
+      &quot;target_path&quot;: &quot;diagnostic_context.substance_or_medical_cause&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-ea25cb10aa4f43889514333f7a41d022&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;ac92c37498d940e6a4e4af10c77981de&quot;,
+      &quot;turn_index&quot;: 16,
+      &quot;quote&quot;: &quot;最近没有听到别人听不到的声音，也没有感觉被监视。&quot;,
+      &quot;target_path&quot;: &quot;diagnostic_context.psychotic_symptoms&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-55b6a3b4b28c4983a17eeca154041d0c&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;f13bbd509c9042da8f4cc116dc2da316&quot;,
+      &quot;turn_index&quot;: 17,
+      &quot;quote&quot;: &quot;已经核对过双相障碍和适应障碍。&quot;,
+      &quot;target_path&quot;: &quot;patient_goals.0&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-451cdb17a7aa4099adda14c4397158b1&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;f13bbd509c9042da8f4cc116dc2da316&quot;,
+      &quot;turn_index&quot;: 17,
+      &quot;quote&quot;: &quot;已经核对过双相障碍和适应障碍。&quot;,
+      &quot;target_path&quot;: &quot;diagnostic_context.differential_diagnoses_assessed&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-1c9d223fac2c41b897938341dc9a4f91&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;fcc3c243a2784858b73323a60a71dbd1&quot;,
+      &quot;turn_index&quot;: 18,
+      &quot;quote&quot;: &quot;量表结果和我的实际感受一致，没有矛盾。&quot;,
+      &quot;target_path&quot;: &quot;diagnostic_context.evidence_conflicts&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-f82c9eda95aa44c19326ef5d1b154ce0&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;98fef3c3b89243e29da2f64a4a6ece99&quot;,
+      &quot;turn_index&quot;: 19,
+      &quot;quote&quot;: &quot;我的目标是恢复工作状态和改善睡眠。&quot;,
+      &quot;target_path&quot;: &quot;patient_goals.1&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-0ec94fb7b31746a1b43ae3e1fa516b4d&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;9a9a4c67fdb14f28899945c4d1f9aada&quot;,
+      &quot;turn_index&quot;: 20,
+      &quot;quote&quot;: &quot;重要性8分，信心6分，准备度7分。&quot;,
+      &quot;target_path&quot;: &quot;diagnostic_context.motivation_importance&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-d81118def7a24430b1d0a9f436e0e361&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;9a9a4c67fdb14f28899945c4d1f9aada&quot;,
+      &quot;turn_index&quot;: 20,
+      &quot;quote&quot;: &quot;重要性8分，信心6分，准备度7分。&quot;,
+      &quot;target_path&quot;: &quot;diagnostic_context.motivation_confidence&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    },
+    {
+      &quot;evidence_id&quot;: &quot;L2E-994d13782be14e7383570e22a2c73160&quot;,
+      &quot;source_type&quot;: &quot;patient_message&quot;,
+      &quot;message_id&quot;: &quot;9a9a4c67fdb14f28899945c4d1f9aada&quot;,
+      &quot;turn_index&quot;: 20,
+      &quot;quote&quot;: &quot;重要性8分，信心6分，准备度7分。&quot;,
+      &quot;target_path&quot;: &quot;diagnostic_context.motivation_readiness&quot;,
+      &quot;created_by&quot;: &quot;llm_candidate_rule_verified&quot;,
+      &quot;parent_ids&quot;: []
+    }
+  ],
+  &quot;information_sufficiency&quot;: &quot;sufficient&quot;,
+  &quot;missing_dimensions&quot;: [],
+  &quot;patient_confirmation&quot;: &quot;paused&quot;,
+  &quot;safety_controls&quot;: [],
+  &quot;flags&quot;: [],
+  &quot;l2_validation&quot;: {
+    &quot;status&quot;: &quot;fail&quot;,
+    &quot;route&quot;: &quot;return_to_l2&quot;,
+    &quot;violations&quot;: [
+      &quot;患者尚未确认画像&quot;
+    ],
+    &quot;evidence_node_count&quot;: 36
+  }
+}</pre></section>
+
+<section class="card wide"><h2>L3 诊断与 Verifier</h2><pre>{}</pre></section>
+<section class="card wide"><h2>L3→L2 待补充维度</h2><pre>[]</pre></section>
+</div>
+</main></body></html>

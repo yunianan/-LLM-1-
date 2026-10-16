@@ -36,7 +36,7 @@ class ControlledCLINICRReasoner:
             "considered_disorders": list(SUPPORTED_DISORDERS),
             "candidates": [
                 {
-                    "disorder": "MDD",
+                    "disorder": "D013",
                     "label": "重性抑郁障碍",
                     "symptom_match": {"matched": 5, "total": 9},
                     "core_evidence_summary": "低落、兴趣减退及相关量表证据",
@@ -44,7 +44,7 @@ class ControlledCLINICRReasoner:
                     "confidence": 0.75,
                 },
                 {
-                    "disorder": "GAD",
+                    "disorder": "D011",
                     "label": "广泛性焦虑障碍",
                     "symptom_match": {"matched": 2, "total": 6},
                     "core_evidence_summary": "存在需要继续核对的焦虑线索",
@@ -52,7 +52,7 @@ class ControlledCLINICRReasoner:
                     "confidence": 0.45,
                 },
                 {
-                    "disorder": "AdjustmentDisorder",
+                    "disorder": "D020",
                     "label": "适应障碍伴抑郁情绪",
                     "symptom_match": {"matched": 2, "total": 5},
                     "core_evidence_summary": "存在应激相关线索",
@@ -60,7 +60,7 @@ class ControlledCLINICRReasoner:
                     "confidence": 0.35,
                 },
                 {
-                    "disorder": "Bipolar",
+                    "disorder": "D009",
                     "label": "双相Ⅱ型（抑郁相）",
                     "symptom_match": {"matched": 1, "total": 7},
                     "core_evidence_summary": "作为重要排除诊断保留",
@@ -77,12 +77,12 @@ class ControlledCLINICRReasoner:
     ) -> EliminativeAssessment:
         self.evaluate_calls.append(candidate.disorder)
         ref = _known_ref(profile)
-        if candidate.disorder == "MDD":
+        if candidate.disorder == "D013":
             items = profile.get("PHQ9_items") or {}
             required = {"item1", "item2", "item3", "item4", "item6"}
             if not required <= set(items):
                 return EliminativeAssessment.model_validate({
-                    "disorder": "MDD",
+                    "disorder": "D013",
                     "criteria_detail": [{
                         "code": "A1",
                         "name": "心境抑郁",
@@ -122,14 +122,14 @@ class ControlledCLINICRReasoner:
                     "evidence_refs": [f"PHQ9_{item_key}={score}"],
                 })
             return EliminativeAssessment.model_validate({
-                "disorder": "MDD",
+                "disorder": "D013",
                 "criteria_detail": criteria,
                 "conclusion": "meets_criteria",
                 "conclusion_reason": "满足5/9条且包含A1和A2",
                 "missing_dimensions": [],
             })
 
-        if candidate.disorder in {"GAD", "AdjustmentDisorder"}:
+        if candidate.disorder in {"D011", "D020"}:
             return EliminativeAssessment.model_validate({
                 "disorder": candidate.disorder,
                 "criteria_detail": [{

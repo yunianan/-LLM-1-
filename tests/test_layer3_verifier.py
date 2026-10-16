@@ -8,7 +8,7 @@ from tests.l3_test_double import ControlledRewardModelVerifier
 
 def _candidate(confidence: float) -> DiagnosticCandidate:
     return DiagnosticCandidate.model_validate({
-        "disorder": "MDD",
+        "disorder": "D013",
         "label": "重性抑郁障碍",
         "symptom_match": {"matched": 5, "total": 9},
         "core_evidence_summary": "五项标准有逐条证据",
@@ -19,7 +19,7 @@ def _candidate(confidence: float) -> DiagnosticCandidate:
 
 def _assessment() -> EliminativeAssessment:
     return EliminativeAssessment.model_validate({
-        "disorder": "MDD",
+        "disorder": "D013",
         "criteria_detail": [{
             "code": "A1",
             "name": "心境抑郁",

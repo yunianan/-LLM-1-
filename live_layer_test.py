@@ -316,18 +316,7 @@ def _fictional_l3_profile() -> dict[str, Any]:
         "mania_or_hypomania_history": False,
         "substance_or_medical_cause": False,
         "psychotic_symptoms": False,
-        "differential_diagnoses_assessed": [
-            "MDD",
-            "GAD",
-            "PTSD",
-            "OCD",
-            "Insomnia",
-            "Panic",
-            "SocialAnxiety",
-            "Adjustment",
-            "SomaticSymptom",
-            "Bipolar",
-        ],
+        "differential_diagnoses_assessed": ["D009", "D020"],
         "evidence_conflicts": [],
         "key_symptoms_extracted": [
             {
@@ -467,9 +456,9 @@ def _fictional_report():
                 "boundaries": ["开药", "确诊", "诊断新疾病", "预测未来"],
             },
             "L2": {
-                "primary": "MDD",
+                "primary": "D013",
                 "comorbidities": [],
-                "excluded": ["Bipolar", "PTSD"],
+                "excluded": ["D009", "D018"],
                 "core_beliefs": ["我什么都做不好"],
                 "plugins": [],
                 "plugin_triggers": [],
@@ -493,7 +482,7 @@ def _fictional_report():
                 "verifier_score": 0.86,
                 "therapy_type": "CBT+BA",
                 "verifier_decision": "confirmed",
-                "diagnosis_details": {"primary": {"disorder": "MDD"}},
+                "diagnosis_details": {"primary": {"disorder": "D013"}},
                 "scale_scores": {"PHQ-9": 17},
                 "cognitive_patterns": [],
                 "triggering_situations": [],
@@ -519,7 +508,7 @@ def _fictional_report():
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "diagnosis": {
                 "primary": {
-                    "disorder": "MDD",
+                    "disorder": "D013",
                     "confidence": 0.78,
                     "severity": "moderate_severe",
                     "evidence": "虚构量表与叙述证据",
@@ -544,8 +533,8 @@ def _fictional_report():
                 "secondary": [],
                 "under_observation": [],
                 "ruled_out": [
-                    {"disorder": "Bipolar", "reason": "无躁狂或轻躁狂史", "evidence_ref": "MDQ=2"},
-                    {"disorder": "PTSD", "reason": "无核心创伤症候群", "evidence_ref": "PCL5=8"},
+                    {"disorder": "D009", "reason": "无躁狂或轻躁狂史", "evidence_ref": "MDQ=2"},
+                    {"disorder": "D018", "reason": "无核心创伤症候群", "evidence_ref": "PCL5=8"},
                 ],
             },
             "verifier_score": 0.86,

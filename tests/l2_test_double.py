@@ -159,7 +159,7 @@ class ControlledL2Model:
         if expected == "differential_diagnoses_assessed" or "双相障碍" in quote:
             structured.append(StructuredFieldCandidate(
                 field="differential_diagnoses_assessed",
-                value=["Bipolar", "Adjustment"],
+                value=["D009", "Adjustment"],
                 evidence_quote=quote,
             ))
         if expected == "evidence_conflicts" or "量表结果" in quote:

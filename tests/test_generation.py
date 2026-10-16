@@ -19,7 +19,7 @@ from shared.schemas.treatment_instructions import TreatmentInstructions
 
 ROLE = RoleInstruction(identity="你是一名受过CBT训练的心理治疗师", style="温暖、共情、结构化")
 ANCHOR = DiagnosticAnchor(primary="MDD（置信度 0.87）", comorbidities=["Insomnia Disorder"],
-                           excluded=["Bipolar II", "PTSD"], plugins=["CBT-I"],
+                           excluded=["Bipolar II", "D018"], plugins=["CBT-I"],
                           confidence=0.87, candidate_confidence=0.75,
                           verifier_score=1.0, therapy_type="CBT")
 BOUNDARY = BoundaryInstruction(absolute_bans=["禁止开药", "禁止诊断新疾病", "禁止预测未来"],

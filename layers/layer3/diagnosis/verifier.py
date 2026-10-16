@@ -30,7 +30,9 @@ class IndependentVerifier:
         differential_context: list[dict[str, Any]],
     ) -> dict[str, Any]:
         candidate_without_confidence = candidate.model_dump(
-            mode="json", exclude={"confidence"}
+            mode="json", exclude={"confidence": True, "decision_paths": {
+                "__all__": {"decisions": {"__all__": {"confidence"}}}
+            }}
         )
         result = self.model.score_reasoning(
             profile,

@@ -4,36 +4,14 @@ from shared.report_integrity import REQUIRED_L3_CHECKS, l3_report_fingerprint
 from .instructions.instruction_generator import validate_session_instructions
 
 
+from shared.disorder_catalog import canonical_disorder, treatment_key
+
 MIN_CANDIDATE_CONFIDENCE = 0.5
 
 PRIMARY_THERAPY_BY_DIAGNOSIS = {
-    "MDD": {"CBT", "CBT+BA"},
-    "GAD": {"CBT"},
-    "PTSD": {"CBT-TF"},
-    "OCD": {"CBT"},
-    "BIPOLAR": {"CBT+IPSRT"},
-    "INSOMNIA": {"CBT-I"},
-    "PANICDISORDER": {"CBT"},
-    "SOCIALANXIETYDISORDER": {"CBT"},
-    "ADJUSTMENTDISORDER": {"CBT/SFBT"},
-    "SOMATICSYMPTOMDISORDER": {"CBT"},
-}
-
-DIAGNOSIS_ALIASES = {
-    "MDD": "MDD",
-    "MAJORDEPRESSIVEDISORDER": "MDD",
-    "GAD": "GAD",
-    "GENERALIZEDANXIETYDISORDER": "GAD",
-    "PTSD": "PTSD",
-    "POSTTRAUMATICSTRESSDISORDER": "PTSD",
-    "OCD": "OCD",
-    "OBSESSIVECOMPULSIVEDISORDER": "OCD",
-    "BIPOLAR": "BIPOLAR",
-    "BIPOLARDISORDER": "BIPOLAR",
-    "BIPOLARI": "BIPOLAR",
-    "BIPOLARII": "BIPOLAR",
-    "INSOMNIA": "INSOMNIA",
-    "INSOMNIADISORDER": "INSOMNIA",
+    "MDD": {"CBT", "CBT+BA"}, "GAD": {"CBT"}, "PTSD": {"CBT-TF"},
+    "OCD": {"CBT"}, "Bipolar": {"CBT+IPSRT"}, "Insomnia": {"CBT-I"},
+    "AdjustmentDisorder": {"CBT/SFBT"},
 }
 
 class L3OutputValidator:
@@ -98,7 +76,7 @@ class L3OutputValidator:
         )
 
         therapy = (report.get("recommended_therapy") or {}).get("primary", "")
-        allowed = PRIMARY_THERAPY_BY_DIAGNOSIS.get(primary_code)
+        allowed = PRIMARY_THERAPY_BY_DIAGNOSIS.get(treatment_key(primary_code))
         therapy_ok = allowed is not None and therapy in allowed
         self._check(
             checks,
@@ -190,5 +168,4 @@ class L3OutputValidator:
 
     @staticmethod
     def _canonical_diagnosis(value: str) -> str:
-        normalized = "".join(ch for ch in value.upper() if ch.isalnum())
-        return DIAGNOSIS_ALIASES.get(normalized, normalized)
+        return canonical_disorder(value)

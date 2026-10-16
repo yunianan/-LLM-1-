@@ -36,7 +36,7 @@ def _profile() -> dict:
         "mania_or_hypomania_history": False,
         "substance_or_medical_cause": False,
         "psychotic_symptoms": False,
-        "differential_diagnoses_assessed": ["Bipolar", "AdjustmentDisorder"],
+        "differential_diagnoses_assessed": ["D009", "D020"],
         "evidence_conflicts": [],
         "evidence_nodes": [
             {
@@ -54,7 +54,7 @@ def _profile() -> dict:
     }
 
 
-def test_step1_considers_exactly_ten_disorders_and_generates_three_to_five():
+def test_step1_considers_exactly_twenty_four_disorders_and_keeps_a_relevant_subset():
     engine, reasoner, verifier = controlled_clinicr()
 
     result = engine.run(_profile())
@@ -63,12 +63,12 @@ def test_step1_considers_exactly_ten_disorders_and_generates_three_to_five():
     assert set(reasoner.generate_calls[0][ALLOWED_EVIDENCE_REFS_KEY]) >= {
         "PHQ9=16", "PHQ9_item2=3", "patient_utterance_L008"
     }
-    assert 3 <= len(result["candidates"]) <= 5
+    assert 1 <= len(result["candidates"]) <= len(SUPPORTED_DISORDERS)
     assert set(SUPPORTED_DISORDERS) == set(
         reasoner.generate_candidates(_profile()).considered_disorders
     )
     assert reasoner.evaluate_calls == [
-        "MDD", "GAD", "AdjustmentDisorder", "Bipolar"
+        "D013", "D011", "D020", "D009"
     ]
     assert len(verifier.calls) == 1
 
@@ -112,7 +112,7 @@ def test_step2_candidates_are_evaluated_concurrently_and_keep_rank_order(monkeyp
 
     assert reasoner.peak > 1
     assert [item["disorder"] for item in result["checked"]] == [
-        "MDD", "GAD", "AdjustmentDisorder", "Bipolar"
+        "D013", "D011", "D020", "D009"
     ]
     assert len(verifier.calls) == 1
 
@@ -123,7 +123,7 @@ def test_step2_preserves_low_confidence_differentials_and_binds_dsm_evidence():
     result = engine.run(_profile())
 
     primary = result["diagnosis"]["primary"]
-    assert primary["disorder"] == "MDD"
+    assert primary["disorder"] == "D013"
     assert primary["dsm5_criteria_met"] == ["A1", "A2", "A4", "A6", "A7"]
     detail = {item["code"]: item for item in primary["dsm5_criteria_detail"]}
     assert detail["A1"]["evidence_refs"] == ["PHQ9_item2=3"]
@@ -132,13 +132,13 @@ def test_step2_preserves_low_confidence_differentials_and_binds_dsm_evidence():
     candidate_confidences = {
         item["disorder"]: item["confidence"] for item in result["candidates"]
     }
-    assert candidate_confidences["AdjustmentDisorder"] == 0.35
-    assert candidate_confidences["Bipolar"] == 0.15
+    assert candidate_confidences["D020"] == 0.35
+    assert candidate_confidences["D009"] == 0.15
     assert {item["disorder"] for item in result["diagnosis"]["under_observation"]} == {
-        "GAD", "AdjustmentDisorder"
+        "D011", "D020"
     }
     assert {item["disorder"] for item in result["diagnosis"]["ruled_out"]} == {
-        "Bipolar"
+        "D009"
     }
 
 
@@ -199,7 +199,7 @@ def test_diagnose_runs_clinicr_before_therapy_and_preserves_three_step_result():
     report = DiagnosticReport.model_validate(raw)
 
     assert report.diagnosis.primary is not None
-    assert report.diagnosis.primary.disorder == "MDD"
+    assert report.diagnosis.primary.disorder == "D013"
     assert report.candidate_confidence == 0.75
     assert report.verifier_score == 0.87
     assert report.verifier_decision == "confirmed"

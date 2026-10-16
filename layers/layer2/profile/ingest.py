@@ -13,6 +13,8 @@ from layers.layer2.schemas import (
 )
 
 
+from shared.disorder_catalog import SYMPTOMS
+
 ALLOWED_SYMPTOMS = {
     "depressed_mood",
     "anhedonia",
@@ -28,6 +30,7 @@ ALLOWED_SYMPTOMS = {
     "elevated_mood",
     "passive_si",
 }
+ALLOWED_SYMPTOMS.update(SYMPTOMS)
 
 ALLOWED_STRUCTURED_FIELDS = {
     "symptom_duration_days",
@@ -36,6 +39,7 @@ ALLOWED_STRUCTURED_FIELDS = {
     "substance_or_medical_cause",
     "differential_diagnoses_assessed",
     "evidence_conflicts",
+    "diagnostic_details",
     "relapse_count",
     "rhythm_disturbance",
     "exposure_avoidant",
@@ -227,6 +231,8 @@ class ProfileIngestor:
             return isinstance(value, bool)
         if field == "differential_diagnoses_assessed":
             return isinstance(value, list) and all(isinstance(item, str) for item in value)
+        if field == "diagnostic_details":
+            return isinstance(value, dict) and all(isinstance(key, str) for key in value)
         if field == "evidence_conflicts":
             return isinstance(value, list) and all(isinstance(item, dict) for item in value)
         if field.startswith("motivation_"):
@@ -246,7 +252,10 @@ class ProfileIngestor:
             if evidence_id not in state.motivation.sources:
                 state.motivation.sources.append(evidence_id)
             return
-        setattr(state.diagnostic_context, field, value)
+        if field == "diagnostic_details":
+            state.diagnostic_context.diagnostic_details.update(value)
+        else:
+            setattr(state.diagnostic_context, field, value)
         state.diagnostic_context.sources.setdefault(field, []).append(evidence_id)
 
     def _remove_target(

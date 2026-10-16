@@ -195,7 +195,7 @@ def test_plugin_guidance_sent_only_for_activated_plugin(service):
     assert turn.plugin_guidance in service.backend.calls[-1][1].content
 
 
-@pytest.mark.parametrize("field,value", [("primary", "PTSD"), ("candidate_confidence", .01), ("verifier_score", .01), ("plugins", ["EMDR"])])
+@pytest.mark.parametrize("field,value", [("primary", "D018"), ("candidate_confidence", .01), ("verifier_score", .01), ("plugins", ["EMDR"])])
 def test_l3_static_validation_detects_inconsistent_anchor(raw, field, value):
     raw["instructions"]["L2"][field] = value
     receipt = L3OutputValidator().validate(raw)

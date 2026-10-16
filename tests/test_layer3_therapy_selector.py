@@ -80,7 +80,7 @@ def test_step1_all_ten_mappings_pass_l3_output_guard(diagnosis, expected):
 
 def test_step2_applies_priority_and_limits_active_plugins_to_two():
     therapy = TherapySelector().run(
-        "Bipolar",
+        "D009",
         {
             "MDQ": 8,
             "rhythm_disturbance": True,
@@ -91,7 +91,7 @@ def test_step2_applies_priority_and_limits_active_plugins_to_two():
             "PHQ9": 12,
             "GAD7": 10,
         },
-        confirmed_diagnoses={"Bipolar", "PTSD", "OCD"},
+        confirmed_diagnoses={"D009", "D018", "D016"},
         verifier_decision="confirmed",
     )
 
@@ -105,9 +105,9 @@ def test_step2_applies_priority_and_limits_active_plugins_to_two():
 
 def test_step2_uses_confirmed_comorbidity_for_diagnosis_specific_plugin():
     therapy = TherapySelector().run(
-        "GAD",
+        "D011",
         {"PCL5": 40, "exposure_avoidant": True},
-        confirmed_diagnoses={"GAD", "PTSD"},
+        confirmed_diagnoses={"D011", "D018"},
         verifier_decision="confirmed",
     )
     assert therapy["plugins"] == ["EMDR"]
@@ -116,9 +116,9 @@ def test_step2_uses_confirmed_comorbidity_for_diagnosis_specific_plugin():
 
 def test_step2_does_not_activate_diagnosis_specific_plugin_for_provisional_case():
     therapy = TherapySelector().run(
-        "PTSD",
+        "D018",
         {"PCL5": 40, "exposure_avoidant": True},
-        confirmed_diagnoses={"PTSD"},
+        confirmed_diagnoses={"D018"},
         verifier_decision="provisional",
     )
     assert therapy["plugins"] == []
@@ -126,13 +126,13 @@ def test_step2_does_not_activate_diagnosis_specific_plugin_for_provisional_case(
 
 def test_step2_cbt_i_uses_insomnia_chief_complaint_not_primary_diagnosis():
     therapy = TherapySelector().run(
-        "MDD",
+        "D013",
         {
             "ISI": 18,
             "chronic_months": 4,
             "insomnia_chief_complaint": True,
         },
-        confirmed_diagnoses={"MDD"},
+        confirmed_diagnoses={"D013"},
     )
     assert therapy["plugins"] == ["CBT-I"]
 
@@ -142,14 +142,14 @@ def test_step2_sfbt_requires_confirmed_adjustment_disorder():
     selector = TherapySelector()
 
     without_diagnosis = selector.run(
-        "GAD",
+        "D011",
         profile,
-        confirmed_diagnoses={"GAD"},
+        confirmed_diagnoses={"D011"},
     )
     with_comorbidity = selector.run(
-        "GAD",
+        "D011",
         profile,
-        confirmed_diagnoses={"GAD", "AdjustmentDisorder"},
+        confirmed_diagnoses={"D011", "D020"},
     )
 
     assert without_diagnosis["plugins"] == []
@@ -158,13 +158,13 @@ def test_step2_sfbt_requires_confirmed_adjustment_disorder():
 
 def test_step3_severe_and_high_motivation_adjustments_are_both_preserved():
     therapy = TherapySelector().run(
-        "MDD",
+        "D013",
         {
             "PHQ9": 20,
             "GAD7": 6,
             "motivation": {"importance": 8, "confidence": 6},
         },
-        confirmed_diagnoses={"MDD"},
+        confirmed_diagnoses={"D013"},
     )
     adjustments = therapy["strategy_adjustments"]
 
@@ -178,13 +178,13 @@ def test_step3_severe_and_high_motivation_adjustments_are_both_preserved():
 
 def test_step3_low_motivation_defers_action_oriented_interventions():
     therapy = TherapySelector().run(
-        "GAD",
+        "D011",
         {
             "PHQ9": 8,
             "GAD7": 7,
             "motivation": {"importance": 3, "confidence": 4},
         },
-        confirmed_diagnoses={"GAD"},
+        confirmed_diagnoses={"D011"},
     )
     adjustments = therapy["strategy_adjustments"]
 
@@ -196,9 +196,9 @@ def test_step3_low_motivation_defers_action_oriented_interventions():
 
 def test_step3_missing_scales_remain_undetermined_instead_of_becoming_mild():
     therapy = TherapySelector().run(
-        "MDD",
+        "D013",
         {},
-        confirmed_diagnoses={"MDD"},
+        confirmed_diagnoses={"D013"},
     )
 
     assert DiagnoseRequest().PHQ9 is None
@@ -208,13 +208,13 @@ def test_step3_missing_scales_remain_undetermined_instead_of_becoming_mild():
 
 def test_step3_severe_dissociation_suppresses_exposure_plugin():
     therapy = TherapySelector().run(
-        "PTSD",
+        "D018",
         {
             "PCL5": 40,
             "exposure_avoidant": True,
             "severe_dissociation": True,
         },
-        confirmed_diagnoses={"PTSD"},
+        confirmed_diagnoses={"D018"},
     )
 
     assert therapy["plugins"] == []
@@ -227,12 +227,12 @@ def test_step3_severe_dissociation_suppresses_exposure_plugin():
 
 def test_step3_active_substance_dependence_suppresses_all_plugins():
     therapy = TherapySelector().run(
-        "GAD",
+        "D011",
         {
             "AAQ_II": 30,
             "substance_active": True,
         },
-        confirmed_diagnoses={"GAD"},
+        confirmed_diagnoses={"D011"},
     )
 
     assert therapy["plugins"] == []
@@ -241,12 +241,12 @@ def test_step3_active_substance_dependence_suppresses_all_plugins():
 
 def test_step3_psychotic_symptoms_prioritize_psychiatric_referral():
     therapy = TherapySelector().run(
-        "MDD",
+        "D013",
         {
             "motivation": {"importance": 8, "confidence": 8},
             "psychotic_symptoms": True,
         },
-        confirmed_diagnoses={"MDD"},
+        confirmed_diagnoses={"D013"},
     )
     adjustments = therapy["strategy_adjustments"]
 
@@ -258,12 +258,12 @@ def test_step3_psychotic_symptoms_prioritize_psychiatric_referral():
 
 def test_step3_contraindication_overrides_high_motivation_exposure_permission():
     therapy = TherapySelector().run(
-        "PTSD",
+        "D018",
         {
             "motivation": {"importance": 8, "confidence": 8},
             "severe_dissociation": True,
         },
-        confirmed_diagnoses={"PTSD"},
+        confirmed_diagnoses={"D018"},
     )
     adjustments = therapy["strategy_adjustments"]
 
@@ -274,19 +274,19 @@ def test_step3_contraindication_overrides_high_motivation_exposure_permission():
 
 def test_therapy_output_survives_l3_to_l4_schema_and_prompt():
     therapy = TherapySelector().run(
-        "MDD",
+        "D013",
         {
             "PHQ9": 20,
             "GAD7": 6,
             "relapse_count": 3,
             "motivation": {"importance": 8, "confidence": 6},
         },
-        confirmed_diagnoses={"MDD"},
+        confirmed_diagnoses={"D013"},
     )
     clinicr_result = {
         "diagnosis": {
             "primary": {
-                "disorder": "MDD",
+                "disorder": "D013",
                 "confidence": 0.8,
                 "severity": "severe",
                 "evidence": "evidence",
