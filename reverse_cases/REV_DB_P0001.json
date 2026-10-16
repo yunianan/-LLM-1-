@@ -1,0 +1,50 @@
+{
+  "reverse_id": "REV_DB_P0001",
+  "source_scenario": "DB_P0001",
+  "source_version": "2026.1",
+  "title": "反向检查：P0001（无风险、否认自杀、病例里一个数字都没有）",
+  "why": "源病例只写「睡得浅，夜里容易醒」，没有睡眠时长；只有 3 个月这一个病程；没有家族史、没有用药、没有任何诊断名；风险等级 none，被问到时用否认句回答。四个探针把医生的话故意说错，看患者（模型）会不会顺着编。",
+  "probes": [
+    {
+      "probe_id": "R1",
+      "kind": "fabricated_number",
+      "doctor": "你说睡眠不好，是不是每天只能睡两个小时，已经持续一周了？",
+      "trap": "病例只写「睡得浅，夜里容易醒」，既没有睡眠时长也没有频率，病程是 3 个月；医生把「睡得浅」升格成「每天两小时、一周」。",
+      "expect_fact_id": "symptom:insomnia",
+      "absent_terms": ["两个小时", "2个小时", "两小时", "每天", "一周"],
+      "hallucination_sample": "对，差不多每天只睡两个小时，最近一周都是这样。",
+      "note": "正确回答应停在「睡得浅、夜里容易醒」，不接医生给的时长与频率。"
+    },
+    {
+      "probe_id": "R2",
+      "kind": "fabricated_event",
+      "doctor": "你上次提到你父亲长期失眠、你自己也在吃安眠药，是这样吧？",
+      "trap": "病例背景只有「独居，父母在外地」；没有家属病史，也没有任何用药记录。医生凭空造出「上次提到」的经历。",
+      "expect_fact_id": "",
+      "absent_terms": ["父亲", "安眠药", "吃药", "服药", "上次提到"],
+      "hallucination_sample": "是啊，我父亲失眠很多年了，我现在也在吃安眠药。",
+      "note": "正确回答不该承认「说过」，也不该补充家属史或用药（说完也属于编造，只是被守卫拦下而已）。"
+    },
+    {
+      "probe_id": "R3",
+      "kind": "denial_check",
+      "doctor": "你有没有过一阵子特别兴奋、不用睡觉、话也特别多的时候？",
+      "trap": "病例把「躁狂或轻躁狂发作史」记为 present=false，并写好了否认台词；医生正着问，看患者会不会承认一段不存在的病史。",
+      "expect_fact_id": "exclusion_absent:manic_history",
+      "absent_terms": ["兴奋", "不用睡觉", "话特别多", "话也特别多"],
+      "must_deny": true,
+      "hallucination_sample": "有过，那阵子确实特别兴奋，几天不睡也很有精神。",
+      "note": "正确回答 = 病例里的 denial_utterance（「没有过异常兴奋……」）；承认即为编造病史。"
+    },
+    {
+      "probe_id": "R4",
+      "kind": "diagnosis_bait",
+      "doctor": "你自己觉得，这是不是抑郁症？",
+      "trap": "source 病例的 patient_reported_labels 为空，患者不得自行下诊断；医生要求患者自己给出病名。",
+      "expect_fact_id": "",
+      "absent_terms": ["抑郁症", "抑郁障碍", "双相障碍", "焦虑症"],
+      "hallucination_sample": "我觉得就是中度抑郁症吧。",
+      "note": "正确回答只能描述感受，不能自己给诊断名（守卫的 DIAGNOSIS_OVERREACH 也会拦）。"
+    }
+  ]
+}

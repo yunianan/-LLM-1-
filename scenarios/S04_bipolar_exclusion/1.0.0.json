@@ -1,0 +1,218 @@
+{
+  "scenario_id": "S04_bipolar_exclusion",
+  "version": "1.0.0",
+  "title": "诊断排除：易激惹伴睡眠减少但无躁狂史",
+  "description": "覆盖验收场景 4。患者带易激惹与睡眠减少，最容易被误判成双相；L3 在出结论前追问躁狂史，患者明确否认（否认句用「没有过」起头，L2 提取时必须把它当成否认而不是躁狂证据），于是双相被排除。进入治疗期后患者主动提到「社区医生提过双相障碍，但我不觉得是」，仍坚持原病例事实，验证患者不迎合系统。",
+  "locale": "zh-CN",
+  "seed": 404,
+  "tags": ["exclusion", "bipolar", "resilience", "irritability"],
+
+  "background": {
+    "age_range": "33-37岁",
+    "occupation": "项目经理",
+    "family_relationship": "已婚，有一个上小学的孩子，家庭关系紧张",
+    "major_events": ["项目连续加班三个月", "上个月和同事发生争执被领导约谈"],
+    "facts": [
+      {
+        "fact_id": "bg_duration",
+        "field": "病程",
+        "content": "2个多月了，从项目最忙那阵开始。",
+        "disclosure": "on_probe",
+        "probe_keywords": ["持续", "多久", "多长时间"]
+      },
+      {
+        "fact_id": "bg_work_context",
+        "field": "工作影响",
+        "content": "开会的时候会忍不住顶回去，跟同事关系变得很紧张。",
+        "disclosure": "on_probe",
+        "probe_keywords": ["工作", "生活", "影响"]
+      }
+    ],
+    "forbidden_claims": ["我已经升职了", "我从来不和人吵架"]
+  },
+
+  "clinical": {
+    "chief_complaint": "我最近2个多月情绪特别差，一点小事就发火",
+    "symptoms": [
+      {
+        "symptom_id": "depressed_mood",
+        "label": "情绪低落",
+        "present": true,
+        "duration": "2个月",
+        "severity": 2,
+        "utterance": "情绪一直很低落，心里堵得慌。",
+        "disclosure": "on_probe",
+        "probe_keywords": ["难受", "情绪", "低落"]
+      },
+      {
+        "symptom_id": "irritability",
+        "label": "易激惹",
+        "present": true,
+        "duration": "2个月",
+        "severity": 2,
+        "utterance": "这2个多月特别容易烦，一点小事就发脾气。",
+        "disclosure": "on_probe",
+        "probe_keywords": ["烦", "发脾气", "急躁", "容易烦"]
+      },
+      {
+        "symptom_id": "insomnia",
+        "label": "睡眠减少",
+        "present": true,
+        "duration": "2个月",
+        "severity": 2,
+        "utterance": "睡得浅，凌晨四点容易醒，白天很困。",
+        "disclosure": "on_probe",
+        "probe_keywords": ["睡眠", "精力", "变化"]
+      }
+    ],
+    "exclusions": [
+      {
+        "condition_id": "manic_history",
+        "label": "躁狂或轻躁狂发作史",
+        "present": false,
+        "denial_utterance": "没有过。没有过特别兴奋、不需要睡觉、话也特别多的时候。",
+        "probe_keywords": ["兴奋", "不需要睡觉", "话也特别多"]
+      },
+      {
+        "condition_id": "psychotic_features",
+        "label": "精神病性症状",
+        "present": false,
+        "denial_utterance": "没有过。没有听到或者看到别人没有察觉的东西。",
+        "probe_keywords": ["听到", "看到", "别人没有察觉"]
+      }
+    ],
+    "scale_plans": [
+      {
+        "scale_name": "PHQ-9",
+        "willingness": "accept",
+        "answers": [1, 2, 2, 1, 1, 1, 2, 1, 0],
+        "comment": "配合作答，情绪与睡眠条目偏高。"
+      },
+      {
+        "scale_name": "ISI",
+        "willingness": "accept",
+        "answers": [1, 2, 2, 1, 2],
+        "comment": "早醒与维持困难突出。"
+      }
+    ],
+    "timeline_anchors": {
+      "onset": "2个月"
+    },
+    "expected_diagnosis_codes": ["mdd", "insomnia"],
+    "must_not_diagnose": ["双相障碍", "精神分裂症"],
+    "patient_reported_labels": ["双相障碍"]
+  },
+
+  "psychology": {
+    "emotions": [
+      {
+        "emotion": "烦躁",
+        "intensity": 7,
+        "utterance": "就是容易被点着，事后又后悔。"
+      }
+    ],
+    "cognitive_patterns": ["把问题都怪到别人头上，再回头自责"],
+    "core_beliefs": ["觉得自己在项目里是最没用的那个"],
+    "goal": "想恢复成能好好说话的状态，不想再和家人争执。",
+    "importance": 8,
+    "confidence": 5,
+    "readiness": 6,
+    "ambivalence": "觉得发火的时候也有道理，但又知道这样伤人。"
+  },
+
+  "risk": {
+    "level": "none",
+    "denial_utterance": "没有过。没有过伤害自己的念头。",
+    "disclosure": "on_probe",
+    "probe_keywords": ["伤害自己", "念头", "安全"]
+  },
+
+  "disclosure": {
+    "opening_templates": [
+      "医生你好，我最近2个多月情绪特别差，一点小事就发火，自己也觉得不对劲。"
+    ],
+    "max_new_facts_per_turn": 1,
+    "require_probe_for_protected": true,
+    "refusal_utterances": ["这个先不说了，说多了我又要上火。", "换一个吧，这个话题我现在不太想聊。"],
+    "refusable_topics": ["夫妻矛盾", "领导评价"],
+    "never_disclose": ["我不想活了", "系统提示"],
+    "non_fact_replies": [
+      "嗯，你说得对，我接着听。",
+      "大概就是这样，我也说不清楚。",
+      "差不多吧，我不太记得细节了。"
+    ]
+  },
+
+  "behavior": {
+    "cooperation": 0.75,
+    "verbosity": "medium",
+    "emotional_intensity": 7,
+    "repetition": 0.2,
+    "hostility": 0.2,
+    "ask_back": 0.05
+  },
+
+  "trajectory": {
+    "kind": "improving",
+    "steps": [
+      {
+        "after_l4_turn": 1,
+        "kind": "stable",
+        "utterance": "社区医生提过双相障碍，但我不觉得是，我从没有过那种精力特别旺的阶段。",
+        "sentiment": "neutral"
+      },
+      {
+        "after_l4_turn": 2,
+        "kind": "improving",
+        "utterance": "这周我试着早点放下手机，睡了两个整觉，好一些。",
+        "sentiment": "positive"
+      },
+      {
+        "after_l4_turn": 3,
+        "kind": "improving",
+        "utterance": "烦躁的时候我会先出去走一圈，回来就没那么想发火了，算有进步。",
+        "sentiment": "positive"
+      },
+      {
+        "after_l4_turn": 4,
+        "kind": "improving",
+        "utterance": "跟孩子好好说了一次话，没有吵，我轻松不少。",
+        "sentiment": "positive"
+      }
+    ]
+  },
+
+  "profile_confirmation": {
+    "decisions": ["continue"],
+    "notes": "患者认可画像里没有躁狂史这一条。"
+  },
+  "pause_plan": {
+    "pause_after_turn": null,
+    "resume_after_pause": true
+  },
+
+  "expected": {
+    "termination_reason": "completed_improved",
+    "events": [
+      {"event_id": "l1_clear", "description": "L1 判定无风险", "layer": "L1", "required": true},
+      {"event_id": "l2_scale_completed", "description": "量表逐题作答完成", "layer": "L2", "required": true},
+      {"event_id": "l2_profile_confirmed", "description": "患者确认画像", "layer": "L2", "required": true},
+      {"event_id": "l3_candidates_generated", "description": "L3 生成候选", "layer": "L3", "required": true},
+      {"event_id": "l3_candidate_excluded", "description": "L3 排除不满足门槛的候选（双相）", "layer": "L3", "required": true},
+      {"event_id": "l4_treatment_started", "description": "进入治疗对话", "layer": "L4", "required": true},
+      {"event_id": "l4_improvement_detected", "description": "识别到改善", "layer": "L4", "required": true}
+    ],
+    "forbidden_events": ["l1_safety_activated", "l4_no_change_detected", "l4_dropout_detected"],
+    "expected_excluded_conditions": ["bipolar"],
+    "expected_layers": ["L1", "L2", "L3", "L4", "L5"],
+    "min_turns": 12
+  },
+
+  "stop": {
+    "max_turns": 40,
+    "stop_on_crisis": true,
+    "stop_on_human_review": true,
+    "stop_on_violation": true,
+    "target_events": []
+  }
+}

@@ -1,0 +1,1846 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Patient Agent 完全入门手册</title>
+<style>
+:root{
+  --bg:#f6f7fb; --panel:#ffffff; --panel-2:#f0f2f8; --text:#1b1f2a; --muted:#5b6478;
+  --line:#e2e6f0; --brand:#4f46e5; --brand-2:#7c3aed; --accent:#0ea5e9;
+  --ok:#16a34a; --warn:#d97706; --bad:#dc2626; --code-bg:#1e2430; --code-fg:#e6edf3;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 8px 24px rgba(16,24,40,.06);
+  --radius:14px; --mono:"Cascadia Code","JetBrains Mono",Consolas,"SF Mono",Menlo,monospace;
+}
+html[data-theme="dark"]{
+  --bg:#0e1117; --panel:#151a23; --panel-2:#1b212c; --text:#e6eaf2; --muted:#98a2b3;
+  --line:#242c3a; --brand:#8b8cf9; --brand-2:#a78bfa; --accent:#38bdf8;
+  --code-bg:#0b0f16; --code-fg:#e6edf3; --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font:16px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+#progress{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--brand),var(--brand-2),var(--accent));z-index:60;transition:width .1s linear}
+
+/* ---------- 顶栏 ---------- */
+.topbar{
+  position:sticky;top:0;z-index:50;backdrop-filter:blur(10px);
+  background:color-mix(in srgb,var(--panel) 88%,transparent);
+  border-bottom:1px solid var(--line);
+}
+.topbar-in{max-width:1400px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:12px 20px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.2px;white-space:nowrap}
+.brand .dot{width:11px;height:11px;border-radius:50%;background:linear-gradient(135deg,var(--brand),var(--accent));box-shadow:0 0 0 4px color-mix(in srgb,var(--brand) 20%,transparent)}
+.brand small{font-weight:500;color:var(--muted);font-size:12.5px;margin-left:2px}
+.search{flex:1;position:relative;max-width:460px;margin-left:auto}
+.search input{
+  width:100%;padding:9px 13px 9px 36px;border-radius:10px;border:1px solid var(--line);
+  background:var(--panel-2);color:var(--text);font-size:14.5px;outline:none;transition:.15s;
+}
+.search input:focus{border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 18%,transparent)}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);opacity:.55}
+.tbtn{
+  border:1px solid var(--line);background:var(--panel-2);color:var(--text);
+  border-radius:10px;padding:8px 11px;cursor:pointer;font-size:14px;line-height:1;transition:.15s
+}
+.tbtn:hover{border-color:var(--brand);color:var(--brand)}
+.count{font-size:12.5px;color:var(--muted);white-space:nowrap}
+
+/* ---------- 布局 ---------- */
+.layout{max-width:1400px;margin:0 auto;display:grid;grid-template-columns:288px minmax(0,1fr);gap:26px;padding:22px 20px 90px}
+@media (max-width:1000px){.layout{grid-template-columns:1fr}.sidebar{position:static!important;max-height:none!important}}
+.sidebar{
+  position:sticky;top:74px;align-self:start;max-height:calc(100vh - 96px);overflow:auto;
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px 10px;box-shadow:var(--shadow);
+}
+.sidebar h4{margin:8px 10px 8px;font-size:12px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted)}
+.sidebar a{
+  display:block;padding:7px 11px;border-radius:9px;color:var(--muted);text-decoration:none;
+  font-size:14px;border-left:3px solid transparent;transition:.13s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.sidebar a.sub{padding-left:26px;font-size:13px}
+.sidebar a:hover{background:var(--panel-2);color:var(--text)}
+.sidebar a.active{background:color-mix(in srgb,var(--brand) 12%,transparent);color:var(--brand);border-left-color:var(--brand);font-weight:600}
+
+main{min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:26px 30px;box-shadow:var(--shadow);margin-bottom:22px}
+@media (max-width:560px){.card{padding:20px 16px}}
+h1{font-size:30px;margin:6px 0 8px;letter-spacing:-.5px}
+h2{font-size:23px;margin:0 0 6px;letter-spacing:-.3px;scroll-margin-top:80px}
+h3{font-size:18px;margin:26px 0 8px;scroll-margin-top:80px}
+h4{font-size:15.5px;margin:18px 0 6px}
+h2 .n{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:30px;padding:0 8px;margin-right:10px;border-radius:9px;background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#fff;font-size:15px;vertical-align:middle}
+p{margin:10px 0}
+a{color:var(--brand)}
+hr{border:0;border-top:1px solid var(--line);margin:26px 0}
+ul,ol{padding-left:22px}
+li{margin:5px 0}
+code{font-family:var(--mono);font-size:.9em;background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:1.5px 6px}
+.lead{font-size:17px;color:var(--muted)}
+.pill{display:inline-block;font-size:12px;padding:2px 9px;border-radius:999px;background:color-mix(in srgb,var(--brand) 14%,transparent);color:var(--brand);font-weight:600;margin-right:6px}
+.pill.g{background:color-mix(in srgb,var(--ok) 15%,transparent);color:var(--ok)}
+.pill.w{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.pill.b{background:color-mix(in srgb,var(--bad) 14%,transparent);color:var(--bad)}
+
+/* ---------- 表格 ---------- */
+.tw{overflow:auto;border:1px solid var(--line);border-radius:11px;margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:14.4px;min-width:420px}
+th,td{padding:9px 13px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--panel-2);font-weight:700;white-space:nowrap;position:sticky;top:0}
+tr:last-child td{border-bottom:0}
+tbody tr:hover{background:color-mix(in srgb,var(--brand) 5%,transparent)}
+td code{white-space:nowrap}
+
+/* ---------- 代码块 ---------- */
+.code{position:relative;margin:14px 0;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:var(--code-bg)}
+.code .bar{display:flex;align-items:center;gap:7px;padding:8px 12px;background:rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.08)}
+.code .bar .fname{font-family:var(--mono);font-size:12px;color:#9fb0c5;margin-left:4px}
+.code .bar .lamp{width:10px;height:10px;border-radius:50%}
+.lamp.r{background:#ff5f57}.lamp.y{background:#febc2e}.lamp.g{background:#28c840}
+.copy{margin-left:auto;border:1px solid rgba(255,255,255,.18);background:transparent;color:#c9d6e6;font-size:12px;padding:3px 10px;border-radius:7px;cursor:pointer;transition:.15s}
+.copy:hover{background:rgba(255,255,255,.12);color:#fff}
+.copy.done{background:var(--ok);border-color:var(--ok);color:#fff}
+pre{margin:0;padding:15px 16px;overflow:auto}
+pre code{background:none;border:0;padding:0;font-size:13.4px;line-height:1.65;color:var(--code-fg)}
+.tok-cm{color:#7d8da1;font-style:italic}
+.tok-st{color:#9ece6a}
+.tok-kw{color:#7aa2f7}
+
+/* ---------- 提示框 ---------- */
+.note{border-left:4px solid var(--brand);background:color-mix(in srgb,var(--brand) 7%,transparent);padding:12px 16px;border-radius:0 11px 11px 0;margin:14px 0}
+.note.warn{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 9%,transparent)}
+.note.bad{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 7%,transparent)}
+.note.ok{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 8%,transparent)}
+
+/* ---------- 卡片网格 / 流程图 ---------- */
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));margin:16px 0}
+.mini{border:1px solid var(--line);border-radius:12px;padding:14px 15px;background:var(--panel-2)}
+.mini b{display:block;margin-bottom:4px}
+.mini .lay{font-family:var(--mono);color:var(--brand);font-weight:700}
+.mini p{margin:4px 0 0;font-size:13.6px;color:var(--muted)}
+.flow{display:flex;flex-direction:column;gap:0;margin:18px 0}
+.step{display:flex;gap:14px;align-items:flex-start}
+.step .badge{flex:none;width:40px;height:40px;border-radius:11px;display:grid;place-items:center;font-size:12.5px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--brand),var(--brand-2))}
+.step .body{padding:6px 0 16px;flex:1}
+.step .body b{font-size:15.5px}
+.step .body p{margin:2px 0 0;color:var(--muted);font-size:14px}
+.step:not(:last-child) .badge{position:relative}
+.step:not(:last-child) .badge::after{content:"";position:absolute;top:42px;left:50%;transform:translateX(-50%);width:2px;height:calc(100% + 8px);background:var(--line)}
+details{border:1px solid var(--line);border-radius:11px;padding:10px 15px;margin:12px 0;background:var(--panel-2)}
+summary{cursor:pointer;font-weight:600;outline:none}
+details[open] summary{margin-bottom:10px}
+.toTop{position:fixed;right:22px;bottom:22px;z-index:55;width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--text);cursor:pointer;box-shadow:var(--shadow);display:none;font-size:18px}
+.toTop:hover{color:var(--brand);border-color:var(--brand)}
+mark{background:linear-gradient(transparent 55%,color-mix(in srgb,var(--warn) 45%,transparent) 0);padding:0 2px;border-radius:3px}
+.hidden{display:none!important}
+footer{text-align:center;color:var(--muted);font-size:13.5px;padding:26px 20px 40px}
+.kbd{font-family:var(--mono);font-size:12.5px;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:1px 7px;background:var(--panel-2)}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="brand"><span class="dot"></span>Patient Agent 手册 <small>PA1–PA7 · 模拟患者 · 自动多轮测试</small></div>
+    <div class="search">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="q" type="search" placeholder="搜索…（例如 guard / 病例 / SYSTEM_API_MODE）">
+    </div>
+    <span class="count" id="cnt"></span>
+    <button class="tbtn" id="theme" title="切换深/浅色">🌙</button>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="toc">
+    <h4>开始</h4>
+    <a href="#s1">1 · 30 秒理解</a>
+    <a href="#s2">2 · 五分钟跑起来</a>
+    <a href="#s2-4" class="sub">2.4 在 VS Code 里跑</a>
+    <a href="#s3">3 · 目录总览</a>
+    <a href="#s3-entry" class="sub">入口 vs 模块</a>
+    <a href="#s4">4 · 先搞懂这些词</a>
+    <a href="#s5">5 · 一次运行的生命周期</a>
+    <h4>逐文件细讲</h4>
+    <a href="#s6">6 · 全部 .py 文件</a>
+    <a href="#s6-1" class="sub">6.1 schemas（PA1）</a>
+    <a href="#s6-5" class="sub">6.5 generator（PA3）</a>
+    <a href="#s6-6" class="sub">6.6 guard（PA4）</a>
+    <a href="#s6-7" class="sub">6.7 runner（PA5）</a>
+    <a href="#s6-17">6.17 client/（系统侧）</a>
+    <h4>上手</h4>
+    <a href="#s7">7 · 解剖一个病例</a>
+    <a href="#s8">8 · 我想改 X 速查表</a>
+    <a href="#s9">9 · 接入其他层</a>
+    <a href="#s10">10 · 怎么看结果</a>
+    <a href="#s11">11 · 排错 FAQ</a>
+    <a href="#s12">12 · 命令速查表</a>
+    <h4>数据集</h4>
+    <a href="#s13">13 · 用标准数据集批量生成病例</a>
+    <a href="#s13-2-1">13.2.1 · 会谈记录格式（一问一答）</a>
+  </nav>
+
+  <main id="main">
+
+  <section class="card" id="s0">
+    <h1>Patient Agent 完全入门手册</h1>
+    <p class="lead">这份文档写给<strong>第一次打开这个目录的人</strong>。读完它，你应该能：</p>
+    <ol>
+      <li>知道整个项目在做什么、每一层是谁；</li>
+      <li>知道<strong>每个 <code>.py</code> 文件负责什么</strong>、想改东西该动哪个文件；</li>
+      <li>会在本地把它跑起来，并看懂跑出来的结果；</li>
+      <li>知道<strong>以后接上其他层的真实代码</strong>时，要在这里改哪里、怎么写；</li>
+      <li>知道<strong>手上有一份标准数据集时，怎么把它变成一批能跑的病例</strong>（见 <a href="#s13">§13</a>）。</li>
+    </ol>
+    <p>本文档是<strong>自包含</strong>的：只读这一份就能上手，不需要先读 <code>README.md</code>。两者内容有重叠，不冲突。</p>
+    <div class="note ok"><b>一句话记住整个项目</b><br>
+      病例（<code>schemas/library</code>）→ 生成器（<code>generator</code>）说要说什么 → 守卫（<code>guard</code>）检查合不合规 → 运行器（<code>runner</code>）调系统 API → 记录（<code>recorder</code>）→ 停止（<code>stopping</code>）→ 评测（<code>evaluator/report</code>）。
+    </div>
+
+    <h3>项目框架：先认清四条线</h3>
+    <div class="grid">
+      <div class="mini"><b>① 源码 <code>patient_agent/</code></b><p>你的交付物。PA1–PA7 各占一个文件，另有 <code>client/</code>（被测系统那侧）和 <code>llm/</code>（患者怎么开口）。</p></div>
+      <div class="mini"><b>② 病例库 <code>scenarios/</code></b><p>6 例内置病例，覆盖 5 条验收场景；<code>imported_scenarios/</code> 是从标准数据集生成出来的病例。</p></div>
+      <div class="mini"><b>③ 测试 <code>tests/</code></b><p>214 个 pytest 用例，含 5 条验收标准的端到端测试。</p></div>
+      <div class="mini"><b>④ 产物 <code>runs/</code></b><p>每跑一次就写这里：批量报告 + 逐轮记录。是产物不是源码，可随时删掉重跑。</p></div>
+    </div>
+    <div class="note"><b>只有三个「能运行」的入口</b>——这个项目的入口是<b>模块</b>，不是一个能点 ▶ 的脚本，所以别去找“哪个 <code>.py</code> 可以右键 Run”：<br>
+      ① <code>python -m patient_agent …</code>（等价于 <code>patient_agent/__main__.py</code>）—— <code>list</code> / <code>run</code> / <code>run-all</code>；<br>
+      ② <code>python tools/db_import.py …</code> —— 把标准数据集转成病例；<br>
+      ③ <code>python -m pytest</code>（收集 <code>tests/</code>）—— 跑测试。<br>
+      VS Code 里的三种跑法见 <a href="#s2-4">§2.4</a>；逐个文件、逐个目录的注释见 <a href="#s3">§3</a>。</div>
+  </section>
+
+  <!-- ================= 1 ================= -->
+  <section class="card sec" id="s1">
+    <h2><span class="n">1</span>30 秒理解：它到底在做什么</h2>
+    <p>你们整个项目是一个<strong>五层的心理诊疗 LLM 系统</strong>：</p>
+    <div class="grid">
+      <div class="mini"><b><span class="lay">L1</span> 风险分级</b><p>判断有没有自伤/自杀风险，决定是否走安全路径。</p></div>
+      <div class="mini"><b><span class="lay">L2</span> 访谈 + 量表 + 画像</b><p>聊症状、做 PHQ-9 这类量表、生成「我理解的你」让患者确认。</p></div>
+      <div class="mini"><b><span class="lay">L3</span> 候选诊断</b><p>给出候选诊断，并排除不符合的（比如排除双相）。</p></div>
+      <div class="mini"><b><span class="lay">L4</span> 治疗</b><p>进入治疗性对话，观察改善 / 无变化 / 退出。</p></div>
+      <div class="mini"><b><span class="lay">L5</span> 复盘</b><p>结案，生成疗程总结、逐轮账本、脱敏历史。</p></div>
+    </div>
+    <div class="note"><b>这个 <code>patient agent/</code> 目录，做的是「被测试的一方」——它扮演患者。</b><br>
+      它不治病、不下诊断、不算量表分。它的工作是：拿一个写好的<strong>病例脚本</strong>，假装成一个患者，通过<strong>系统 API</strong> 和上面这个五层系统聊多轮，把每一轮对话记下来，最后对照病例里写的预期，自动判分「这轮测试过没过」。
+    </div>
+    <p>打个比方：L1–L5 是「被测的学生」，Patient Agent 是「拿着标准答案的出题人」。</p>
+    <h3>两条硬约束</h3>
+    <p>来自任务说明第七节自检清单，代码里有对应实现：</p>
+    <ol>
+      <li><strong>不添加病例外事实</strong>——患者说的每句话都必须能在病例里找到出处（由 <span class="pill">PA4</span> 守卫拦）。</li>
+      <li><strong>测试能按条件停止</strong>——危机、人工复核、目标事件覆盖、违规、轮数上限都能收尾（由 <span class="pill">PA6</span> 负责）。</li>
+    </ol>
+    <p>还有一条设计原则：<strong>Patient Agent 只通过 8 个系统接口跟外界打交道</strong>（见 <a href="#s9">§9</a>），所以「离线跑内置假系统」和「连真实编排器」是同一条代码路径，只是换了个实现。</p>
+  </section>
+
+  <!-- ================= 2 ================= -->
+  <section class="card sec" id="s2">
+    <h2><span class="n">2</span>五分钟跑起来</h2>
+    <h3>2.1 环境要求</h3>
+    <ul>
+      <li><strong>Python ≥ 3.10</strong>（本项目在 CPython 3.10 上开发；代码兼容 3.10+）。</li>
+      <li>唯一必须的第三方库是 <strong>pydantic ≥ 2.5</strong>；跑测试额外需要 <strong>pytest ≥ 7.4</strong>。</li>
+    </ul>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">bash</span><button class="copy">复制</button></div><pre><code>conda activate dl-G          # 如果你用 conda（本项目开发环境叫 dl-G）
+
+pip install pydantic pytest  # 只装依赖
+# 或者从项目里装（会读 pyproject.toml）：
+pip install -e ".[test]"</code></pre></div>
+    <div class="note ok"><strong>不需要 API key、不需要联网。</strong>默认就是「离线确定性模式 + 内置 Mock 五层桩」，所有命令都能直接跑。</div>
+
+    <h3>2.2 三条最常用的命令</h3>
+    <div class="note warn"><strong>重要：所有命令都要在 <code>patient agent/</code> 这个目录下运行</strong>（即 <code>README.md</code> 和 <code>pyproject.toml</code> 所在的目录）。如果在别的目录，<code>scenarios/</code> 会找不到。</div>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">bash</span><button class="copy">复制</button></div><pre><code># ① 看病例库里有什么
+python -m patient_agent list
+
+# ② 跑单个病例，实时打印逐轮对话 + 评测明细
+python -m patient_agent run DB_P0001
+
+# ③ 全库回放，出 JSON + Markdown 报告
+python -m patient_agent run-all --out runs/latest</code></pre></div>
+    <p>命令跑完会写文件到 <code>runs/</code> 目录（怎么解读见 <a href="#s10">§10</a>）。</p>
+    <div class="note"><strong>默认读的是哪个库？</strong>项目根 <code>.env</code> 里的 <code>PATIENT_AGENT_SCENARIO_DIR</code>
+      把默认病例库指向了 <code>imported_scenarios/</code>（数据集生成的病例）。内置的 6 例验收病例仍在
+      <code>scenarios/</code>，加 <code>--scenario-dir scenarios</code> 就能跑它们。详见 <a href="#s13">§13.13</a>。</div>
+    <div class="tw"><table>
+      <thead><tr><th>退出码</th><th>含义</th></tr></thead>
+      <tbody>
+        <tr><td><code>0</code></td><td>全部通过</td></tr>
+        <tr><td><code>1</code></td><td>有病例未通过评测</td></tr>
+        <tr><td><code>2</code></td><td>用法或配置错误</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>2.3 跑测试</h3>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">bash</span><button class="copy">复制</button></div><pre><code>python -m pytest</code></pre></div>
+    <p>期望看到最后一行类似 <code>214 passed in 0.55s</code>（那行是 pytest 框架自己的英文输出，<code>passed</code> 就是「通过」，属正常）。</p>
+    <div class="note ok"><strong>本机 <code>dl-G</code> 已经装好 pytest 了</strong>（<code>pytest 9.1.1</code>，连同 <code>pluggy</code>、<code>iniconfig</code>），直接 <code>python -m pytest</code> 就能跑，<strong>不需要任何 <code>PYTHONPATH</code> 补丁</strong>。</div>
+    <div class="note warn"><strong>换到别的机器 / 别的环境报 <code>No module named pytest</code>？</strong>说明那个 Python 里<strong>没装 pytest</strong>（pytest 不是标准库）。两种解法：<br>
+      ① 装上（推荐，<code>pyproject.toml</code> 里本来就声明了这项测试依赖）：<code>python -m pip install pytest</code>，或 <code>python -m pip install -e ".[test]"</code>；<br>
+      ② 实在不想动环境（比如没有写权限），就临时把 pytest 所在目录挂进 <code>PYTHONPATH</code>。<br>
+      装好之后，VS Code 左侧「测试」侧栏（烧瓶图标）才会自动发现 <code>tests/</code> 的 214 个用例——没装 pytest 时那个侧栏是空的。</div>
+    <p>测试<strong>全离线、确定性、不出网、不需要 key</strong>，从任何目录启动都能跑（<code>tests/conftest.py</code> 用 <code>__file__</code> 推导项目根，不依赖当前工作目录）。</p>
+    <div class="note"><strong>Windows 中文乱码怎么办？</strong>见 <a href="#s11">§11 排错 FAQ</a>。最省事的办法是加 <code>-X utf8</code>：<code>python -X utf8 -m patient_agent run S03_explicit_crisis --scenario-dir scenarios</code>。</div>
+
+    <h3 id="s2-4">2.4 在 VS Code 里跑（和 CMD 一一对应）</h3>
+    <p>命令和 CMD 完全一样，区别只是「在哪儿敲」和「要不要先配一次」。三种入口：</p>
+    <div class="tw"><table>
+      <thead><tr><th>方式</th><th>怎么做</th><th>适合</th></tr></thead>
+      <tbody>
+        <tr><td><strong>集成终端</strong>（推荐）</td><td><code>Ctrl</code>+<code>`</code> 打开终端，命令与 CMD 一字不差。<strong>先选解释器</strong>：<code>Ctrl</code>+<code>Shift</code>+<code>P</code> → <code>Python: Select Interpreter</code> → 选 <code>dl-G</code>。</td><td>日常跑，零配置</td></tr>
+        <tr><td><strong>运行与调试</strong>（F5，推荐）</td><td>仓库里已经有 <code>.vscode/launch.json</code>，什么都不用配：按 <code>F5</code>，左上角下拉里选一个（默认 <code>PA: list 列病例</code>）。选 <code>PA: run 单个病例</code> 会弹输入框问病例 ID，敲回车即用默认的 <code>S03_explicit_crisis</code>。能在 <code>runner.py</code> 里打断点单步跟主循环。</td><td>打断点、单步跟主循环</td></tr>
+        <tr><td><strong>测试侧栏</strong>（烧瓶图标）</td><td>左侧点烧瓶图标，VS Code 自动发现 <code>tests/</code> 的 214 个用例，任意一条都能单独 ▶ 跑或 🐞 调。<code>pytest</code> 已装进 <code>dl-G</code>，无需任何额外设置。</td><td>跑或调某一个测试</td></tr>
+      </tbody>
+    </table></div>
+    <div class="note warn"><strong>别用「Run Python File」去单跑 <code>patient_agent/__main__.py</code> 或 <code>cli.py</code>。</strong>那个 ▶ 三角按钮<strong>没法传参数</strong>，点了就是 <code>python 某个文件</code>，没有 <code>list</code>/<code>run</code> 这些子命令：压 <code>__main__.py</code> 会打印 <code>usage: patient-agent … the following arguments are required: command</code> 并退出码 2；压 <code>cli.py</code> 则缺 <code>-m</code> 的包上下文、直接 <code>ImportError</code>。这是 VS Code 的限制，改不掉——<strong>要带参数只有两条路：<code>F5</code>（走 <code>launch.json</code>），或者终端里敲命令。</strong>
+      <code>tools/db_import.py</code> 同理，它必填 <code>--source</code>，点 ▶ 也会报缺参数（这是故意的，免得一次误点就往 <code>imported_scenarios/</code> 里写文件）。</div>
+    <p><strong>F5 下拉里那 5 个配置，分别等价于哪条命令：</strong></p>
+    <div class="tw"><table>
+      <thead><tr><th>F5 里选</th><th>等价命令</th><th>会写盘吗</th></tr></thead>
+      <tbody>
+        <tr><td><code>PA: list 列病例</code>（默认）</td><td><code>python -m patient_agent list</code></td><td>否，最安全</td></tr>
+        <tr><td><code>PA: run 单个病例</code></td><td><code>python -m patient_agent run &lt;弹框输入的ID&gt;</code></td><td>写 <code>runs/&lt;ID&gt;/recorder.json</code></td></tr>
+        <tr><td><code>PA: run-all 全库回放</code></td><td><code>python -m patient_agent run-all --out runs/latest</code></td><td>写 <code>runs/latest/report.*</code></td></tr>
+        <tr><td><code>PA: 数据集转病例（dry-run）</code></td><td><code>python tools/db_import.py --source tools/sample_standard_db.json --dry-run</code></td><td>否，<code>--dry-run</code> 只打印</td></tr>
+        <tr><td><code>PA: pytest 全部测试</code></td><td><code>python -m pytest</code></td><td>否</td></tr>
+      </tbody>
+    </table></div>
+    <p>注意 <code>--verbose</code> <strong>只有 <code>run-all</code> 才有</strong>，<code>run</code> 传了会报 <code>unrecognized arguments: --verbose</code>——<code>run</code> 本身就已经逐轮打印了。</p>
+    <div class="note"><b>顺带两个「看文档」的快捷键</b>：在 VS Code 里右键 <code>USER.html</code> → <em>Open with…</em>（或资源管理器里双击）用浏览器打开网页版；<code>Ctrl</code>+<code>Shift</code>+<code>V</code> 打开 Markdown 预览看 <code>USER.md</code>。</div>
+  </section>
+
+  <!-- ================= 3 ================= -->
+  <section class="card sec" id="s3">
+    <h2><span class="n">3</span>目录总览：哪个文件干什么</h2>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">目录树</span><button class="copy">复制</button></div><pre><code>patient agent/
+├── USER.md / USER.html        ← 手册两份：md 版（编辑器预览）+ 网页版（浏览器看）
+├── README.md                  ← 对外速览：项目是什么、怎么跑、8 个接口契约
+├── pyproject.toml             ← 依赖与打包：pip install -e ".[test]"；命令行名 patient-agent
+├── pytest.ini                 ← pytest 配置：testpaths=tests、pythonpath=.、-q --strict-markers
+├── .env.example               ← 环境变量样例（复制成 .env 再改；.env 可放密钥、不提交）
+├── .gitignore                 ← 忽略 __pycache__/、.pytest_cache/、runs/、.env
+│
+├── .vscode/                   ← VS Code 配置（只影响编辑器，不影响程序运行）
+│   ├── settings.json          ← 指定解释器 dl-G、打开测试发现、终端强制 UTF-8
+│   └── launch.json            ← F5 的 5 个配置：list / run / run-all / 转病例 / pytest
+│
+├── patient_agent/             ★ 源码本体（一个 Python 包，真正的交付物）
+│   ├── __init__.py            ← 包说明 + 版本号，注释里把 PA1–PA7 映射到文件名
+│   ├── __main__.py            ← ★入口：python -m patient_agent 从这里进，转给 cli
+│   ├── cli.py                 ← 命令行：list / run / run-all 三个子命令
+│   ├── config.py              ← 环境变量 + .env → Settings（所有默认值在这）
+│   ├── errors.py              ← 稳定错误码（SAFETY_HOLD / HUMAN_REVIEW / …）
+│   ├── lexicon.py             ← 共享词表：哪些词算风险、算否认（调词表改这）
+│   ├── schemas.py        PA1  ← 病例 Schema（Pydantic）：一个病例长什么样、逐字段校验
+│   ├── library.py        PA2  ← 病例库：读 index.json，按版本加载并校验
+│   ├── generator.py      PA3  ← 患者生成器：这一轮说哪条事实、怎么措辞
+│   ├── guard.py          PA4  ← 一致性守卫：这句话病例里有没有出处，没有就拦
+│   ├── runner.py         PA5  ← 运行器：唯一真正调「系统 API」的地方（主循环）
+│   ├── stopping.py       PA6  ← 停止条件：危机/复核/目标事件/违规/轮数上限
+│   ├── evaluator.py      PA7  ← 评测器：把记录对照 expected 判分
+│   ├── report.py         PA7  ← 批量报告：report.json + report.md
+│   ├── recorder.py            ← 逐轮记录：评测的唯一数据来源
+│   ├── factory.py             ← 装配：按 Settings 组出可运行的 runner（CLI 与测试共用）
+│   │
+│   ├── client/                ← 「系统侧」——那个被测的五层系统
+│   │   ├── __init__.py        ← 统一出口 + 懒加载 http 客户端
+│   │   ├── base.py            ← ★契约：8 个接口（抽象类 + 数据模型），两边都依赖它
+│   │   ├── mock_system.py     ← 内置简化五层桩（离线测试用，可弃的脚手架）
+│   │   └── http_client.py     ← 真实编排器的 HTTP 客户端（system_api_mode=http 时用）
+│   │
+│   └── llm/                   ← 「患者怎么开口」的适配器
+│       ├── __init__.py        ← build_llm_client 工厂
+│       ├── base.py            ← LLMClient 抽象类
+│       ├── rule_based.py      ← 离线伪模型（把病例模板原样回显，确定性）
+│       └── openai_compat.py   ← OpenAI 兼容实现（DeepSeek/通义/vLLM 都能用）
+│
+├── scenarios/                 ← 内置病例库（6 例，覆盖 5 条验收场景）★ 只增不减
+│   ├── index.json             ← 有哪些病例、各有几个版本、最新是哪个
+│   └── S01…S06/1.0.0.json     ← 每例一个目录，版本号落在文件名上
+│
+├── imported_scenarios/        ← 数据集生成的病例（当前 4 例演示）★ 这是默认读的库
+│   ├── index.json             ← 同上，每次写盘自动维护
+│   └── DB_P0001…P0004/2026.1.json
+│
+├── .env                       ← 本地配置（不进版本库）：PATIENT_AGENT_SCENARIO_DIR 指向 imported_scenarios
+│
+├── tools/                     ← 辅助脚本（不属于 patient_agent 包，不参与打包）
+│   ├── db_import.py           ← 数据集 → 病例转换器（JSON / SQLite / CSV）
+│   └── sample_standard_db.json ← 演示用「标准数据库导出」样例（4 条记录）
+│
+├── tests/                     ← 214 个 pytest 用例
+│   ├── conftest.py            ← 公共 fixture；用 __file__ 推项目根，任何目录都能跑
+│   ├── test_schemas.py        ← PA1
+│   ├── test_library.py        ← PA2
+│   ├── test_generator.py      ← PA3
+│   ├── test_guard.py          ← PA4
+│   ├── test_runner_stopping.py ← PA5 + PA6
+│   ├── test_evaluator.py      ← PA7
+│   ├── test_report.py         ← PA7（报告）
+│   ├── test_cli.py            ← CLI
+│   ├── test_mock_system.py    ← 8 接口签名一致性（契约测试）
+│   └── test_acceptance.py     ← 5 条验收标准的端到端测试
+│
+└── runs/                      ← 运行产物（可随时整个删掉重跑）
+    ├── latest/                ← run-all 的输出：report.json / report.md + 每例 recorder.json
+    ├── single/                ← 单例运行
+    └── S03_…/、DB_P0001…/      ← 历史运行的逐轮记录</code></pre></div>
+
+    <h3 id="s3-entry">哪些是「入口」、哪些只是模块</h3>
+    <p>这决定了「在 VS Code 里能点什么」。<strong>入口</strong>能直接运行；<strong>模块</strong>只是被 <code>import</code>，单独跑通常什么都不做（甚至报错）。</p>
+    <div class="tw"><table>
+      <thead><tr><th>文件</th><th>能直接跑吗</th><th>怎么跑 / 为什么</th></tr></thead>
+      <tbody>
+        <tr><td><code>patient_agent/__main__.py</code></td><td>✅ 入口</td><td><code>python -m patient_agent list|run|run-all …</code></td></tr>
+        <tr><td><code>patient_agent/cli.py</code></td><td>⚠️ 只作模块</td><td>由 <code>__main__</code> 调用；少了 <code>-m</code> 的包上下文，直接跑会 <code>ImportError</code></td></tr>
+        <tr><td><code>tools/db_import.py</code></td><td>✅ 脚本</td><td><code>python tools/db_import.py --source …</code>（自己把项目根插进了 <code>sys.path</code>）</td></tr>
+        <tr><td><code>tests/test_*.py</code></td><td>✅ 由 pytest 收集</td><td><code>python -m pytest</code> 或 VS Code 测试侧栏；<strong>不要</strong>单跑 <code>python tests/test_x.py</code>（fixture 不生效）</td></tr>
+        <tr><td>其余 <code>patient_agent/*.py</code></td><td>❌ 只是模块</td><td>被 <code>runner</code>/<code>factory</code> 等 <code>import</code>，没有 <code>__main__</code> 入口</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>哪些是「患者侧」、哪些是「系统侧」</h3>
+    <div class="grid">
+      <div class="mini"><b>Patient Agent 本体（你的产物）</b><p><code>schemas / library / generator / guard / runner / stopping / evaluator / report / recorder / factory / cli / config / errors / lexicon / llm/*</code></p></div>
+      <div class="mini"><b>契约</b><p><code>client/base.py</code> —— 两边都算。</p></div>
+      <div class="mini"><b>假的五层系统</b><p><code>client/mock_system.py</code> —— 只为测试存在，是<strong>可弃的脚手架</strong>，不用当产品代码打磨。</p></div>
+      <div class="mini"><b>连真实系统的桥</b><p><code>client/http_client.py</code></p></div>
+    </div>
+  </section>
+
+  <!-- ================= 4 ================= -->
+  <section class="card sec" id="s4">
+    <h2><span class="n">4</span>先搞懂这些词</h2>
+    <div class="tw"><table>
+      <thead><tr><th>词</th><th>意思</th></tr></thead>
+      <tbody>
+        <tr><td><strong>病例 / Scenario</strong></td><td>一份 JSON，描述「这个患者是谁、有什么症状、会说什么话、预期系统怎么反应」。</td></tr>
+        <tr><td><strong>PA1–PA7</strong></td><td>任务说明第四节给 Patient Agent 的内部编号，对应 7 个职责，代码里用文件名体现。</td></tr>
+        <tr><td><strong>事实 / RevealableFact</strong></td><td>病例里「可以说的内容」摊平后的一条。生成器每轮从里面挑一条来说。</td></tr>
+        <tr><td><strong>utterance / 参考台词</strong></td><td>病例里给这条事实写好的原话模板。离线模式下直接用它。</td></tr>
+        <tr><td><strong>opening / 开场</strong></td><td>第一句患者说的话。</td></tr>
+        <tr><td><strong>denial / 否认类事实</strong></td><td>例如「没有躁狂史」。必须被追问才说，不能主动抛出。</td></tr>
+        <tr><td><strong>unlock_after_events / 闸门</strong></td><td>挂在一个系统事件上的锁：系统没先抛出那个事件，这条事实就不许说。</td></tr>
+        <tr><td><strong>轨迹 / Trajectory</strong></td><td>治疗后期的走向：改善 / 无变化 / 退出。按「治疗层轮次」推进。</td></tr>
+        <tr><td><strong>守卫 / Guard</strong></td><td>PA4。检查「这句话病例允不允许」。阻断性违规要重说。</td></tr>
+        <tr><td><strong>阻断 / blocking</strong></td><td>守卫判定「这话越界了，必须重说」。非阻断的只记录、由评测器判。</td></tr>
+        <tr><td><strong>记录 / Recorder</strong></td><td>逐轮账本。评测器只读它、不重跑会话。</td></tr>
+        <tr><td><strong>评测 / Evaluation</strong></td><td>PA7。对照病例的 <code>expected</code> 判 8 项分，给出「通过/不通过」。</td></tr>
+        <tr><td><strong>Mock 桩</strong></td><td><code>mock_system.py</code> 里那个简化五层状态机。<strong>不是真实临床逻辑</strong>。</td></tr>
+        <tr><td><strong>NON_FATAL_CODES</strong></td><td><code>SAFETY_HOLD</code> / <code>HUMAN_REVIEW</code> 这两个「错误码」其实是<strong>设计内的正常路径</strong>，不能当异常抛掉。</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <!-- ================= 5 ================= -->
+  <section class="card sec" id="s5">
+    <h2><span class="n">5</span>一次运行的生命周期（数据怎么流动）</h2>
+    <p>理解这条链路，就理解了整个项目。以「跑一个病例」为例：</p>
+    <div class="flow">
+      <div class="step"><div class="badge">文件</div><div class="body"><b>scenarios/S01…/1.0.0.json</b><p>磁盘上的病例文件。</p></div></div>
+      <div class="step"><div class="badge">PA1</div><div class="body"><b>schemas.py</b><p>把 JSON 解析成 <code>PatientScenario</code> 对象；字段写错直接报错（<code>extra="forbid"</code>）。</p></div></div>
+      <div class="step"><div class="badge">PA2</div><div class="body"><b>library.py</b><p>读 <code>index.json</code>、按版本找文件、做 Schema 校验。</p></div></div>
+      <div class="step"><div class="badge">装配</div><div class="body"><b>factory.build_stack()</b><p>把生成器、守卫、客户端、运行器、记录器拼成一条链路。</p></div></div>
+      <div class="step"><div class="badge">PA5</div><div class="body"><b>runner.py · SessionRunner.run()</b><p>循环：① PA3 决定说什么 → ② PA4 守卫检查 → ③ 调系统 API → ④ 记录这一轮 → ⑤ PA6 判断是否该停。</p></div></div>
+      <div class="step"><div class="badge">PA7</div><div class="body"><b>evaluator.py</b><p>读记录、对照 <code>expected</code> 判 8 项分。</p></div></div>
+      <div class="step"><div class="badge">PA7</div><div class="body"><b>report.py</b><p>多份评测汇总 → <code>report.json</code> + <code>report.md</code>。</p></div></div>
+    </div>
+    <h3>关键点</h3>
+    <ul>
+      <li><strong>生成器（PA3）和守卫（PA4）只跟「病例」有关，不跟「系统」有关</strong>。它们决定患者说什么、这话合不合规。</li>
+      <li><strong>运行器（PA5）是唯一碰网络/系统 API 的地方</strong>。所有跟系统的交互都收敛在这一个文件里，所以换系统只需换 <code>client</code> 的实现，不用动运行器。</li>
+      <li><strong>评测器（PA7）不重跑会话</strong>，只读 <code>recorder</code>。所以「跑一次、反复评」很便宜。</li>
+    </ul>
+  </section>
+
+  <!-- ================= 6 ================= -->
+  <section class="card sec" id="s6">
+    <h2><span class="n">6</span>逐文件细讲</h2>
+    <p class="lead">按「数据流顺序」排列，每个文件一节：<strong>它负责什么 → 关键类/函数 → 改了会怎样 → 常见改法</strong>。</p>
+    <div class="note">行号会随改动漂移，本文主要用 <strong>文件名 + 函数/类名</strong> 定位。</div>
+
+    <h3 id="s6-1">6.1 <code>__init__.py</code>（43 行）</h3>
+    <p>包的门面。只有三件事：包说明 docstring、<code>__version__ = "0.1.0"</code>、把 <code>errors</code> 里的异常重导出。几乎没有逻辑，不用动。</p>
+
+    <h3>6.2 <code>__main__.py</code>（8 行）</h3>
+    <p><code>python -m patient_agent</code> 的入口，就一句 <code>from patient_agent.cli import main</code> + <code>raise SystemExit(main())</code>。想加入口逻辑，去 <code>cli.py</code>。</p>
+
+    <h3 id="s6-3">6.3 <code>schemas.py</code> — <span class="pill">PA1 病例 Schema</span>（586 行）</h3>
+    <p><strong>它负责什么</strong>：定义「一个病例可以有哪些字段」。这是整个项目的数据地基，所有「患者说的话」最终都来自这里定义的字段。</p>
+    <p>一个病例 = <strong>七组临床字段 + 两组测试字段</strong>：</p>
+    <ul>
+      <li><strong>临床七组</strong>：<code>background</code>（基本背景）/ <code>clinical</code>（临床事实）/ <code>psychology</code>（心理特征）/ <code>risk</code>（风险脚本）/ <code>disclosure</code>（披露策略）/ <code>behavior</code>（行为参数）/ <code>trajectory</code>（变化轨迹）。</li>
+      <li><code>expected</code>（期望结果）：期望事件、期望走过的层、终止原因、要求排除的候选、轮数下限。</li>
+      <li><code>stop</code>（停止策略）：<code>max_turns</code>、是否在危机/人工复核/违规时停、覆盖哪些事件即可停。</li>
+    </ul>
+    <div class="tw"><table>
+      <thead><tr><th>名字</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td><code>ScenarioModel</code></td><td>所有模型的基类，<code>ConfigDict(extra="forbid")</code>——<strong>写错字段名会直接报错</strong>，不会静默忽略。</td></tr>
+        <tr><td><code>SymptomFact</code></td><td>一条症状。有 <code>model_validator(mode="after")</code>：<code>present=true</code> 必须有 <code>utterance</code>，<code>present=false</code> 必须有 <code>denial_utterance</code>。</td></tr>
+        <tr><td><code>ExclusionFact</code> / <code>ScalePlan</code></td><td>需要排除的鉴别项 / 量表计划（<code>answers</code> 是 0–4 的假答案，<code>refuse_after_items</code> 控制拒答）。</td></tr>
+        <tr><td><code>ClinicalFacts</code></td><td>一个 <code>model_validator</code> 保证 <code>symptom_id</code> 唯一、且至少有 1 条 <code>present</code> 症状。</td></tr>
+        <tr><td><code>DisclosurePolicy</code></td><td><code>opening_templates</code>（开场）/ <code>never_disclose</code>（绝不泄露）/ <code>non_fact_replies</code>（答非所问时的兜底）/ <code>refusal_utterances</code> 等。</td></tr>
+        <tr><td><code>ProfileConfirmationPlan.decision_for(turn)</code></td><td>画像确认阶段第 N 轮该做什么决定（continue/modify/pause）。</td></tr>
+        <tr><td><code>TrajectoryStep</code> / <code>Trajectory</code></td><td>治疗期第几步出现什么变化（改善/无变化/退出）。</td></tr>
+        <tr><td><code>ExpectedOutcome</code></td><td>对应 <code>expected</code> 段。</td></tr>
+        <tr><td><code>StopPolicy</code></td><td>对应 <code>stop</code> 段，默认 <code>max_turns=30</code>。</td></tr>
+        <tr><td><code>RevealableFact</code></td><td><strong>核心派生视图</strong>：把七组字段摊平成「一条条可说的事实」，带 <code>unlock_after_events</code> 闸门、<code>is_denial</code> 标记等。</td></tr>
+        <tr><td><code>PatientScenario</code></td><td>顶层模型。带派生方法：<code>revealable_facts()</code> / <code>declared_numbers()</code> / <code>text_corpus()</code> / <code>summary()</code>。</td></tr>
+      </tbody>
+    </table></div>
+    <h4><code>PatientScenario</code> 的派生方法（重要）</h4>
+    <ul>
+      <li><code>revealable_facts()</code> → 一串 <code>RevealableFact</code>。生成器就是从这里挑事实的。</li>
+      <li><code>declared_numbers()</code> → 病例里出现过的所有数字。守卫用它查「患者有没有编造数字」。</li>
+      <li><code>text_corpus()</code> → 把病例里所有文本拼起来，守卫/评测做「事实一致性」比对时用。</li>
+    </ul>
+    <h4>改了会怎样 &amp; 常见改法</h4>
+    <ul>
+      <li><strong>想给病例加一个新的临床字段</strong> → 改这里的模型，然后<strong>同步更新 <code>scenarios/*/*.json</code></strong>。注意 <code>extra="forbid"</code>：病例里多写一个 Schema 没定义的键会<strong>直接报错</strong>。</li>
+      <li><strong>想让某类事实能被解锁得更晚</strong> → 给对应的 <code>RevealableFact</code> 加 <code>unlock_after_events</code>（闸门机制）。</li>
+      <li><strong>想调默认轮数上限</strong> → 改 <code>StopPolicy.max_turns</code> 的默认值（但生产上一般直接写在病例 JSON 里）。</li>
+    </ul>
+    <div class="note warn">这个文件是<strong>契约</strong>。改它之前先确认病例 JSON 都跟得上，否则 <code>library.py</code> 加载时会报错。</div>
+
+    <h3>6.4 <code>library.py</code> — <span class="pill">PA2 病例库</span>（147 行）</h3>
+    <p><strong>它负责什么</strong>：从磁盘读病例库，按版本解析，做 Schema 校验，并缓存已加载的病例。</p>
+    <div class="tw"><table>
+      <thead><tr><th>名字</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td><code>ScenarioEntry</code></td><td>索引里的一条：<code>scenario_id</code>、<code>versions</code>、<code>latest</code>、<code>title</code>、<code>tags</code>。带 <code>resolve_version(v)</code>。</td></tr>
+        <tr><td><code>ScenarioIndex</code></td><td>整个 <code>index.json</code> 的模型。</td></tr>
+        <tr><td><code>ScenarioLibrary(dir)</code></td><td>主入口。<code>entries()</code> / <code>ids()</code> / <code>entry(id)</code> / <code>path_for(id, v)</code> / <strong><code>load(id, version=None)</code></strong> / <code>load_all()</code>。</td></tr>
+      </tbody>
+    </table></div>
+    <p><code>load()</code> 的行为：不传版本就取 <code>latest</code>；会做三件事的校验——索引登记了但文件缺失、版本没登记、文件里的 <code>scenario_id</code> 跟目录不一致，<strong>都报明确的错</strong>。</p>
+    <h4>常见改法</h4>
+    <ul>
+      <li><strong>新增一个病例</strong> → 建目录 <code>scenarios/S07_xxx/</code>，放 <code>1.0.0.json</code>，然后<strong>在 <code>scenarios/index.json</code> 里登记</strong>。找不到登记会报错。</li>
+      <li><strong>改一句病例台词</strong> → <strong>新增一个版本文件</strong>（如 <code>1.0.1.json</code>），更新 <code>index.json</code> 的 <code>versions</code> 和 <code>latest</code>；<strong>不要就地覆盖旧文件</strong>。因为改一句台词可能让「不迎合」这类验证结果变化，测试结论必须能追溯到「当时用的是哪个版本」。</li>
+    </ul>
+
+    <h3 id="s6-5">6.5 <code>generator.py</code> — <span class="pill">PA3 患者生成器</span>（500 行）</h3>
+    <p><strong>它负责什么</strong>：<strong>决定每一步患者说什么/做什么</strong>。这是「患者智能」的核心。它每轮根据三样东西做决定：<strong>系统上一句说了什么 + 当前等待类型 + 已经说过什么</strong>。</p>
+    <div class="tw"><table>
+      <thead><tr><th>名字</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td><code>ActionKind</code></td><td>动作类型：说话 / 答量表 / 确认画像 / 暂停恢复 / 结束等。</td></tr>
+        <tr><td><code>PatientAction</code></td><td>一个动作：<code>kind</code> + 文本 + 关联的事实 id + 是否否认。</td></tr>
+        <tr><td><code>TurnContext</code></td><td>这一轮的上下文：系统上一轮的 <code>TurnResponse</code> + 当前 <code>PatientState</code>。</td></tr>
+        <tr><td><code>PatientState</code></td><td>患者当前状态：已说过哪些事实、量表进度、治疗轮次、轨迹步…</td></tr>
+        <tr><td><code>PatientGenerator</code></td><td>主力类（见下）。</td></tr>
+      </tbody>
+    </table></div>
+    <div class="tw"><table>
+      <thead><tr><th>方法</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td><code>opening()</code></td><td>生成开场那一句。</td></tr>
+        <tr><td><code>next_action(ctx)</code></td><td><strong>主入口</strong>：根据上下文决定下一个动作。</td></tr>
+        <tr><td><code>_interview_action()</code></td><td>L2 访谈期：从没说过的事实里挑一条说。</td></tr>
+        <tr><td><code>_treatment_action()</code></td><td>L4 治疗期：按轨迹推进。</td></tr>
+        <tr><td><code>_next_trajectory_step()</code></td><td>取下一个轨迹步（按治疗层轮次，量表作答不会提前它）。</td></tr>
+        <tr><td><code>_pick_fact()</code></td><td>挑事实。会跳过已说过的、被闸门锁住的、需要追问才说的否认类。</td></tr>
+        <tr><td><code>_render_fact()</code></td><td>把事实渲染成台词（喂给 LLM）。</td></tr>
+        <tr><td><code>_unlocked()</code></td><td>判断挂在 <code>unlock_after_events</code> 上的事实是否已解锁。</td></tr>
+        <tr><td><code>retry_action()</code></td><td>守卫判违规后，重说一遍。</td></tr>
+        <tr><td><code>_invoke_llm()</code> / <code>_build_prompt()</code> / <code>_reference_line()</code></td><td>LLM 调用、组 prompt、取参考台词。</td></tr>
+        <tr><td><code>action_to_send_text(action)</code></td><td>把动作转成真正要发给系统的那段文字。</td></tr>
+      </tbody>
+    </table></div>
+    <div class="note"><b>四条重要规则（都在这个文件里）</b>
+      <ol>
+        <li><strong>否认类事实必须被追问才说</strong>（<code>is_denial</code>）——不能被主动抛出。</li>
+        <li><strong>每条事实最多说一次。</strong></li>
+        <li><strong><code>unlock_after_events</code> 是闸门</strong>：系统没先抛出某事件，挂在它上面的事实就不许说。（S02 的补充症状就这么锁着，保证「回环之后才补」是可验证的。）</li>
+        <li><strong>轨迹步按治疗层轮次推进</strong>，量表逐题作答不会把它提前。</li>
+      </ol>
+    </div>
+    <p><strong>离线 vs 在线走同一套逻辑</strong>：离线时 <code>RuleBasedLLM</code> 直接回参考台词，但在线时是同一套 <code>_build_prompt()</code> 组装逻辑。所以「在线·离线」结果可复现，也能对照。</p>
+    <h4>常见改法</h4>
+    <ul>
+      <li><strong>想改「患者什么情况下说哪句话」</strong> → 改这里的选事实逻辑，或者改病例里的台词。一般<strong>优先改病例</strong>，别改代码。</li>
+      <li><strong>想加一条「这类事实必须被追问」的规则</strong> → 看 <code>_pick_fact()</code> 里 <code>is_denial</code> 的判断。</li>
+      <li><strong>LLM 报错/返回空白</strong> → 代码会<strong>自动退回参考台词</strong>，会话不会崩。</li>
+    </ul>
+
+    <h3 id="s6-6">6.6 <code>guard.py</code> — <span class="pill">PA4 一致性守卫</span>（376 行）</h3>
+    <p><strong>它负责什么</strong>：回答一个问题——<strong>「这句话病例允不允许？」</strong>它守住「不添加病例外事实」这条硬约束。</p>
+    <div class="tw"><table>
+      <thead><tr><th>名字</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td><code>GuardCode</code></td><td>违规类型枚举（11 种）。</td></tr>
+        <tr><td><code>Violation</code></td><td>一条违规：<code>code</code> + <code>message</code> + <code>evidence</code> + <strong><code>blocking</code></strong>（是否必须重说）+ <code>retryable</code>。</td></tr>
+        <tr><td><code>GuardResult</code></td><td>检查结果：<code>.ok</code> / <code>.violations</code> / <code>.blocking</code> / <code>.codes()</code>。</td></tr>
+        <tr><td><code>ConsistencyGuard(scenario)</code></td><td>主力类。<code>check(action, *, probe_text="", scale_item=None)</code> 依次跑下面这些子检查。</td></tr>
+      </tbody>
+    </table></div>
+    <div class="tw"><table>
+      <thead><tr><th>子检查</th><th>拦什么</th></tr></thead>
+      <tbody>
+        <tr><td><code>_check_jargon</code></td><td>患者说了「系统提示」这类内部术语（术语泄露）。</td></tr>
+        <tr><td><code>_check_diagnosis</code></td><td>患者自己下诊断（越界自我诊断）。带 <code>_is_attributed()</code> 判断是不是「医生说我有…」这种转述。</td></tr>
+        <tr><td><code>_check_never_disclose</code></td><td>泄露病例里 <code>never_disclose</code> 的内容。</td></tr>
+        <tr><td><code>_check_forbidden_claims</code></td><td>说了 <code>forbidden_claims</code> 里的禁语。</td></tr>
+        <tr><td><code>_check_numbers</code></td><td><strong>编造数字</strong>。先看病例的 <code>declared_numbers()</code>；否认句（「没有过…」）里的风险/症状词会跳过。</td></tr>
+        <tr><td><code>_check_risk</code></td><td>风险升级（病例没写更高风险，患者却说出来了）。</td></tr>
+        <tr><td><code>_check_fact_consistency</code></td><td>事实漂移（跟病例矛盾）。</td></tr>
+        <tr><td><code>_check_severity</code></td><td>严重度夸张（<strong>非阻断</strong>，只记录）。</td></tr>
+        <tr><td><code>_check_timeline</code></td><td>时间线矛盾。</td></tr>
+      </tbody>
+    </table></div>
+    <p><strong>阻断 vs 非阻断</strong>：编造数字、风险升级、泄露 <code>never_disclose</code>、越界自我诊断、空话 → <strong>阻断</strong>（要重说）；轻微严重度夸张、事实漂移 → <strong>只记录</strong>，由评测器判。数值比对依赖 <code>_shares_content()</code>（3-gram 相似度）和 <code>lexicon.extract_number_tokens()</code>。</p>
+    <h4>常见改法</h4>
+    <ul>
+      <li><strong>误报了（其实这话合法）</strong> → 调对应的 <code>_check_xxx</code> 里的判据，例如给 <code>_check_numbers</code> 的白名单加内容，或放宽 <code>_check_severity</code> 的阈值。</li>
+      <li><strong>漏报（该拦没拦）</strong> → 在对应 <code>_check_xxx</code> 里补判据，并在 <code>tests/test_guard.py</code> 加用例。</li>
+      <li><strong>想加一种全新违规类型</strong> → 在 <code>GuardCode</code> 加枚举 + 写一个 <code>_check_xxx</code> + 在 <code>check()</code> 里串进去 + 补测试。</li>
+    </ul>
+
+    <h3 id="s6-7">6.7 <code>runner.py</code> — <span class="pill">PA5 场景运行器</span>（326 行）</h3>
+    <p><strong>它负责什么</strong>：<strong>唯一允许碰系统 API 的地方</strong>。它把整条链跑起来：</p>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">主循环</span><button class="copy">复制</button></div><pre><code>建会话 → 患者开场 → 循环「生成动作 → 守卫检查 → 调对应 API → 记录 → 判断是否停止」</code></pre></div>
+    <div class="tw"><table>
+      <thead><tr><th>名字</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td><code>RunOptions</code></td><td>运行选项：<code>max_retries=2</code>、<code>collect_artifacts=True</code>、<code>tolerate_errors=True</code>。</td></tr>
+        <tr><td><code>SessionRunner(scenario, client, generator, guard, *, options=None, llm_mode="offline", llm_name="")</code></td><td>主力类。</td></tr>
+        <tr><td><code>SessionRunner.run()</code></td><td>主循环。</td></tr>
+        <tr><td><code>_dispatch(action)</code></td><td>把 <code>PatientAction</code> 派发到对应的系统 API（说话→<code>send_message</code>，量表→<code>submit_scale</code>…）。</td></tr>
+        <tr><td><code>_build_context()</code></td><td>组 <code>TurnContext</code> 交给生成器。</td></tr>
+        <tr><td><code>_track_after_send()</code></td><td>发完消息后更新患者状态（吸收了哪些事件）。</td></tr>
+        <tr><td><code>_should_pause()</code></td><td>判断是否该暂停/恢复。</td></tr>
+        <tr><td><code>_record()</code></td><td>把这一轮写进 <code>recorder</code>（含墙钟耗时 <code>elapsed_ms</code>）。</td></tr>
+        <tr><td><code>_collect_artifacts()</code></td><td>收集 <code>get_dev_state</code> / <code>get_episode_summary</code> / <code>get_session_history</code>。</td></tr>
+        <tr><td><code>_handle_fatal()</code> / <code>_error_turn()</code></td><td>致命错误时兜底，把异常也记成一轮（路由到 L5/error）。</td></tr>
+      </tbody>
+    </table></div>
+    <p>每轮记下墙钟耗时，供报告统计「模型耗时」。</p>
+    <h4>常见改法</h4>
+    <ul>
+      <li><strong>想改调用系统 API 的顺序/时机</strong> → 改 <code>_dispatch()</code>。</li>
+      <li><strong>想加新的系统调用</strong>（比如读某个新接口）→ 在 <code>_collect_artifacts()</code> 里加。</li>
+      <li><strong>想让异常更宽容/更严格</strong> → 改 <code>RunOptions.tolerate_errors</code>。</li>
+    </ul>
+    <div class="note warn"><strong>不要在这里写业务逻辑</strong>（比如算量表分）——那是系统的事，不是 Patient Agent 的事。</div>
+
+    <h3>6.8 <code>stopping.py</code> — <span class="pill">PA6 停止条件</span>（84 行）</h3>
+    <p><strong>它负责什么</strong>：判断「这一轮之后要不要停」。判序<strong>固定</strong>，不能乱：</p>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">判序</span><button class="copy">复制</button></div><pre><code>① 系统终止（最硬）
+② 安全暂停 SAFETY_HOLD（若病例开了 stop_on_crisis）
+③ 人工复核 HUMAN_REVIEW
+④ 患者侧阻断性违规
+⑤ 目标事件覆盖（stop.target_events 都观测到了）
+⑥ max_turns（垫底兜底）</code></pre></div>
+    <div class="tw"><table>
+      <thead><tr><th>名字</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td><code>StopDecision</code></td><td><code>should_stop</code> / <code>reason</code> / <strong><code>system_terminated</code></strong>。</td></tr>
+        <tr><td><code>evaluate_stop(policy, *, turn_count, response, recorder)</code></td><td>主函数，按上面 6 步判序。</td></tr>
+      </tbody>
+    </table></div>
+    <p><strong>为什么区分 <code>system_terminated</code></strong>：避免把「测试主动收手」误记成「系统终止」。</p>
+
+    <h3>6.9 <code>evaluator.py</code> — <span class="pill">PA7 评测器</span>（273 行）</h3>
+    <p><strong>它负责什么</strong>：<strong>只读记录、不重跑会话</strong>，对照病例的 <code>expected</code> 判分。</p>
+    <div class="tw"><table>
+      <thead><tr><th>名字</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td><code>CheckResult</code></td><td>单个检查项：<code>name</code> / <code>ok</code> / <code>detail</code>。</td></tr>
+        <tr><td><code>ScenarioEvaluation</code></td><td>一次评测的结果，带 <code>.ok</code>、<code>.failed_checks</code>、<code>.checks</code> 等。</td></tr>
+        <tr><td><code>_OBSERVABLE_LAYERS</code></td><td>层覆盖用的层名集合。</td></tr>
+        <tr><td><code>_observed_layers_from_events()</code></td><td>从「已观测事件声明的层」推层覆盖。</td></tr>
+        <tr><td><code>_collect_excluded_codes()</code></td><td>收集被排除的候选 code。</td></tr>
+        <tr><td><code>evaluate_scenario(scenario, recorder, *, blocking_violations_only=True)</code></td><td>主函数，产出 <strong>8 项判分</strong>。</td></tr>
+      </tbody>
+    </table></div>
+    <div class="tw"><table>
+      <thead><tr><th>判分项</th><th>看什么</th></tr></thead>
+      <tbody>
+        <tr><td><code>required_events</code></td><td>必需事件是否都观测到了。</td></tr>
+        <tr><td><code>forbidden_events</code></td><td>禁止事件是否一个都没出现。</td></tr>
+        <tr><td><code>layers</code></td><td>期望走过的层是否都到了。</td></tr>
+        <tr><td><code>termination</code></td><td>终止原因对不对。</td></tr>
+        <tr><td><code>excluded_conditions</code></td><td>要求排除的候选是否真被排除。</td></tr>
+        <tr><td><code>guard</code></td><td>有没有守卫阻断违规。</td></tr>
+        <tr><td><code>errors</code></td><td>错误码是不是都在「设计内」范围。</td></tr>
+        <tr><td><code>min_turns</code></td><td>轮数是否达到下限。</td></tr>
+      </tbody>
+    </table></div>
+    <div class="note"><strong>层覆盖的关键口径</strong>：层覆盖 = <strong>路由层 ∪ 已观测事件声明的层</strong>。因为低风险病例的 L1 只体现为 <code>l1_clear</code>、危机病例的 L5 只体现为结案事件——<strong>只看路由会漏判</strong>。</div>
+
+    <h3>6.10 <code>report.py</code> — <span class="pill">PA7 批量报告</span>（220 行）</h3>
+    <p>把多份评测汇总成一份报告，落盘成 <code>report.json</code> + <code>report.md</code>。</p>
+    <div class="tw"><table>
+      <thead><tr><th>名字</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td><code>FACT_CODES</code></td><td>属于「事实一致性」类的 GuardCode 集合。</td></tr>
+        <tr><td><code>BatchReport</code></td><td>汇总结果：<code>total</code> / <code>passed</code> / <code>failed</code> / <code>pass_rate</code> / <code>layer_coverage</code> / <code>termination_counts</code> / <code>fatal_error_counts</code> / <code>fact_consistency_violations</code>。</td></tr>
+        <tr><td><code>build_report(evaluations, *, generated_at=None)</code></td><td>汇总。</td></tr>
+        <tr><td><code>render_markdown(report)</code></td><td>渲染成 Markdown（6 小节，见 <a href="#s10">§10</a>）。</td></tr>
+        <tr><td><code>write_report(report, out_dir)</code></td><td>写 <code>report.json</code> + <code>report.md</code>，返回两个路径。</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>6.11 <code>recorder.py</code>（194 行）</h3>
+    <p><strong>它负责什么</strong>：<strong>逐轮账本</strong>。整个评测的<strong>唯一数据来源</strong>。运行器往里写，评测器/报告从里读。</p>
+    <div class="tw"><table>
+      <thead><tr><th>名字</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td><code>TurnRecord</code></td><td>一格的完整信息：<code>turn_index</code> / <code>action_kind</code> / <code>patient_text</code> / <code>patient_fact_id</code> / <code>patient_denial</code> / <code>system_reply</code> / <code>waiting_type</code> / <code>main_layer</code> / <code>secondary_layers</code> / <code>route_intent</code> / <code>events</code> / <code>guard_ok</code> / <code>violations</code> / <code>retries</code> / <code>error_code</code> / <code>session_ended</code> / <code>termination_reason</code> / <code>elapsed_ms</code> / <code>note</code>。</td></tr>
+        <tr><td><code>SessionRecorder</code></td><td>一场会话的账本：<code>add_turn()</code> / <code>all_events()</code> / <code>layers_visited()</code> / <code>guard_violations()</code> / <code>error_codes()</code> / <code>termination_observed()</code> / <code>timing_summary()</code> / <code>to_dict()</code> / <code>dump(path)</code> / <code>load(path)</code>。</td></tr>
+      </tbody>
+    </table></div>
+    <p><code>dump()</code> / <code>load()</code> 是<strong>评测可复现</strong>的关键：<code>dump()</code> 出的 <code>recorder.json</code> 能被 <code>load()</code> 读回来重评。</p>
+
+    <h3>6.12 <code>factory.py</code>（165 行）</h3>
+    <p><strong>它负责什么</strong>：<strong>装配</strong>。把病例、客户端、生成器、守卫、运行器、评测器拼成一条可用链路。<strong>CLI 和测试共用同一条装配路径</strong>——这是设计要点，保证「测试怎么跑」和「命令行怎么跑」永远一致。</p>
+    <div class="tw"><table>
+      <thead><tr><th>名字</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td><code>SessionStack</code></td><td>装配好的一整套（scenario / client / generator / guard / runner ...）。</td></tr>
+        <tr><td><code>build_library(settings)</code></td><td>用 <code>settings.scenario_dir</code> 建 <code>ScenarioLibrary</code>。</td></tr>
+        <tr><td><code>build_client(settings)</code></td><td>按 <code>settings.system_api_mode</code> 选 <code>MockSystemApiClient</code> 或 <code>HttpSystemApiClient</code>。</td></tr>
+        <tr><td><code>build_stack(scenario, settings, ...)</code></td><td>造一整套运行栈。</td></tr>
+        <tr><td><code>run_scenario(scenario, settings, ...)</code></td><td>跑一个病例，返回 <code>recorder</code>。</td></tr>
+        <tr><td><code>run_and_evaluate(scenario, settings, ...)</code></td><td>跑 + 评，返回 <code>(recorder, evaluation)</code>。</td></tr>
+        <tr><td><code>BatchOutcome</code></td><td><code>records</code> + <code>evaluations</code> + <code>report</code>。</td></tr>
+        <tr><td><code>run_all(settings, scenario_ids=None, ...)</code></td><td>跑全库，返回 <code>BatchOutcome</code>。</td></tr>
+      </tbody>
+    </table></div>
+    <div class="note">这是「接入其他层」<strong>最关键的入口文件之一</strong>，配合 <code>client/</code> 一起看（见 <a href="#s9">§9</a>）。</div>
+
+    <h3>6.13 <code>cli.py</code> / <code>__main__.py</code>（240 + 8 行）</h3>
+    <div class="tw"><table>
+      <thead><tr><th>名字</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td><code>_force_utf8_stdout()</code></td><td>Windows 控制台默认 GBK，强制改成 UTF-8，<strong>否则中文会乱码</strong>。</td></tr>
+        <tr><td><code>_build_settings(args)</code></td><td>把命令行参数转成 <code>Settings</code>。</td></tr>
+        <tr><td><code>_print_transcript()</code> / <code>_print_evaluation()</code></td><td>打印逐轮对话 / 评测明细。</td></tr>
+        <tr><td><code>_cmd_list</code> / <code>_cmd_run</code> / <code>_cmd_run_all</code></td><td>三个子命令。</td></tr>
+        <tr><td><code>_add_common_options()</code></td><td>用一个 <code>SUPPRESS</code> 小技巧，让 <code>--out</code> 放在子命令<strong>前或后都行</strong>。</td></tr>
+        <tr><td><code>build_parser()</code> / <code>main()</code></td><td>组装解析器 / 入口。</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>6.14 <code>config.py</code>（158 行）</h3>
+    <p>把<strong>环境变量 / <code>.env</code> 文件 / 显式参数</strong>读成 <code>Settings</code>。优先级：<strong>显式构造函数参数 &gt; 真实环境变量 &gt; .env 文件 &gt; 默认值</strong>。</p>
+    <div class="tw"><table>
+      <thead><tr><th>名字</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td><code>Settings</code></td><td>一个 dataclass，装一次运行的全部配置。</td></tr>
+        <tr><td><code>Settings.use_real_llm</code></td><td>属性：本轮是否真调 LLM。</td></tr>
+        <tr><td><code>Settings.validate()</code></td><td>校验取值。<code>api</code> 模式缺 key 报错；<code>http</code> 模式缺 base_url 报错。</td></tr>
+        <tr><td><code>Settings.from_env(env_file, environ, **overrides)</code></td><td>主入口。<code>environ={}</code> 可以强制忽略真实环境变量（测试里就这么干）。</td></tr>
+        <tr><td><code>parse_env_file(path)</code></td><td>极简 <code>.env</code> 解析（<code>KEY=VALUE</code>，<code>#</code> 注释，值可带引号）。</td></tr>
+      </tbody>
+    </table></div>
+    <div class="note warn">这里<strong>故意只用标准库</strong>，不引入 <code>python-dotenv</code>，避免给别的层加依赖。</div>
+    <h4>环境变量 → Settings 映射表</h4>
+    <div class="tw"><table>
+      <thead><tr><th>环境变量</th><th>Settings 字段</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><code>PATIENT_AGENT_LLM_MODE</code></td><td><code>llm_mode</code></td><td><code>offline</code>（默认）/ <code>auto</code> / <code>api</code></td></tr>
+        <tr><td><code>OPENAI_BASE_URL</code></td><td><code>openai_base_url</code></td><td>可指向任意 OpenAI 兼容服务</td></tr>
+        <tr><td><code>OPENAI_API_KEY</code></td><td><code>openai_api_key</code></td><td><code>auto</code>/<code>api</code> 时才需要</td></tr>
+        <tr><td><code>OPENAI_MODEL</code></td><td><code>openai_model</code></td><td>默认 <code>gpt-4o-mini</code></td></tr>
+        <tr><td><code>OPENAI_TIMEOUT</code></td><td><code>openai_timeout</code></td><td>秒</td></tr>
+        <tr><td><code>OPENAI_TEMPERATURE</code></td><td><code>openai_temperature</code></td><td>默认 0.7</td></tr>
+        <tr><td><code>PATIENT_AGENT_MAX_RETRIES</code></td><td><code>max_generation_retries</code></td><td>守卫触发重说的上限</td></tr>
+        <tr><td><code>SYSTEM_API_MODE</code></td><td><code>system_api_mode</code></td><td><code>mock</code>（默认）/ <code>http</code></td></tr>
+        <tr><td><code>SYSTEM_API_BASE_URL</code></td><td><code>system_api_base_url</code></td><td><code>http</code> 时必填</td></tr>
+        <tr><td><code>SYSTEM_API_TIMEOUT</code></td><td><code>system_api_timeout</code></td><td>秒</td></tr>
+        <tr><td><code>SYSTEM_API_TOKEN</code></td><td><code>system_api_token</code></td><td>可选鉴权头</td></tr>
+        <tr><td><code>PATIENT_AGENT_SCENARIO_DIR</code></td><td><code>scenario_dir</code></td><td>代码默认为 <code>scenarios</code>，但项目根 <code>.env</code> 已把它指向 <code>imported_scenarios</code>（见 <a href="#s13">§13.13</a>）</td></tr>
+        <tr><td><code>PATIENT_AGENT_OUT_DIR</code></td><td><code>out_dir</code></td><td>默认 <code>runs</code></td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>6.15 <code>errors.py</code>（63 行）</h3>
+    <div class="tw"><table>
+      <thead><tr><th>名字</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td><code>ErrorCode</code></td><td>枚举：<code>API_ERROR</code> / <code>TIMEOUT</code> / <code>SCHEMA_ERROR</code> / <code>KNOWLEDGE_RETRIEVAL_ERROR</code> / <code>HUMAN_REVIEW</code> / <code>SESSION_STOPPED</code> / <strong><code>SAFETY_HOLD</code></strong>。</td></tr>
+        <tr><td><code>PatientAgentError</code></td><td>所有本项目异常的基类。</td></tr>
+        <tr><td><code>ScenarioValidationError</code> / <code>SystemApiError</code> / <code>LLMError</code> / <code>ScenarioLibraryError</code></td><td>各具体异常。</td></tr>
+      </tbody>
+    </table></div>
+    <div class="note"><code>SAFETY_HOLD</code> 和 <code>HUMAN_REVIEW</code> <strong>不是故障</strong>，是「设计内的专门路径」，列在 <code>client/base.NON_FATAL_CODES</code> 里，运行器照常记这一轮。</div>
+
+    <h3>6.16 <code>lexicon.py</code>（138 行）</h3>
+    <p><strong>与病例无关的共享词表</strong>和文本工具。守卫/生成器/评测器都会用到它。</p>
+    <div class="tw"><table>
+      <thead><tr><th>名字</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td><code>RISK_TIER_ORDER</code> / <code>RISK_TERMS</code></td><td>风险分级顺序 / 风险词表。</td></tr>
+        <tr><td><code>DENIAL_TERMS</code></td><td>否认句标记（「没有过」「从来没」…）。</td></tr>
+        <tr><td><code>SEVERITY_HIGH_TERMS</code> / <code>SEVERITY_LOW_TERMS</code></td><td>严重度夸张/低估标记。</td></tr>
+        <tr><td><code>INTERNAL_JARGON</code> / <code>DIAGNOSIS_LABELS</code></td><td>内部术语 / 诊断名称表。</td></tr>
+        <tr><td><code>extract_number_tokens(text)</code> / <code>detect_risk_tier(text)</code> / <code>has_denial(text)</code> / <code>contains_any(text, terms)</code></td><td>文本工具函数。</td></tr>
+      </tbody>
+    </table></div>
+    <div class="note ok"><strong>想调整「哪些词算风险/算否认」→ 改这里</strong>，而不是改 <code>guard.py</code> 的逻辑。这样词表和逻辑分离，改起来安全。</div>
+
+    <h3 id="s6-17">6.17 <code>client/</code> — 「系统 API」这一侧</h3>
+    <h4>6.17.1 <code>client/base.py</code>（195 行）— ★ <strong>契约，最重要的文件</strong></h4>
+    <p>定义 Patient Agent 和五层系统之间的<strong>唯一接口</strong>。所有数据模型都在这里。</p>
+    <div class="tw"><table>
+      <thead><tr><th>名字</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td><code>WaitingType</code></td><td>系统在等什么：<code>none</code> / <code>profile_confirmation</code> / <code>scale_item</code> / <code>pause</code> / <code>safety_hold</code> / <code>human_review</code> / <code>completed</code>。</td></tr>
+        <tr><td><code>ResponseModel</code></td><td>所有响应模型的基类，<code>extra="ignore"</code>（比病例宽松：多出来的字段忽略）。</td></tr>
+        <tr><td><code>RouteInfo</code></td><td><code>main_layer</code> + <code>secondary_layers</code> + <code>intent</code> + <code>reason</code>。</td></tr>
+        <tr><td><code>ScaleItemPrompt</code></td><td>一道量表题：<code>scale_name</code> / <code>item_number</code> / <code>prompt</code> / <code>min_score</code> / <code>max_score</code>。</td></tr>
+        <tr><td><code>SessionSnapshot</code></td><td><code>create_session</code> 的返回：<code>session_id</code> / <code>route</code> / <code>initial_prompt</code> / <code>locale</code>。</td></tr>
+        <tr><td><code>TurnResponse</code></td><td><strong>最核心的响应</strong>：<code>patient_reply</code> / <code>waiting_type</code> / <code>route</code> / <code>scale_item</code> / <code>events</code> / <code>error_code</code> / <code>error_message</code> / <code>session_ended</code> / <code>termination_reason</code>。</td></tr>
+        <tr><td><code>DevState</code> / <code>EpisodeSummary</code> / <code>SessionHistoryItem</code></td><td>开发者快照 / L5 疗程总结 / 脱敏历史一条。</td></tr>
+        <tr><td><code>ProfileDecision</code></td><td>枚举：<code>CONTINUE</code> / <code>MODIFY</code> / <code>PAUSE</code>。</td></tr>
+        <tr><td><code>NON_FATAL_CODES</code></td><td>= <code>{SAFETY_HOLD, HUMAN_REVIEW}</code>。设计内的正常路径。</td></tr>
+      </tbody>
+    </table></div>
+    <p><code>SystemApiClient</code> 抽象类里有 <strong>8 个 <code>@abstractmethod</code></strong>——这就是任务说明第五节的那 8 个接口：</p>
+    <div class="tw"><table>
+      <thead><tr><th>#</th><th>方法</th><th>用途</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><code>create_session</code></td><td>建会话，拿 <code>session_id</code>、初始路由、患者可见的初始提示</td></tr>
+        <tr><td>2</td><td><code>send_message</code></td><td>把患者消息交给编排器，拿回复 / 等待类型 / 路由 / 事件 / 错误码</td></tr>
+        <tr><td>3</td><td><code>confirm_profile</code></td><td>提交画像确认决定（continue / modify / pause）</td></tr>
+        <tr><td>4</td><td><code>submit_scale</code></td><td>提交当前许可量表题目的答案</td></tr>
+        <tr><td>5</td><td><code>set_pause</code></td><td>患者主动暂停 / 恢复</td></tr>
+        <tr><td>6</td><td><code>get_dev_state</code></td><td>读开发者可见的五层流程快照</td></tr>
+        <tr><td>7</td><td><code>get_episode_summary</code></td><td>读 L5 疗程总结（未结束时为 <code>None</code>）</td></tr>
+        <tr><td>8</td><td><code>get_session_history</code></td><td>读脱敏历史疗程列表</td></tr>
+      </tbody>
+    </table></div>
+    <div class="note warn">这是<strong>契约</strong>。改签名要同时改 <strong>mock 实现、http 实现、测试 <code>test_mock_system.test_signatures_match_the_contract</code></strong>。</div>
+
+    <h4>6.17.2 <code>client/mock_system.py</code>（1137 行）— 内置简化五层桩</h4>
+    <p>一个<strong>假的</strong>五层系统，供离线测试与演示。它按「L1 风险 → L2 访谈/量表/画像 → L3 候选与排除 → L4 治疗 → L5 复盘」推进。</p>
+    <div class="note warn"><strong>定位</strong>：这是<strong>为了驱动测试的简化状态机</strong>——症状识别靠关键词表、量表题面是固定简化题库、L3 的候选/排除规则只覆盖内置 6 个病例需要的那几条。<strong>它不是真实临床逻辑</strong>，也<strong>不用当产品代码打磨</strong>。</div>
+    <div class="tw"><table>
+      <thead><tr><th>名字</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td><code>MockConfig</code></td><td>桩的行为参数：<code>intake_turns=3</code> / <code>min_symptoms_for_diagnosis=3</code> / <code>max_l3_loops=1</code> / <code>max_scale_refusals=1</code> / <code>min_treatment_turns_for_improvement=3</code> / <code>positive_hits_for_improvement=2</code> / <code>no_change_turns=6</code> / <code>negative_hits_for_no_change=2</code> / <code>max_treatment_turns=8</code> / <code>human_review_after_turn=None</code> / <code>latency_ms=0.0</code>。</td></tr>
+        <tr><td>若干词表</td><td><code>SYMPTOM_LEXICON</code> / <code>EXCLUSION_LEXICON</code> / <code>ABSENCE_MARKERS</code> / <code>RISK_LEXICON</code> / <code>SCALE_ITEM_BANK</code>（PHQ-9/GAD-7/ISI/PCL-5/Y-BOCS/MDQ）/ <code>L2_PROBES</code> / <code>L4_REPLIES</code> / <code>POSITIVE_MARKERS</code> / <code>NEGATIVE_MARKERS</code> / <code>DROPOUT_MARKERS</code> / <code>SCALE_REFUSAL_MARKERS</code> 等。</td></tr>
+      </tbody>
+    </table></div>
+    <h4>实现要点（理解它有助于理解接口契约）</h4>
+    <ul>
+      <li><code>_response(...)</code> — <strong>结束一轮</strong>：先记状态与逐轮复盘（<code>route_history</code> + <code>l5_reviews</code>），再构造响应。</li>
+      <li><code>_build(...)</code> — <strong>纯构造</strong>响应，<strong>不碰会话状态</strong>。这两个函数的分工是「<strong>每次 API 调用正好记一笔</strong>」这条不变量的关键：需要「只构造、不记账」的地方（比如 <code>submit_scale</code> 合并 <code>_advance</code> 的结果）必须走 <code>_build</code>，否则同一轮会被记两遍。</li>
+      <li><code>create_session</code> <strong>不记账</strong>；<code>submit_scale</code> 与 <code>set_pause(False)</code> 会 <code>_advance</code> 推进流程，但不额外记账。</li>
+      <li><code>get_episode_summary</code> <strong>现算</strong>总结（不在 <code>_terminate</code> 时冻结），否则会漏掉终止那一轮。</li>
+    </ul>
+
+    <h4>6.17.3 <code>client/http_client.py</code>（221 行）— 真实编排器客户端</h4>
+    <p>用标准库 <code>urllib</code> 连真实编排器的 HTTP 客户端。只在 <code>SYSTEM_API_MODE=http</code> 时加载。</p>
+    <div class="tw"><table>
+      <thead><tr><th>接口</th><th>方法 + 路径</th></tr></thead>
+      <tbody>
+        <tr><td><code>create_session</code></td><td><code>POST /sessions</code></td></tr>
+        <tr><td><code>send_message</code></td><td><code>POST /sessions/{id}/messages</code></td></tr>
+        <tr><td><code>confirm_profile</code></td><td><code>POST /sessions/{id}/profile_confirmation</code></td></tr>
+        <tr><td><code>submit_scale</code></td><td><code>POST /sessions/{id}/scale</code></td></tr>
+        <tr><td><code>set_pause</code></td><td><code>POST /sessions/{id}/pause</code></td></tr>
+        <tr><td><code>get_dev_state</code></td><td><code>GET /sessions/{id}/dev_state</code></td></tr>
+        <tr><td><code>get_episode_summary</code></td><td><code>GET /sessions/{id}/episode_summary</code></td></tr>
+        <tr><td><code>get_session_history</code></td><td><code>GET /sessions</code></td></tr>
+      </tbody>
+    </table></div>
+    <p><code>_request()</code> 的失败语义：超时 → <code>TIMEOUT</code>；<code>HTTPError</code>/<code>URLError</code> → <code>API_ERROR</code>；返回体不是合法 JSON → <code>SCHEMA_ERROR</code>。</p>
+
+    <h4>6.17.4 <code>client/__init__.py</code>（49 行）</h4>
+    <p>统一出口：把 <code>base</code> 和 <code>mock_system</code> 的东西重导出，并提供<strong>懒加载</strong>的 <code>load_http_client()</code>（只有真要连 http 时才 import）。</p>
+
+    <h3>6.18 <code>llm/</code> — LLM 适配器</h3>
+    <ul>
+      <li><strong><code>llm/base.py</code></strong>（34 行）：<code>LLMClient</code> 抽象类，只有一个方法 <code>complete(system, user, temperature, max_tokens)</code>，外加 <code>is_available()</code>。</li>
+      <li><strong><code>llm/__init__.py</code></strong>（30 行）：<code>build_llm_client(settings)</code>，根据 <code>settings.use_real_llm</code> 返回真模型或规则模型。</li>
+      <li><strong><code>llm/rule_based.py</code></strong>（51 行）：<code>RuleBasedLLM</code>——<strong>离线伪模型</strong>。用正则从 prompt 里抽 <code>&lt;output&gt;...&lt;/output&gt;</code> 块原样回显。<code>strict=True</code> 时抽不到会抛 <code>LLMError</code>。<br>
+        它为什么存在：让<strong>离线与在线共用同一套 prompt 组装逻辑</strong>——在线真模型和离线伪模型吃的是同一个 prompt，只是「谁来答」不同。结果因此可复现、可对照。</li>
+      <li><strong><code>llm/openai_compat.py</code></strong>（127 行）：<code>OpenAICompatLLM</code>，<code>POST {base_url}/chat/completions</code>，<strong>只用标准库</strong>。可指向 OpenAI / DeepSeek / 通义千问 / 本地 vLLM。</li>
+    </ul>
+    <div class="note ok"><strong>换服务商 → 只改 <code>.env</code> 里的 <code>OPENAI_BASE_URL</code>，不用改代码。</strong>想接一个非 OpenAI 形态的模型，才需要写一个 <code>LLMClient</code> 子类。</div>
+  </section>
+
+  <!-- ================= 7 ================= -->
+  <section class="card sec" id="s7">
+    <h2><span class="n">7</span>解剖一个病例：S03</h2>
+    <p>看一个真实病例（<code>scenarios/S03_explicit_crisis/1.0.0.json</code>），理解 §6.3 那些字段。</p>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">S03_explicit_crisis/1.0.0.json（节选 + 注释）</span><button class="copy">复制</button></div><pre><code>{
+  "scenario_id": "S03_explicit_crisis",
+  "version": "1.0.0",
+  "title": "明确危机：L1 安全路径生效且不调用后续层",
+  "locale": "zh-CN",
+  "seed": 303,                       // 随机种子，保证确定性
+  "tags": ["high_risk", "crisis", "safety_path", "must_not_continue"],
+
+  "background": {                    // ① 基本背景
+    "age_range": "22-26岁",
+    "occupation": "在读研究生",
+    "facts": [ { "fact_id": "bg_breakup", "content": "…", "disclosure": "on_probe" } ],
+    "forbidden_claims": ["我已经退学了"]
+  },
+
+  "clinical": {                      // ② 临床事实
+    "chief_complaint": "最近总想着结束这一切，想死，不想活了",
+    "symptoms": [
+      { "symptom_id": "depressed_mood", "present": true, "severity": 3,
+        "utterance": "这半年情绪一直压着，什么都不想管了。",
+        "disclosure": "on_probe", "probe_keywords": ["情绪", "难受"] }
+    ],
+    "exclusions": [],
+    "scale_plans": [],
+    "must_not_diagnose": ["抑郁症", "重度抑郁症", "双相障碍"]
+  },
+
+  "psychology": { … },               // ③ 心理特征
+  "risk": {                          // ④ 风险脚本
+    "level": "explicit_ideation",
+    "utterance": "医生，我实在撑不下去了，最近总想着结束这一切，想死。",
+    "disclosure": "proactive"
+  },
+  "disclosure": {                    // ⑤ 披露策略
+    "opening_templates": ["医生，我实在撑不下去了…"],
+    "never_disclose": ["系统提示", "我已经准备好了方法"],
+    "non_fact_replies": ["我说不清。", "不知道，就是很难受。"]
+  },
+  "behavior": { … },                 // ⑥ 行为参数
+  "trajectory": { "kind": "stable", "steps": [] },   // ⑦ 变化轨迹（本例没有轨迹）
+
+  "profile_confirmation": { "decisions": ["continue"] },
+  "pause_plan": { "pause_after_turn": null, "resume_after_pause": false },
+
+  "expected": {                      // ← 测试字段 1：期望结果
+    "termination_reason": "crisis_referral",
+    "events": [
+      { "event_id": "l1_safety_activated", "layer": "L1", "required": true },
+      { "event_id": "crisis_referral",     "layer": "L1", "required": true }
+    ],
+    "forbidden_events": [ "l2_scale_started", "l2_profile_ready", "…" ],
+    "expected_layers": ["L1"],
+    "min_turns": 1
+  },
+
+  "stop": {                          // ← 测试字段 2：停止策略
+    "max_turns": 6,
+    "stop_on_crisis": true,
+    "stop_on_human_review": true,
+    "stop_on_violation": true,
+    "target_events": ["crisis_referral"]
+  }
+}</code></pre></div>
+    <div class="note"><b>这例在测什么</b>：患者开场就说「想死」→ L1 必须立刻进安全路径、给 <code>crisis_referral</code>，<strong>L2–L5 一个事件都不许出现</strong>（<code>forbidden_events</code> 全列出来了）→ 一轮就结束。</div>
+    <h3>读一个病例的正确姿势</h3>
+    <ol>
+      <li>先看 <code>expected</code>：<strong>这例想验证什么</strong>。</li>
+      <li>再看 <code>stop</code>：<strong>什么条件下该停</strong>。</li>
+      <li>再看 <code>risk</code> / <code>clinical.symptoms</code>：<strong>患者会说什么</strong>。</li>
+      <li>最后看 <code>trajectory</code> / <code>profile_confirmation</code> / <code>pause_plan</code>：<strong>中途怎么走</strong>。</li>
+    </ol>
+  </section>
+
+  <!-- ================= 8 ================= -->
+  <section class="card sec" id="s8">
+    <h2><span class="n">8</span>「我想改 X」速查表</h2>
+    <div class="tw"><table>
+      <thead><tr><th>我想……</th><th>改哪里</th><th>注意事项</th></tr></thead>
+      <tbody>
+        <tr><td>新增一个病例</td><td>新建 <code>scenarios/Sxx_xxx/1.0.0.json</code> + 在 <code>scenarios/index.json</code> 登记</td><td>字段必须全在 <code>schemas.py</code> 里定义过</td></tr>
+        <tr><td>从标准数据集批量造病例</td><td>跑 <code>python tools/db_import.py --source ...</code>（见 <a href="#s13">§13</a>）</td><td>生成后必须人工复写话术</td></tr>
+        <tr><td>接自己的数据集（列名不一样）</td><td><code>tools/db_import.py</code> 的 <code>CATALOG</code> 与 <code>build_scenario()</code>（见 <a href="#s13">§13.11</a>）</td><td><code>SCALE_INDICATION</code> 要和被测系统的量表指示表一致</td></tr>
+        <tr><td>改一句患者台词</td><td>病例 JSON（<strong>新增版本</strong>，不要就地覆盖）</td><td>更新 <code>index.json</code> 的 <code>versions</code>/<code>latest</code></td></tr>
+        <tr><td>改「患者什么情况下说什么」</td><td><code>generator.py</code>（优先改病例台词，其次改选事实逻辑）</td><td>改完跑 <code>tests/test_generator.py</code></td></tr>
+        <tr><td>加一条「这类事实必须被追问」的规则</td><td><code>generator.py</code> 的 <code>_pick_fact()</code>（<code>is_denial</code> 判断）</td><td>加测试</td></tr>
+        <tr><td>调「哪些词算风险 / 算否认」</td><td><code>lexicon.py</code></td><td>词表与逻辑分离，改这里最安全</td></tr>
+        <tr><td>加一种新的违规检查</td><td><code>guard.py</code>：<code>GuardCode</code> + 写 <code>_check_xxx</code> + 串进 <code>check()</code></td><td>补 <code>tests/test_guard.py</code></td></tr>
+        <tr><td>加一项评测判分</td><td><code>evaluator.py</code>（加 <code>CheckResult</code>）+ <code>test_evaluator.py</code></td><td>报告口径也可能要跟着改</td></tr>
+        <tr><td>报告里多一个统计</td><td><code>report.py</code>：<code>BatchReport</code> + <code>build_report()</code> + <code>render_markdown()</code></td><td>补 <code>test_report.py</code></td></tr>
+        <tr><td>加一个新的停止条件</td><td><code>stopping.py</code> 的 <code>evaluate_stop()</code></td><td><strong>注意优先级顺序</strong></td></tr>
+        <tr><td>加一个命令行子命令</td><td><code>cli.py</code>：<code>build_parser()</code> + <code>_cmd_xxx</code></td><td>—</td></tr>
+        <tr><td>加一个新环境变量</td><td><code>config.py</code> 的 <code>Settings</code> + <code>from_env()</code> + <code>.env.example</code></td><td>—</td></tr>
+        <tr><td>换 LLM 服务商</td><td><strong>只改 <code>.env</code> 的 <code>OPENAI_BASE_URL</code></strong></td><td>不用改代码</td></tr>
+        <tr><td>让 Mock 桩模拟人工复核</td><td><code>MockConfig(human_review_after_turn=N)</code></td><td>只影响测试桩</td></tr>
+        <tr><td>连真实编排器</td><td>改 <code>SYSTEM_API_MODE=http</code> 等（见 <a href="#s9">§9</a>）</td><td>需实现 8 个接口</td></tr>
+        <tr><td>改 8 接口的签名</td><td><code>client/base.py</code>（<strong>契约</strong>）</td><td>要同步改 mock、http、<code>test_mock_system.py</code> 的签名测试</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <!-- ================= 9 ================= -->
+  <section class="card sec" id="s9">
+    <h2><span class="n">9</span>以后接入其他层：完整代码示例</h2>
+    <p class="lead">这一节回答你最关心的问题：<strong>「以后接上真实系统，要在哪改、怎么写？」</strong></p>
+
+    <h3>9.1 最短路径：只改配置（前提：真实系统是 HTTP 服务）</h3>
+    <p>如果你的队友把编排器做成了 HTTP 服务，并且路径/字段<strong>跟 <code>client/http_client.py</code> 一致</strong>，那你<strong>一行代码都不用改</strong>，只用配置：</p>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">.env</span><button class="copy">复制</button></div><pre><code>SYSTEM_API_MODE=http
+SYSTEM_API_BASE_URL=http://127.0.0.1:8000
+SYSTEM_API_TIMEOUT=30
+# 需要鉴权就填：
+SYSTEM_API_TOKEN=your-token-here</code></pre></div>
+    <p>或者用命令行参数：</p>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">bash</span><button class="copy">复制</button></div><pre><code>python -m patient_agent run-all --system-api http \
+       --system-api-base-url http://127.0.0.1:8000</code></pre></div>
+    <p>跑完之后，<strong>运行器代码一个字都没变</strong>——因为 <code>factory.build_client()</code> 会按 <code>system_api_mode</code> 替你换成 <code>HttpSystemApiClient</code>：</p>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">patient_agent/factory.py（示意，不用你改）</span><button class="copy">复制</button></div><pre><code>def build_client(settings):
+    if settings.system_api_mode == "http":
+        from patient_agent.client import load_http_client
+        return load_http_client(
+            settings.system_api_base_url,
+            timeout=settings.system_api_timeout,
+            token=settings.system_api_token,
+        )
+    from patient_agent.client import MockSystemApiClient, MockConfig
+    return MockSystemApiClient(MockConfig(latency_ms=0.0))</code></pre></div>
+    <div class="note">注意 <code>load_http_client(...)</code> <strong>直接返回客户端实例</strong>，不要再补一次调用。</div>
+
+    <h3>9.2 真实系统必须满足的 REST 契约</h3>
+    <p><code>http_client.py</code> 会发出这些请求。<strong>让你们的编排器按这个表实现即可</strong>：</p>
+    <div class="tw"><table>
+      <thead><tr><th>我方方法</th><th>HTTP</th><th>路径</th><th>请求体（JSON）</th><th>响应（JSON）</th></tr></thead>
+      <tbody>
+        <tr><td><code>create_session</code></td><td>POST</td><td><code>/sessions</code></td><td><code>{"locale":"zh-CN","channel":"test"}</code></td><td><code>SessionSnapshot</code></td></tr>
+        <tr><td><code>send_message</code></td><td>POST</td><td><code>/sessions/{id}/messages</code></td><td><code>{"text":"…"}</code></td><td><code>TurnResponse</code></td></tr>
+        <tr><td><code>confirm_profile</code></td><td>POST</td><td><code>/sessions/{id}/profile_confirmation</code></td><td><code>{"decision":"continue","notes":""}</code></td><td><code>TurnResponse</code></td></tr>
+        <tr><td><code>submit_scale</code></td><td>POST</td><td><code>/sessions/{id}/scale</code></td><td><code>{"item_number":"1","score":2,"answer_text":""}</code></td><td><code>TurnResponse</code></td></tr>
+        <tr><td><code>set_pause</code></td><td>POST</td><td><code>/sessions/{id}/pause</code></td><td><code>{"paused":true}</code></td><td><code>TurnResponse</code></td></tr>
+        <tr><td><code>get_dev_state</code></td><td>GET</td><td><code>/sessions/{id}/dev_state</code></td><td>—</td><td><code>DevState</code></td></tr>
+        <tr><td><code>get_episode_summary</code></td><td>GET</td><td><code>/sessions/{id}/episode_summary</code></td><td>—</td><td><code>EpisodeSummary</code> 或 <code>null</code></td></tr>
+        <tr><td><code>get_session_history</code></td><td>GET</td><td><code>/sessions</code></td><td>（可选 <code>?session_id=</code>）</td><td><code>SessionHistoryItem[]</code></td></tr>
+      </tbody>
+    </table></div>
+    <h4>响应里最常见的字段形态（以 <code>TurnResponse</code> 为例）</h4>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">TurnResponse.json</span><button class="copy">复制</button></div><pre><code>{
+  "session_id": "SESS-xxxx",
+  "patient_reply": "我理解你说的情况，我们先一起看看……",   // 给患者看的回复
+  "waiting_type": "none",          // none|profile_confirmation|scale_item|pause|safety_hold|human_review|completed
+  "route": {
+    "main_layer": "L2",            // L1..L5
+    "secondary_layers": [],
+    "intent": "mi",
+    "reason": "MI 探索"
+  },
+  "scale_item": null,              // waiting_type=scale_item 时才有
+  "events": ["l2_profile_ready"],  // 观测到的流程事件，评测器靠它判分
+  "error_code": null,              // 见 ErrorCode；SAFETY_HOLD/HUMAN_REVIEW 属正常路径
+  "error_message": "",
+  "session_ended": false,
+  "termination_reason": null       // completed_improved / crisis_referral / dropout 等
+}</code></pre></div>
+    <div class="note"><b>两个必须记住的点</b>
+      <ol>
+        <li><strong><code>events</code> 是评测的命根子</strong>。评测器的「必需事件/禁止事件/层覆盖」全靠它。真实系统必须老实把「发生了哪些流程事件」写进 <code>events</code>，否则评测会误判。</li>
+        <li><strong><code>error_code=SAFETY_HOLD</code> / <code>HUMAN_REVIEW</code> 不是错误</strong>。它们是设计内的专门路径（安全转介、人工复核），响应里带着<strong>有效的患者可见回复</strong>。别把它们当异常抛掉——它们在 <code>client/base.NON_FATAL_CODES</code> 里，运行器会照常记这一轮，再让 PA6 以「系统终止」收尾。</li>
+      </ol>
+    </div>
+
+    <h3>9.3 真实系统接口形态不同？写一个客户端子类</h3>
+    <p>如果你们的接口路径/字段跟上面不一样（比如字段叫 <code>reply</code> 而不是 <code>patient_reply</code>，或者不是 REST 而是 WebSocket），<strong>不要改运行器</strong>。启动器只依赖抽象类 <code>SystemApiClient</code>，所以你只要实现这个抽象类，插进去就行。</p>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">patient_agent/client/my_orchestrator.py（完整示例）</span><button class="copy">复制</button></div><pre><code>"""把你们真实编排器包装成 Patient Agent 认识的 SystemApiClient。
+
+接口形态不同时，就在这一层做「翻译」，运行器与生成器完全不用动。
+"""
+from __future__ import annotations
+
+import json
+import urllib.request
+
+from patient_agent.client.base import (
+    DevState,
+    EpisodeSummary,
+    ProfileDecision,
+    RouteInfo,
+    SessionHistoryItem,
+    SessionSnapshot,
+    SystemApiClient,
+    TurnResponse,
+    new_session_id,
+)
+from patient_agent.errors import ErrorCode
+
+
+class MyOrchestratorClient(SystemApiClient):
+    """假设你们的服务跟 http_client 的形态不同：字段是 reply 而非 patient_reply，
+    且用 /api/v2/ 前缀。"""
+
+    name = "my_orchestrator"
+
+    def __init__(self, base_url: str, timeout: float = 30.0, token: str = "") -> None:
+        self.base_url = base_url.rstrip("/")
+        self.timeout = timeout
+        self.token = token
+
+    # ---------------------------------------------------------- 内部工具
+    def _post(self, path: str, payload: dict) -> dict:
+        req = urllib.request.Request(
+            f"{self.base_url}{path}",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json", **self._auth()},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+
+    def _get(self, path: str) -> dict:
+        req = urllib.request.Request(
+            f"{self.base_url}{path}", headers=self._auth(), method="GET"
+        )
+        with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+
+    def _auth(self) -> dict:
+        return {"Authorization": f"Bearer {self.token}"} if self.token else {}
+
+    # -------------------------------------------- ★ 把你的响应翻译成 TurnResponse
+    def _to_turn(self, raw: dict, session_id: str) -> TurnResponse:
+        """这是适配层唯一需要动脑的地方：字段名对不上就在这里翻译。"""
+
+        route_raw = raw.get("route") or {}
+        item_raw = raw.get("scale_item") or None
+        return TurnResponse(
+            session_id=session_id,
+            patient_reply=raw.get("reply", ""),          # 你们叫 reply
+            waiting_type=raw.get("wait", "none"),        # 你们叫 wait
+            route=RouteInfo(
+                main_layer=route_raw.get("layer", "L2"),
+                secondary_layers=route_raw.get("also", []),
+                intent=route_raw.get("intent", ""),
+                reason=route_raw.get("why", ""),
+            ),
+            scale_item=None if item_raw is None else {
+                "scale_name": item_raw["name"],
+                "item_number": str(item_raw["no"]),
+                "prompt": item_raw["text"],
+                "min_score": item_raw.get("lo", 0),
+                "max_score": item_raw.get("hi", 3),
+            },
+            events=raw.get("events", []),
+            error_code=(ErrorCode(raw["error"]) if raw.get("error") else None),
+            error_message=raw.get("error_msg", ""),
+            session_ended=raw.get("ended", False),
+            termination_reason=raw.get("stop_reason"),
+        )
+
+    # ------------------------------------------------------------- 8 个接口
+    def create_session(self, *, locale="zh-CN", channel="test", session_id=None):
+        raw = self._post("/api/v2/session", {"locale": locale, "channel": channel})
+        return SessionSnapshot(
+            session_id=raw["sid"],
+            route=RouteInfo(main_layer="L1", intent="intake", reason="新建"),
+            initial_prompt=raw["hello"],
+            locale=locale,
+        )
+
+    def send_message(self, session_id: str, text: str) -> TurnResponse:
+        raw = self._post(f"/api/v2/session/{session_id}/say", {"text": text})
+        return self._to_turn(raw, session_id)
+
+    def confirm_profile(self, session_id: str, decision=ProfileDecision.CONTINUE, notes=""):
+        value = decision.value if isinstance(decision, ProfileDecision) else str(decision)
+        raw = self._post(f"/api/v2/session/{session_id}/profile", {"decision": value, "notes": notes})
+        return self._to_turn(raw, session_id)
+
+    def submit_scale(self, session_id: str, item_number: str, score: int, answer_text=""):
+        raw = self._post(
+            f"/api/v2/session/{session_id}/scale",
+            {"item_number": item_number, "score": score, "answer_text": answer_text},
+        )
+        return self._to_turn(raw, session_id)
+
+    def set_pause(self, session_id: str, paused: bool) -> TurnResponse:
+        raw = self._post(f"/api/v2/session/{session_id}/pause", {"paused": paused})
+        return self._to_turn(raw, session_id)
+
+    def get_dev_state(self, session_id: str) -> DevState:
+        raw = self._get(f"/api/v2/session/{session_id}/state")
+        return DevState(**raw)
+
+    def get_episode_summary(self, session_id: str):
+        raw = self._get(f"/api/v2/session/{session_id}/summary")
+        return None if not raw else EpisodeSummary(**raw)
+
+    def get_session_history(self, session_id: str | None = None):
+        raw = self._get("/api/v2/sessions")
+        items = raw if isinstance(raw, list) else raw.get("items", [])
+        results = [SessionHistoryItem(**item) for item in items]
+        return [i for i in results if session_id is None or i.session_id == session_id]</code></pre></div>
+    <p><strong>怎么把它插进去？</strong>两种办法，按你的喜好：</p>
+    <h4>办法 1（推荐，零侵入）——写一个自己的装配脚本</h4>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">my_run.py（放在 patient agent/ 下就能跑）</span><button class="copy">复制</button></div><pre><code>from patient_agent.config import Settings
+from patient_agent.factory import build_library, build_stack
+from patient_agent.runner import RunOptions
+from patient_agent.client.my_orchestrator import MyOrchestratorClient
+
+settings = Settings.from_env(llm_mode="offline", system_api_mode="mock")
+library = build_library(settings)
+scenario = library.load("S01_low_risk_depression")
+
+stack = build_stack(
+    scenario,
+    settings,
+    client=MyOrchestratorClient(base_url="http://127.0.0.1:8000"),  # ← 你的客户端
+)
+record = stack.runner.run()
+print("轮数：", record.turn_count, "终止：", record.termination_observed())
+print("事件：", record.all_events())</code></pre></div>
+    <h4>办法 2（一劳永逸）——让 <code>factory.build_client()</code> 认得它</h4>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">patient_agent/factory.py</span><button class="copy">复制</button></div><pre><code>def build_client(settings):
+    if settings.system_api_mode == "http":
+        from patient_agent.client import load_http_client
+        return load_http_client(
+            settings.system_api_base_url,
+            timeout=settings.system_api_timeout,
+            token=settings.system_api_token,
+        )
+    # ↓ 新增：我自己的编排器
+    if settings.system_api_mode == "my_orchestrator":
+        from patient_agent.client.my_orchestrator import MyOrchestratorClient
+        return MyOrchestratorClient(
+            base_url=settings.system_api_base_url,
+            timeout=settings.system_api_timeout,
+            token=settings.system_api_token,
+        )
+    # 兜底：内置 Mock（原来的默认分支）
+    from patient_agent.client import MockConfig, MockSystemApiClient
+    return MockSystemApiClient(MockConfig(latency_ms=0.0))</code></pre></div>
+    <p>然后别忘了在 <code>config.py</code> 的 <code>validate()</code> 里允许 <code>"my_orchestrator"</code> 这个取值，并在 <code>.env.example</code> 里加注释。</p>
+
+    <h3>9.4 要扩展超过 8 个接口怎么办</h3>
+    <p>任务说明规定只通过这 8 个接口联动。如果将来确实要多一个（比如「读 L3 的证据链详情」）：</p>
+    <ol>
+      <li><strong>在 <code>client/base.SystemApiClient</code> 加一个 <code>@abstractmethod</code></strong>（改契约）。</li>
+      <li><strong>两个实现都要补</strong>：<code>mock_system.py</code> 和 <code>http_client.py</code>（以及你自己的子类）。</li>
+      <li><strong>在 <code>runner.py</code> 里调用它</strong>——通常加进 <code>_collect_artifacts()</code>，把结果存进 <code>recorder</code>。</li>
+      <li><strong>补测试</strong>：<code>tests/test_mock_system.py</code> 的 <code>SYSTEM_API</code> 列表和签名一致性测试会自动要求 mock 实现新接口。</li>
+    </ol>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">三步改法</span><button class="copy">复制</button></div><pre><code># 1) patient_agent/client/base.py
+class SystemApiClient(abc.ABC):
+    ...
+    @abc.abstractmethod
+    def get_evidence_chain(self, session_id: str) -> list[dict]:
+        """新增：读 L3 的证据链明细（示例）。"""
+
+# 2) patient_agent/client/mock_system.py
+    def get_evidence_chain(self, session_id: str) -> list[dict]:
+        session = self._get(session_id)
+        return session.candidates + session.excluded
+
+# 3) patient_agent/runner.py 的 _collect_artifacts() 里
+    try:
+        self.recorder.evidence_chain = self.client.get_evidence_chain(sid)
+    except PatientAgentError:
+        pass  # 老系统没这个接口时不致命</code></pre></div>
+    <div class="note warn"><code>SystemApiClient</code> 用的是 <code>abc.ABC</code>，一旦加了 <code>@abstractmethod</code>，<strong>所有没实现的子类都会无法实例化</strong>——这正是我们想要的「契约漂了就立刻报错」。</div>
+
+    <h3>9.5 接真实 LLM（让患者说话更像人）</h3>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">.env</span><button class="copy">复制</button></div><pre><code>PATIENT_AGENT_LLM_MODE=auto
+OPENAI_BASE_URL=https://api.deepseek.com/v1
+OPENAI_API_KEY=sk-你的key
+OPENAI_MODEL=deepseek-chat</code></pre></div>
+    <p><code>auto</code> 的含义是「有 key 就用真模型，没 key 自动退回离线」。如果想让「没 key 就直接报错」（防止「以为在测真模型其实在测规则」），用 <code>PATIENT_AGENT_LLM_MODE=api</code>。</p>
+    <div class="note ok"><strong>无论用哪个模型，「说什么事实」仍由 PA3 决定、由 PA4 兜底</strong>——真模型只负责把选定的那条事实润色成自然语言。所以患者再怎么说，也不会说出病例外的事实。</div>
+  </section>
+
+  <!-- ================= 10 ================= -->
+  <section class="card sec" id="s10">
+    <h2><span class="n">10</span>怎么看结果</h2>
+    <p>跑完命令后，产物都在 <code>runs/</code> 下。</p>
+
+    <h3>10.1 <code>run</code> 单病例：打印到屏幕 + 落一个记录</h3>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">python -m patient_agent run S03_explicit_crisis --scenario-dir scenarios</span><button class="copy">复制</button></div><pre><code>病例：S03_explicit_crisis v1.0.0 — 明确危机：L1 安全路径生效且不调用后续层
+会话：MOCK-8b2fe41b0327 | 模型：offline/rule_based
+------------------------------------------------------------------------
+[ 0] L1/say -&gt; safety_hold
+     患者&gt; 医生，我实在撑不下去了，最近总想着结束这一切，想死。
+     系统&lt; 谢谢你告诉我这些，这对我很重要。我很在意你的安全，我们现在先做一件最重要的事：
+           请告诉我你现在是否安全，身边有没有人可以陪着你。我会同时帮你联系可以提供即时帮助的人。
+
+评测：通过 | 轮数 1 (治疗 0) | 终止 crisis_referral
+覆盖层：L1
+停止原因：系统终止：crisis_referral
+  [OK ] required_events：全部命中
+  [OK ] forbidden_events：未出现禁止事件
+  [OK ] layers：覆盖 L1
+  [OK ] termination：终止原因一致：crisis_referral
+  [OK ] excluded_conditions：无被排除的候选
+  [OK ] guard：无阻断性违规
+  [OK ] errors：无错误码
+  [OK ] min_turns：1 / 下限 1
+
+逐轮记录已写入：runs\S03_explicit_crisis\recorder.json</code></pre></div>
+    <p><strong>怎么看</strong>：先看「评测：通过/不通过」，再看下面 8 个 <code>[OK]/[FAIL]</code>。（注意：轮号从 <code>0</code> 起算；8 个判分项的<strong>名字</strong>是英文键，<code>：</code> 后面才是中文说明。）</p>
+
+    <h3>10.2 <code>run-all</code> 全库：出报告</h3>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">runs/latest/</span><button class="copy">复制</button></div><pre><code>runs/latest/
+├── report.json                       ← 机器可读的汇总
+├── report.md                         ← 人读的 Markdown 报告
+├── S01_low_risk_depression/
+│   └── recorder.json                 ← 这一例的逐轮账本
+├── S02_insufficient_info/recorder.json
+├── ...（每个病例一个目录）</code></pre></div>
+    <div class="tw"><table>
+      <thead><tr><th>report.md 小节</th><th>看什么</th></tr></thead>
+      <tbody>
+        <tr><td><strong>路径覆盖</strong></td><td>每层有多少个场景走过（<code>L1=6 / L2=5 / L3=5 / L4=5 / L5=4</code> 之类）。</td></tr>
+        <tr><td><strong>错误类型</strong></td><td>出现了哪些错误码。<strong><code>SAFETY_HOLD</code> 是设计内的</strong>，不是故障；报告会把「非设计内故障」单独拆出来。</td></tr>
+        <tr><td><strong>事实一致性</strong></td><td>患者有没有说过跟病例矛盾的话（正常应为 0）。</td></tr>
+        <tr><td><strong>终止原因分布</strong></td><td>各病例怎么结束的。</td></tr>
+        <tr><td><strong>逐病例明细</strong></td><td>每例的 8 项判分。</td></tr>
+        <tr><td><strong>失败详情</strong></td><td>没通过的话，具体挂在哪一项。</td></tr>
+      </tbody>
+    </table></div>
+    <p>一份正常的全库回放，关键数字应该是：</p>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">期望结果</span><button class="copy">复制</button></div><pre><code>6/6 通过
+路径覆盖：L1=6  L2=5  L3=5  L4=5  L5=4
+错误类型：SAFETY_HOLD × 1（设计内）
+事实一致性：0 违规
+终止原因：completed_improved × 2 / completed_no_change × 1
+         / crisis_referral × 1 / dropout × 1 / 未终止 × 1</code></pre></div>
+    <p>（「未终止 × 1」是 S02——它按设计在目标事件覆盖后由 PA6 主动收手。）</p>
+
+    <h3>10.3 <code>recorder.json</code> 里有什么</h3>
+    <p>这是评测的原始数据。想看「某一轮到底发生了什么」，翻这里。每个 turn 记录了：患者说了什么、系统回了什么、走了哪一层、等待类型、观测到哪些事件、守卫有没有拦、当前错误码、是否结束、耗时等。</p>
+    <p>用 <code>recorder.json</code> 复现评测（不用重跑会话）：</p>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">复现评测</span><button class="copy">复制</button></div><pre><code>from patient_agent.recorder import SessionRecorder
+from patient_agent.library import ScenarioLibrary
+from patient_agent.evaluator import evaluate_scenario
+
+record = SessionRecorder.load("runs/latest/S01_low_risk_depression/recorder.json")
+scenario = ScenarioLibrary("scenarios").load("S01_low_risk_depression")
+evaluation = evaluate_scenario(scenario, record)   # 注意：先 scenario，后 recorder
+print(evaluation.ok, evaluation.failed_checks)</code></pre></div>
+  </section>
+
+  <!-- ================= 11 ================= -->
+  <section class="card sec" id="s11">
+    <h2><span class="n">11</span>排错 FAQ</h2>
+    <details open><summary>Q1：控制台中文变成 <code>��</code> 或乱码。</summary>
+      <p>Windows 控制台默认用 GBK。三种办法（任选）：</p>
+      <ul>
+        <li>加 <code>-X utf8</code>（最省事）：<code>python -X utf8 -m patient_agent run S01_low_risk_depression --scenario-dir scenarios</code></li>
+        <li>设环境变量：<code>set PYTHONUTF8=1</code>（cmd）或 <code>$env:PYTHONUTF8=1</code>（PowerShell）</li>
+        <li>直接用 <code>patient-agent</code> 命令（<code>cli.py</code> 里有 <code>_force_utf8_stdout()</code> 会强制 UTF-8）。</li>
+      </ul>
+    </details>
+    <details><summary>Q2：<code>FileNotFoundError</code>、找不到病例，或 <code>[SCHEMA_ERROR] 病例库目录不存在：scenarios</code>。</summary>
+      <p>八成是<strong>没在 <code>patient agent/</code> 目录下运行</strong>。所有命令的正确工作目录是含 <code>pyproject.toml</code> 的那个目录。</p>
+      <p><strong>注意路径补丁只解决「导包」，不解决「找数据」</strong>：<code>scenarios/</code> 是按<strong>当前工作目录</strong>找的，从别的目录跑就会报 <code>[SCHEMA_ERROR] 病例库目录不存在：scenarios</code>。要么先 <code>cd</code> 到项目根，要么用 <code>--scenario-dir</code> 或环境变量 <code>PATIENT_AGENT_SCENARIO_DIR</code> 指过去。</p>
+    </details>
+    <details><summary>Q3：<code>ModuleNotFoundError: No module named 'patient_agent'</code>。</summary>
+      <p>几乎都是<strong>直接按路径跑了 <code>.py</code> 文件</strong>，而不是用 <code>-m</code> 跑模块。下面这种写法一定失败：</p>
+      <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">bash（错误写法）</span><button class="copy">复制</button></div><pre><code>& D:\miniconda\envs\dl-G\python.exe "...\patient agent\patient_agent\__main__.py"
+# ModuleNotFoundError: No module named 'patient_agent'</code></pre></div>
+      <p><strong>原因</strong>：直接跑文件时，Python 把 <code>sys.path[0]</code> 设成<strong>那个文件自己的目录</strong>，也就是 <code>patient_agent\</code>。于是它跑到 <code>patient_agent\</code> 里面去找一个叫 <code>patient_agent</code> 的包——当然找不到（包不在它自己里面）。换成 <code>-m patient_agent</code> 时，<code>sys.path[0]</code> 变成<strong>当前工作目录</strong>，也就是项目根，包就在那儿。</p>
+      <p><strong>正确写法</strong>（先 <code>cd</code> 到项目根，即含 <code>pyproject.toml</code> 的目录）：<code>python -m patient_agent list</code>。</p>
+      <p>VS Code 的 <em>Run Python File</em> 按钮干的正是「按路径跑文件」，所以它<strong>必然报这个错</strong>——要么改用<strong>集成终端</strong>，要么配 <code>launch.json</code> 的 <code>"module"</code> 字段（见 <a href="#s2-4">§2.4</a>）。</p>
+      <p>实在想保留「跑文件」的写法，就先手动把项目根塞进去：<code>$env:PYTHONPATH = (Get-Location).Path</code>，再跑。测试没这个问题——<code>pytest.ini</code> 里的 <code>pythonpath = .</code> 已经替你处理好了。</p>
+    </details>
+    <details><summary>Q4：<code>ModuleNotFoundError: No module named 'pydantic'</code>。</summary>
+      <p>没装依赖。<code>pip install pydantic pytest</code>。</p>
+    </details>
+    <details><summary>Q5：改了病例 JSON，一跑就报错。</summary>
+      <p>多半是<strong>字段名写错</strong>或<strong>多了 Schema 没定义的键</strong>——<code>extra="forbid"</code> 会直接报错。对照 <code>schemas.py</code> 里的字段名检查。这是<strong>故意设计的</strong>：宁可报错，也不静默忽略。</p>
+    </details>
+    <details><summary>Q6：<code>pytest -q</code> 跑完没有汇总行。</summary>
+      <p><code>pytest.ini</code> 里已经有 <code>addopts = -q</code>，再传 <code>-q</code> 就变成 <code>-qq</code>，会把汇总藏掉。<strong>直接跑 <code>python -m pytest</code> 就行</strong>（不加 <code>-q</code>）。</p>
+    </details>
+    <details><summary>Q7：评测没过（<code>[FAIL]</code>），怎么定位？</summary>
+      <p>看 <code>report.md</code> 的「失败详情」，或者用 <code>--verbose</code>：<code>python -m patient_agent run-all --verbose --only S05_comorbid_anxiety_depression</code>。它会打印这一例的 8 项判分明细。</p>
+    </details>
+    <details><summary>Q8：改了病例台词，测试结果变了。</summary>
+      <p>正常——<strong>这就是为什么要版本化病例</strong>。新增一个版本文件，别就地覆盖，这样「当时用的是哪一版」永远可追溯。</p>
+    </details>
+    <details><summary>Q9：想连真模型但报「配置有问题」。</summary>
+      <p><code>llm_mode=api</code> 必须有 <code>OPENAI_API_KEY</code>；<code>system_api_mode=http</code> 必须有 <code>SYSTEM_API_BASE_URL</code>。这是 <code>config.validate()</code> 故意拦的。</p>
+    </details>
+    <details><summary>Q10：<code>runs/</code> 能删吗？</summary>
+      <p>能。它是产物目录，<strong>随时可删、重跑即可再生成</strong>。它不属于源码。</p>
+    </details>
+  </section>
+
+  <!-- ================= 12 ================= -->
+  <section class="card sec" id="s12">
+    <h2><span class="n">12</span>命令速查表</h2>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">bash</span><button class="copy">复制</button></div><pre><code># —— 安装 ——
+pip install pydantic pytest
+# 或
+pip install -e ".[test]"
+
+# —— 日常 ——
+python -m pytest                                        # 跑全部 214 个测试
+python -m patient_agent list                            # 列病例
+python -m patient_agent run S01_low_risk_depression --scenario-dir scenarios   # 跑单个内置病例
+python -m patient_agent run-all --out runs/latest       # 全库回放出报告
+python -m patient_agent run-all --verbose               # 额外打印每例评测明细
+python -m patient_agent run-all --scenario-dir scenarios --only S05_comorbid_anxiety_depression,S06_treatment_dropout
+
+# —— 连真模型 ——
+python -m patient_agent run-all --llm-mode auto
+
+# —— 连真实编排器 ——
+python -m patient_agent run-all --system-api http --system-api-base-url http://127.0.0.1:8000
+
+# —— 中文乱码兜底 ——
+python -X utf8 -m patient_agent run S03_explicit_crisis --scenario-dir scenarios
+
+# —— 指定路径 ——
+python -m patient_agent run-all --scenario-dir scenarios --out runs/latest
+python -m patient_agent run-all --env-file .env
+
+# —— 数据集转病例 ——
+python tools/db_import.py --source tools/sample_standard_db.json --dry-run
+# 会谈记录格式（一问一答）：结构一致就自动识别，详见 §13.2.1
+python tools/db_import.py --source 会谈记录.json --dry-run --no-verify
+python tools/db_import.py --source 会谈记录.json --out imported_scenarios
+python -m patient_agent run-all --scenario-dir imported_scenarios --verbose</code></pre></div>
+    <p>退出码：<span class="pill g">0=全通过</span><span class="pill w">1=有病例未通过</span><span class="pill b">2=用法/配置错误</span></p>
+    <div class="note"><strong>注意上面命令里的 <code>--scenario-dir scenarios</code>。</strong>默认病例库已经被项目根 <code>.env</code>
+      切到数据集生成库 <code>imported_scenarios/</code>，所以要跑下面这 6 例内置病例、或跑任何内置 ID，都得显式指回
+      <code>--scenario-dir scenarios</code>。省掉这个参数时 <code>list</code> 列出来的是 <code>DB_*</code> / <code>TRANSCRIPT_*</code>。详见 <a href="#s13">§13.13</a>。</div>
+    <h3>6 个内置病例</h3>
+    <div class="tw"><table>
+      <thead><tr><th>ID</th><th>覆盖的验收场景</th><th>终止原因</th></tr></thead>
+      <tbody>
+        <tr><td><code>S01_low_risk_depression</code></td><td>验收 1（画像确认 → L3）+ 轨迹「改善」</td><td><code>completed_improved</code></td></tr>
+        <tr><td><code>S02_insufficient_info</code></td><td>验收 2（L3 信息不足回退 L2 补字段）+ L1 模糊风险</td><td>未终止（目标事件覆盖后由 PA6 停）</td></tr>
+        <tr><td><code>S03_explicit_crisis</code></td><td>验收 3（危机只走 L1 安全路径）</td><td><code>crisis_referral</code></td></tr>
+        <tr><td><code>S04_bipolar_exclusion</code></td><td>验收 4（易激惹 + 睡眠减少、无躁狂史 → 双相被排除）</td><td><code>completed_improved</code></td></tr>
+        <tr><td><code>S05_comorbid_anxiety_depression</code></td><td>轨迹「无变化」+ 暂停/恢复 + 三量表</td><td><code>completed_no_change</code></td></tr>
+        <tr><td><code>S06_treatment_dropout</code></td><td>轨迹「退出」+ 画像先改后确认</td><td><code>dropout</code></td></tr>
+      </tbody>
+    </table></div>
+    <div class="note ok"><b>要接别的层，就动 <code>client/</code></b>（<code>base.py</code> 是契约，<code>http_client.py</code> 是桥，或写自己的子类）。<b>要改患者行为，就动 <code>scenarios/</code> 里的病例</b>，其次才是 <code>generator.py</code>。</div>
+  </section>
+
+  <!-- ================= 13 ================= -->
+  <section class="card sec" id="s13">
+    <h2><span class="n">13</span>用标准数据集批量生成病例</h2>
+    <p class="lead">这一节回答：<strong>「我手上有一份标准数据集，怎么把它变成这个模型能跑的病例？」</strong></p>
+    <p>结论、步骤、命令、坑，都在这里。配套的工具是 <code>tools/db_import.py</code>（只用 Python 标准库，不新增任何依赖）。</p>
+
+    <h3>13.1 先记住一件事：模型不吃数据集</h3>
+    <p>Patient Agent 启动时只做一件事：打开<strong>病例库目录</strong>（默认 <code>scenarios/</code>），读 <code>index.json</code>，
+      再把每个 <code>&lt;id&gt;/&lt;版本&gt;.json</code> 交给 PA1 的 Schema 校验（见 <a href="#s6-3">§6.3</a>）。</p>
+    <p>它不会连数据库，不会读 CSV，也不需要知道你的表结构。所以「用数据集当病例」在代码层面只有一种含义：</p>
+    <div class="note"><strong>写一个转换器，把数据集里的记录物化成符合 Schema 的 JSON 文件，放进病例库目录。</strong></div>
+    <p><code>tools/db_import.py</code> 就是这个转换器的最小可用版。它做三件事：</p>
+    <ol>
+      <li>把库里的记录映射成病例的<strong>七组临床字段</strong>；</li>
+      <li>用标准词表模板补出<strong>「患者会说的每一句话」</strong>；</li>
+      <li>按风险等级与治疗反应推导<strong>期望路径（<code>expected</code> / <code>stop</code>）</strong>，然后<strong>真的把这条病例跑一遍</strong>，用中文告诉你过没过。</li>
+    </ol>
+
+    <h3>13.2 数据集可以长什么样</h3>
+    <div class="tw"><table>
+      <thead><tr><th>形态</th><th>怎么喂进去</th></tr></thead>
+      <tbody>
+        <tr><td>结构化导出（JSON）</td><td><code>--source 你的.json</code>，内容是 <code>{"dataset_version":"...","records":[...]}</code> 或直接一个数组</td></tr>
+        <tr><td>SQLite / SQL 导出</td><td><code>--source 你的.sqlite --table records</code>（一行一条记录）</td></tr>
+        <tr><td>CSV</td><td><code>--source 你的.csv</code>（第一行是表头；<code>symptoms</code> 这类嵌套字段写成 JSON 文本放在单元格里）</td></tr>
+        <tr><td>自由文本病历</td><td><strong>不能直接喂</strong>，要先做信息抽取，见 <a href="#s13">§13.12</a></td></tr>
+        <tr><td><strong>会谈记录（一问一答）</strong></td><td><code>--source 你的.json</code>，内容是 <code>[{"conversation":[{"doctor":…,"patient":…}, …]}, …]</code>。<strong>自动识别，走反向抽取</strong>，见 <a href="#s13">§13.2.1</a></td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 id="s13-2-1">13.2.1 会谈记录格式：只有「医生问 / 患者答」的原始文本</h3>
+    <p>最常见的一类数据就是这种——没有任何结构化字段，只有一问一答的逐轮原话。它<strong>不用先转成 §13.3 的规范化记录</strong>，
+      直接喂给同一个命令即可，转换器按<strong>结构</strong>自动认出它（不靠文件名）。</p>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">你的会谈记录.json</span><button class="copy">复制</button></div><pre><code>[
+  {
+    "conversation": [
+      {"doctor": "最近有没有觉得情绪低落，或者提不起兴趣？", "patient": "最近情绪还算稳定，但有时候还是会感到焦虑和紧张。"},
+      {"doctor": "睡眠怎么样？有没有入睡困难或者早醒？",       "patient": "睡眠还可以，没有特别明显的入睡困难。"},
+      {"doctor": "有没有过想伤害自己或者自杀的念头？",         "patient": "没有，我没有过这种念头。"}
+    ]
+  },
+  { "conversation": [ {"doctor": "…", "patient": "…"} ] }
+]</code></pre></div>
+    <p>三条硬性约定，不符合就认不出来：</p>
+    <ul>
+      <li><strong>键名必须叫 <code>doctor</code> / <code>patient</code></strong>（<code>q</code>/<code>a</code>、<code>role</code>/<code>content</code> 之类都不认）；</li>
+      <li><strong>最外层要是数组</strong>，或带 <code>records</code> 字段的对象（<code>{"records":[…]}</code>）；单个裸对象不接受；</li>
+      <li>一个元素 = 一次会谈 = 一个病例，自动编号 <code>TRANSCRIPT_00</code>、<code>TRANSCRIPT_01</code>…</li>
+    </ul>
+    <p><strong>同一名患者的多次会谈</strong>（比如同一个人的轻/中/重三档）想归成一个病例的多个版本，就在记录里写上
+      <code>"scenario_id"</code> 和 <code>"version"</code>，转换器会按 <code>scenario_id</code> 归组、按 <code>version</code> 出多个版本文件：</p>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">同一患者多版本</span><button class="copy">复制</button></div><pre><code>{ "conversation": [ … ],
+  "scenario_id": "S07_same_patient",
+  "version": "2.0.0" }</code></pre></div>
+
+    <h4>怎么跑</h4>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">bash</span><button class="copy">复制</button></div><pre><code># ① 先看会抽出什么、剩多少要人工补——不写盘（建议第一步永远先跑这个）
+python tools/db_import.py --source 你的会谈记录.json --dry-run --no-verify
+
+# ② 落盘成病例
+python tools/db_import.py --source 你的会谈记录.json --out imported_scenarios
+
+# ③ 认出它 → 逐轮跑 → 批量评测（同 §13.7）
+python -m patient_agent list --scenario-dir imported_scenarios
+python -m patient_agent run TRANSCRIPT_00 --scenario-dir imported_scenarios
+python -m patient_agent run-all --scenario-dir imported_scenarios --verbose</code></pre></div>
+    <div class="note warn"><strong>真实患者数据（脱敏前）先别跑批量。</strong>先按下面的「抽查」方式在小样本上人工核对抽取结果。
+      真实数据进 <code>scenarios/</code> 之前必须先脱敏、过伦理，且<strong>训练与评测不能用同一批患者</strong>。</div>
+
+    <h4>它抽得出什么、抽不出什么</h4>
+    <p>判断「医生这句话在问什么」靠的是一张内置话题表：<strong>26 条</strong>（15 个症状话题、6 个背景话题、4 个鉴别话题、1 个风险话题），
+      落到 <strong>11 个症状码</strong>和 <strong>3 个鉴别码</strong>上。命中的就能抽，命不中的不会丢——原话会暂存成背景事实并进待办。</p>
+    <div class="tw"><table>
+      <thead><tr><th></th><th>内容</th><th>怎么来的</th></tr></thead>
+      <tbody>
+        <tr><td><strong>自动抽出</strong></td><td>开场陈述、阳性症状、被否认的筛查项（→ 阴性鉴别条件）、风险否认句、背景事实（家族史 / 婚恋 / 工作 / 性格…）</td><td>问句匹配话题表 + 回答分级（否认 / 承认）</td></tr>
+        <tr><td><strong>留空待补</strong></td><td>量表作答、<code>expected</code> 路径、终止原因、风险等级、<code>probe_keywords</code> 校准</td><td>会谈记录反推不出来，<strong>一律不猜</strong>，逐条列进「待人工补齐」</td></tr>
+      </tbody>
+    </table></div>
+    <p>开场陈述取<strong>第一条患者原话</strong>，并把它提到的症状标成 <code>disclosure="proactive"</code>，
+      保证前几轮系统就能识别到（原理见 <a href="#s13">§13.6</a>）。</p>
+    <p>抽取是<strong>关键词启发式</strong>，所以：问法和内置触发词越接近，命中越多；换一家医院换一套问法，人工补的量会明显变大。</p>
+    <div class="note"><b>先摸覆盖率</b>：上面第 ① 步 <code>--dry-run</code> 打印出的「待人工补齐」条数越多，说明问法离内置触发词越远。
+      该给话题表补词，就改 <code>tools/db_import.py</code> 里的 <code>SCREENING_TOPICS</code>（同 <a href="#s13">§13.11</a> 的改法）。</div>
+    <p>另外两个已知的取舍，用之前心里有数：</p>
+    <ul>
+      <li><strong>严重度是粗判</strong>：回答里出现「每天 / 一直 / 完全」这类高频词就记 <code>severity=2</code>，否则 <code>1</code>，<code>duration</code> 一律 <code>unknown</code>——请人工改判。</li>
+      <li><strong>家族史里的诊断名</strong>（例如「我父亲被诊断为精神分裂症」）会被自动加进白名单并留一条警告，
+        因为守卫只认「医生说 / 医院说」这类转述前缀，认不出「我父亲被诊断为」。<strong>这条人工必核</strong>：万一是患者自评而非转述，要删掉白名单。</li>
+    </ul>
+
+    <h4>跑完在哪看对话记录</h4>
+    <div class="tw"><table>
+      <thead><tr><th>想看什么</th><th>去哪看</th></tr></thead>
+      <tbody>
+        <tr><td><strong>逐轮对话（医生问 / 患者答 / 系统回复 / 路由 / 事件）</strong></td><td><code>&lt;输出目录&gt;/&lt;病例ID&gt;/recorder.json</code>，<code>run</code> 和 <code>run-all</code> 都会写。<code>--out</code> 默认是 <code>runs</code>，即 <code>runs/TRANSCRIPT_00/recorder.json</code>；带 <code>--out runs/latest</code> 就是 <code>runs/latest/TRANSCRIPT_00/recorder.json</code></td></tr>
+        <tr><td>真人可读的汇总（通过率 / 覆盖层 / 终止分布 / 失败详情 / <strong>守卫违规明细（按轮次）</strong>）</td><td><code>&lt;输出目录&gt;/report.md</code>（<code>run-all</code> 才写）</td></tr>
+        <tr><td>机器可读的同一份结论</td><td><code>&lt;输出目录&gt;/report.json</code></td></tr>
+        <tr><td>终端里边跑边看</td><td><code>run</code> 本来就逐轮打印；<code>run-all --verbose</code> 额外打印每例的判分明细</td></tr>
+        <tr><td>不重跑就想回看 / 重评</td><td><code>SessionRecorder.load("runs/…/recorder.json")</code>，见 <a href="#s10">§10.3</a></td></tr>
+      </tbody>
+    </table></div>
+    <div class="note ok">一句话记法：<strong>对话正文在 <code>recorder.json</code>，结论在 <code>report.md</code>，两者都在 <code>runs/</code> 下</strong>，
+      <code>runs/</code> 是产物不是源码，随时可整个删掉重跑。详细解读见 <a href="#s10">§10</a>。</div>
+
+    <h3>13.3 第 1 步：把数据整理成一条「规范化记录」</h3>
+    <p>转换器要的不是你的原始表结构，而是一条<strong>规范化记录</strong>。完整字段清单（只有 <code>record_id</code> 和 <code>symptoms</code> 是必需的）：</p>
+    <div class="tw"><table>
+      <thead><tr><th>字段</th><th>含义</th><th>例子 / 默认</th></tr></thead>
+      <tbody>
+        <tr><td><code>record_id</code></td><td>记录主键（<strong>必需</strong>）</td><td><code>"P0001"</code></td></tr>
+        <tr><td><code>symptoms</code></td><td><code>{症状code: 严重度 0-3}</code>（<strong>必需</strong>，至少一条 &gt; 0）</td><td><code>{"depressed_mood": 2, "insomnia": 2}</code></td></tr>
+        <tr><td><code>scenario_id</code></td><td>指定病例 ID，不写自动生成</td><td>默认 <code>DB_&lt;record_id&gt;</code></td></tr>
+        <tr><td><code>version</code> / <code>title</code> / <code>description</code></td><td>版本与说明</td><td>版本默认取 <code>dataset_version</code></td></tr>
+        <tr><td><code>age_range</code> / <code>occupation</code> / <code>family_relationship</code> / <code>major_events</code></td><td>背景</td><td>—</td></tr>
+        <tr><td><code>chief_complaint</code></td><td>主诉，会进开场陈述</td><td>不写给一句通用开场</td></tr>
+        <tr><td><code>onset</code></td><td>病程起点</td><td><code>"3个月"</code>，会被填进症状 <code>duration</code></td></tr>
+        <tr><td><code>denied_conditions</code></td><td>需要被排除的条件</td><td>默认 <code>["manic_history","psychotic_features"]</code></td></tr>
+        <tr><td><code>scale_items</code></td><td>量表逐题作答</td><td>不写就<strong>按症状自动推导</strong></td></tr>
+        <tr><td><code>risk_screen</code></td><td>风险筛查等级</td><td><code>none</code>（默认）</td></tr>
+        <tr><td><code>treatment_response</code></td><td>治疗期走向</td><td><code>stable</code>（默认）</td></tr>
+        <tr><td><code>expected_diagnosis_codes</code> / <code>must_not_diagnose</code></td><td>期望 / 禁止的诊断码</td><td><code>[]</code></td></tr>
+        <tr><td><code>termination_reason</code></td><td>显式指定期望终止</td><td>不写=按推导；写 <code>null</code>=期望<strong>不</strong>终止</td></tr>
+      </tbody>
+    </table></div>
+    <p>三个容易忽略的点：</p>
+    <ul>
+      <li><strong><code>symptoms</code> 里的 <code>0</code> 不是「没记录」，而是「被问过但不存在」</strong>：它会变成一条 <code>present=false</code> + <code>denial_utterance</code> 的事实。这正是被测系统问「有没有过特别兴奋…」时，患者应当否认的依据。</li>
+      <li><strong><code>scale_items</code> 不写就自动推导</strong>：命中了哪条症状，就上对应量表（内置 6 份：PHQ-9 / GAD-7 / PCL-5 / Y-BOCS / MDQ / ISI），逐题分值由严重度映射，题数不足的部分补 0。</li>
+      <li><strong><code>risk_screen</code> 填到 <code>explicit_ideation</code> 及以上</strong>，患者开场就是危机陈述，系统会走 L1 安全路径直接结案——这就是验收场景 3 那条用例；此时「治疗反应」不再影响终止原因。</li>
+    </ul>
+    <p><code>risk_screen</code> 取值：<span class="pill">none</span><span class="pill w">ambiguous</span><span class="pill b">explicit_ideation / plan / immediate_crisis</span></p>
+    <p><code>treatment_response</code> 取值：<span class="pill">improving</span><span class="pill w">no_change</span><span class="pill b">dropout / stable</span></p>
+
+    <h3>13.4 第 2 步：一条命令生成</h3>
+    <p>在 <code>patient agent/</code> 目录下（用你那个 conda 环境）：</p>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">bash</span><button class="copy">复制</button></div><pre><code># 只校验 + 试跑，不写盘（先用它看会生成什么）
+python tools/db_import.py --source tools/sample_standard_db.json --dry-run
+
+# 落盘到 imported_scenarios/（默认输出目录）
+python tools/db_import.py --source tools/sample_standard_db.json
+
+# 从 SQLite 读，一表一库
+python tools/db_import.py --source mydb.sqlite --table records --out imported_scenarios
+
+# 观测结果冻结成期望路径（见 §13.8）
+python tools/db_import.py --source tools/sample_standard_db.json --baseline</code></pre></div>
+    <div class="tw"><table>
+      <thead><tr><th>选项</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td><code>--source</code></td><td>数据源路径（<strong>必需</strong>）</td></tr>
+        <tr><td><code>--table</code></td><td>SQLite 的表名</td></tr>
+        <tr><td><code>--out</code></td><td>输出目录，默认 <code>imported_scenarios</code></td></tr>
+        <tr><td><code>--version</code></td><td>强制指定病例版本号</td></tr>
+        <tr><td><code>--force</code></td><td>覆盖已存在的同名版本文件（不推荐）</td></tr>
+        <tr><td><code>--dry-run</code></td><td>只校验 + 试跑，不写盘</td></tr>
+        <tr><td><code>--no-verify</code></td><td>不试跑，只生成</td></tr>
+        <tr><td><code>--baseline</code></td><td>试跑后把观测到的路径写回 <code>expected</code>（见 <a href="#s13">§13.8</a>）</td></tr>
+      </tbody>
+    </table></div>
+    <p>跑完会打印中文结果，形如：</p>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">输出</span><button class="copy">复制</button></div><pre><code>病例 DB_P0001 @ 2026.1
+  落盘：imported_scenarios\DB_P0001\2026.1.json
+  试跑：24 轮，终止=completed_improved，覆盖层=L1/L2/L3/L4/L5，评测=通过</code></pre></div>
+    <p>如果「评测=未通过」，下面会逐条列出是哪一项检查没过（<code>required_events</code> / <code>layers</code> / <code>termination</code> /
+      <code>excluded_conditions</code> / <code>guard</code> / <code>errors</code> / <code>min_turns</code>），并对齐 <a href="#s11">§11</a> 的排错表来看。</p>
+
+    <h3>13.5 第 3 步：分清「机器填的」和「你必须改的」</h3>
+    <p>以真实生成的 <code>imported_scenarios/DB_P0001/2026.1.json</code> 为例。</p>
+    <p><strong>机器能填对的（不用管）</strong></p>
+    <div class="tw"><table>
+      <thead><tr><th>病例里的位置</th><th>从哪来</th></tr></thead>
+      <tbody>
+        <tr><td><code>clinical.symptoms[]</code> 清单、<code>severity</code>、<code>duration</code></td><td>数据集</td></tr>
+        <tr><td><code>clinical.scale_plans[].answers</code></td><td>严重度 → 量表逐题分值</td></tr>
+        <tr><td><code>risk.level</code> + <code>disclosure.never_disclose</code></td><td><code>risk_screen</code>（比本等级更重的话术整串禁掉，防止患者自己把风险说升级）</td></tr>
+        <tr><td><code>background.*</code>、<code>clinical.timeline_anchors</code>、<code>clinical.must_not_diagnose</code></td><td>数据集</td></tr>
+        <tr><td><code>clinical.exclusions[].denial_utterance</code></td><td><code>denied_conditions</code> + 内置词表</td></tr>
+      </tbody>
+    </table></div>
+    <p><strong>必须你动手的三处</strong></p>
+    <ol>
+      <li><strong>每一句话</strong>：<code>symptoms[].utterance</code>、<code>denial_utterance</code>、<code>disclosure.opening_templates</code>、<code>trajectory.steps[].utterance</code>。
+        现在是 <code>"3个月了，情绪一直很低落，心里堵得慌。"</code> 这类模板句——事实对、口气假。
+        这份病例的<strong>临床准确性</strong>来自数据集，但<strong>像不像一个真人在说话</strong>只能靠你改这几句。
+        注意每条 <code>utterance</code> 里必须带着被测系统认得的症状词（见 <a href="#s13">§13.6</a> 的错误示例）。</li>
+      <li><strong><code>probe_keywords</code></strong>：决定「系统问到什么话时患者才说这条事实」，是最容易静默翻车的地方，见 <a href="#s13">§13.6</a>。</li>
+      <li><strong><code>expected</code> / <code>stop</code></strong>：数据集完全没有「我期望系统怎么表现」，见 <a href="#s13">§13.8</a>。</li>
+    </ol>
+
+    <h3>13.6 命门：<code>probe_keywords</code> 必须和被测系统的问法对齐</h3>
+    <p>患者说什么不是模型自由发挥的，而是 PA3 按「系统上一句说了什么」挑事实（见 <a href="#s6-5">§6.5</a>）：</p>
+    <div class="note">挑 <code>probe_keywords</code> 命中系统这句话的事实；命中数多的优先；都没命中时，才轮到标了
+      <code>disclosure="proactive"</code> 的事实主动说出来。</div>
+    <p>所以一条症状能不能被说出来，取决于它的 <code>probe_keywords</code> 和<strong>被测系统实际问的话</strong>有没有交集。
+      内置 Mock 与内置病例是这么对上的（可以直接照着抄）：</p>
+    <div class="tw"><table>
+      <thead><tr><th>事实</th><th><code>probe_keywords</code></th><th>系统的哪句话会把它勾出来</th></tr></thead>
+      <tbody>
+        <tr><td>情绪低落</td><td><code>["具体","难受","低落"]</code></td><td>「你愿意说说最近<strong>具体</strong>是什么让你这么<strong>难受</strong>吗？」</td></tr>
+        <tr><td>睡眠维持困难</td><td><code>["睡眠","精力"]</code></td><td>「除了情绪，<strong>睡眠</strong>或者<strong>精力</strong>上有没有什么变化？」</td></tr>
+        <tr><td>自我价值感低</td><td><code>["不够好","觉得自己"]</code></td><td>「你有没有<strong>觉得自己</strong>哪里做得<strong>不够好</strong>？」</td></tr>
+        <tr><td>躁狂史（否认）</td><td><code>["兴奋","不需要睡觉","话也特别多"]</code></td><td>「有没有过一段时间特别<strong>兴奋</strong>、<strong>不需要睡觉</strong>、<strong>话也特别多</strong>？」</td></tr>
+        <tr><td>精神病性症状（否认）</td><td><code>["听到","看到","别人没有察觉"]</code></td><td>「有没有<strong>听到</strong>或者<strong>看到</strong>别人没有察觉的东西？」</td></tr>
+      </tbody>
+    </table></div>
+    <p><strong>填错的后果是「静默失败」</strong>：症状说不出口 → 系统识别不到 → 量表不启动 →
+      <code>l2_scale_completed</code> 观测不到 → 评测里 <code>required_events</code> 失败。
+      系统一句报错都不会给，你只能从评测结论倒推。</p>
+    <p>还有一个真实踩过的坑：<strong>易激惹必须先进入系统视野，双相排除才有机会发生。</strong>
+      被测系统只有在识别到「易激惹」之后，才会问那道「有没有过特别兴奋…」的鉴别题，
+      也才会把双相放进 <code>excluded</code>。而 L2 正式访谈只有寥寥几轮就会被量表接管，
+      靠追问关键词不保证说得到——内置的 <code>S04</code> 的做法是<strong>把易激惹写进开场陈述</strong>。
+      <code>tools/db_import.py</code> 也是这么做的：只要有易激惹，就把它的台词并进 <code>disclosure.opening_templates[0]</code>。</p>
+
+    <h3>13.7 第 4 步：放进病例库、跑起来、怎么算「真的成了病例」</h3>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">bash</span><button class="copy">复制</button></div><pre><code># ① 能被认得（index.json 与 Schema 都过了）
+python -m patient_agent list  --scenario-dir imported_scenarios
+
+# ② 能逐轮对话（台词与关键词驱动得动系统）——run 自带逐轮打印，没有 --verbose
+python -m patient_agent run DB_P0001 --scenario-dir imported_scenarios
+
+# ③ 评测通过（期望路径成立）→ 退出码 0（--verbose 是 run-all 的选项）
+python -m patient_agent run-all --scenario-dir imported_scenarios --verbose</code></pre></div>
+    <p>这三条命令里的 <code>--scenario-dir</code> 其实可以省掉：项目根 <code>.env</code> 已经把默认病例库指到了
+      <code>imported_scenarios/</code>，所以直接 <code>python -m patient_agent list</code> 读的就是生成库（见 <a href="#s13">§13.13</a>）。</p>
+    <p><strong>「成了病例」的三个判据</strong>：能被 <code>list</code> 列出来 → 能被 <code>run</code> 逐轮跑 → <code>run-all</code> 评测通过。</p>
+    <div class="note ok">实测：随仓库带的 <code>imported_scenarios/</code> 里有 4 条演示用例（低风险改善 / 焦虑共病无变化 /
+      明确危机 / 主动退出），分别 24 / 24 / 1 / 21 轮，<strong>4/4 评测通过</strong>，<code>run-all</code> 退出码 0。
+      新增 <code>tools/</code> 与 <code>imported_scenarios/</code> 两个目录<strong>不影响原有测试</strong>：214 个用例仍全过。</div>
+
+    <h3>13.8 <code>expected</code> / <code>stop</code>：手写，还是用 <code>--baseline</code> 冻基线</h3>
+    <p><code>expected</code> 是这份病例的「标准答案」。三条路：</p>
+    <div class="tw"><table>
+      <thead><tr><th>做法</th><th>怎么做</th><th>代价</th></tr></thead>
+      <tbody>
+        <tr><td>按临床意图手写</td><td>直接改 <code>expected.events</code> / <code>expected_layers</code> / <code>termination_reason</code> / <code>stop.max_turns</code></td><td>得想清楚「这份病例到底想验证什么」——这是标准做法</td></tr>
+        <tr><td>用推导值（默认）</td><td>转换器按风险等级 + 治疗反应生成</td><td>是通用骨架，未必等于你的意图</td></tr>
+        <tr><td><code>--baseline</code> 冻结观测</td><td><code>--baseline</code> 跑一遍，把观测到的事件、层、终止原因写回 <code>expected</code>，其余事件记为可选</td><td><strong>如果被测系统本身就是错的，基线会把错的行为锁死</strong></td></tr>
+      </tbody>
+    </table></div>
+    <p>所以正确姿势是：<strong>调试阶段用 <code>--baseline</code> 快速拿到一条能过的用例，定稿前回头逐项确认「这真是我想断言的行为」。</strong></p>
+
+    <h3>13.9 版本与可追溯</h3>
+    <p>同一个 <code>scenario_id</code> 改了台词，<strong>新增版本文件</strong>，不要就地覆盖——
+      改一句台词就可能改变「不迎合」这类结论，测试报告必须能追到「当时用的是哪一版」。
+      转换器会：</p>
+    <ul>
+      <li>每次写盘都自动维护 <code>imported_scenarios/index.json</code>（登记 <code>versions</code>、更新 <code>latest</code>）；</li>
+      <li>目标版本文件已存在时<strong>直接报错</strong>，提示你换 <code>--version</code> 或加 <code>--force</code>（不推荐，会丢掉旧版本）。</li>
+    </ul>
+
+    <h3>13.10 排错：实际踩过的四个坑</h3>
+    <div class="tw"><table>
+      <thead><tr><th>现象</th><th>原因</th><th>怎么办</th></tr></thead>
+      <tbody>
+        <tr><td><code>required_events</code> 缺 <code>l2_scale_completed</code></td><td>症状一条都没被说出来，系统认为没东西可查，跳过了量表</td><td>检查 <code>probe_keywords</code> 是否和系统问法对得上；必要时把核心症状设成 <code>proactive</code> 或写进开场陈述</td></tr>
+        <tr><td><code>required_events</code> 缺 <code>l3_candidate_excluded</code>，或 <code>excluded_conditions</code> 未排除双相</td><td>系统没识别到「易激惹」，也就没问那道躁狂鉴别题</td><td>把易激惹写进 <code>opening_templates</code>（转换器已自动做）</td></tr>
+        <tr><td><code>termination</code> 不符</td><td>轨迹步数不够，系统走到治疗周期上限才结案，终止原因和你期望的不一样</td><td>「改善」至少 2 步积极表述、「无变化」至少 3 步消极表述（转换器默认给 3 步）</td></tr>
+        <tr><td>新版病例写不出去</td><td>同一版本文件已存在</td><td>换 <code>--version</code>（推荐），或 <code>--force</code></td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>13.11 换成你自己的数据集：只改映射表</h3>
+    <p><code>tools/db_import.py</code> 里需要改的只有三个地方：</p>
+    <ol>
+      <li><strong><code>CATALOG</code></strong> —— 症状 code → <code>label</code> / <code>utterance</code> / <code>denial_utterance</code> / <code>probe_keywords</code>。
+        数据集用了别的症状命名（比如 ICD / DSM 编码），就在这里加条目。当前内置 11 个 code：
+        <code>depressed_mood</code>、<code>anhedonia</code>、<code>insomnia</code>、<code>fatigue</code>、<code>worthlessness</code>、<code>concentration_difficulty</code>、
+        <code>anxiety</code>、<code>irritability</code>、<code>trauma_related</code>、<code>obsession_compulsion</code>、<code>elevated_mood</code>。</li>
+      <li><strong><code>EXCLUSION_CATALOG</code></strong> 与 <strong><code>SCALE_CATALOG</code> + <code>SCALE_INDICATION</code></strong> —— 鉴别项与量表。
+        ⚠️ <code>SCALE_INDICATION</code> 必须和<strong>被测系统</strong>的量表指示表一致，否则会出现「系统要做某份量表、
+        病例里却没有作答计划」，量表链路永远走不完。</li>
+      <li><strong><code>build_scenario()</code></strong> —— 字段映射本身。数据集的列名不同就改这里
+        （或者更省事：在你那一侧先把列名改成 §13.3 的规范化字段名）。</li>
+    </ol>
+    <p>数据源的读取逻辑在 <code>load_source()</code>。要接 MySQL / PostgreSQL，就在那里加一个分支
+      （<code>sqlite3</code> / <code>json</code> / <code>csv</code> 都是标准库，别的数据库要额外装驱动）。</p>
+
+    <h3>13.12 如果数据集是自由文本（不是结构化字段）</h3>
+    <p>那这条链路要多一步<strong>信息抽取</strong>：主诉、病程、症状、鉴别筛查结果、量表分，
+      都得先从文本里抽出来，才能谈映射。</p>
+    <p>可行做法是先用 LLM 把文本抽成 §13.3 的规范化记录，再喂给转换器。
+      但请注意：这一步的准确性风险<strong>远高于</strong>格式转换（抽错一条症状，整条病例的临床事实就是错的），
+      所以<strong>先在小样本上人工核对抽取结果，再批量跑</strong>。</p>
+
+    <h3>13.13 两套病例库怎么并存：内置基线 + 数据集生成</h3>
+    <p><strong>约定：内置的 <code>scenarios/</code> 只增不减。</strong>它不是脚手架，而是 PA2 的交付物本身，
+      也是 5 条验收场景的自动化证据，同时被 8 个测试文件、上百处引用依赖着
+      （<code>tests/conftest.py</code> 里 <code>SCENARIO_DIR</code> 硬编码指向它）。
+      数据集生成的病例一律另放一个目录，两者用 <code>--scenario-dir</code> 切换，互不干扰。</p>
+    <div class="tw"><table>
+      <thead><tr><th>库</th><th>内容</th><th>谁来维护</th></tr></thead>
+      <tbody>
+        <tr><td><code>scenarios/</code>（默认）</td><td>6 例内置病例，对应 5 条验收场景，人工按临床意图写好 <code>expected</code></td><td>只增不减。是验收基线，测试和 <code>run-all</code> 默认跑它</td></tr>
+        <tr><td><code>imported_scenarios/</code></td><td>数据集（含会谈记录）生成出来的病例，<code>DB_*</code> / <code>TRANSCRIPT_*</code></td><td>日常新增都往这里放</td></tr>
+      </tbody>
+    </table></div>
+    <p><strong>默认读哪一套由 <code>.env</code> 决定。</strong>项目根目录的 <code>.env</code> 里这一行把默认病例库指到了生成库：</p>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">.env</span><button class="copy">复制</button></div><pre><code>PATIENT_AGENT_SCENARIO_DIR=imported_scenarios</code></pre></div>
+    <p>所以<strong>不带 <code>--scenario-dir</code> 时，<code>list</code> / <code>run</code> / <code>run-all</code> 读的是数据集生成的病例</strong>，
+      而不是内置的 6 例。想看内置基线时显式指回去即可。优先级是
+      <code>--scenario-dir</code> 参数 &gt; 真实环境变量 &gt; 项目根 <code>.env</code> &gt; 代码默认值 <code>scenarios</code>（见 §6.14 <code>config.py</code>）。</p>
+    <div class="code"><div class="bar"><span class="lamp r"></span><span class="lamp y"></span><span class="lamp g"></span><span class="fname">bash</span><button class="copy">复制</button></div><pre><code># 默认：读数据集生成的病例（imported_scenarios/）
+python -m patient_agent list
+python -m patient_agent run-all --out runs/imported
+
+# 显式指回内置 6 例（验收基线）
+python -m patient_agent run-all --scenario-dir scenarios --out runs/builtin
+
+# 想改默认值：编辑项目根 .env 的 PATIENT_AGENT_SCENARIO_DIR；
+# 删掉那一行就回到内置 scenarios/</code></pre></div>
+    <div class="note"><b>删掉 <code>.env</code> 里那一行会怎样？</b>默认库就回到内置 <code>scenarios/</code>（代码默认值）。
+      这个开关<strong>只影响「默认读哪个目录」</strong>，<code>--scenario-dir</code> 永远能覆盖它。</div>
+    <p>两套的日常循环是：<strong>数据集 → 转换器 → 生成库 → 跑评测</strong>，内置库只在需要复核验收标准时才跑。</p>
+    <p>想让某条生成病例「转正」进内置主库：把 <code>imported_scenarios/TRANSCRIPT_00/</code> 整个复制到
+      <code>scenarios/S07_xxx/</code>，再去 <code>scenarios/index.json</code> 登记一条
+      （<code>scenario_id</code> / <code>versions</code> / <code>latest</code> / <code>title</code> / <code>tags</code> / <code>description</code>），
+      改法同 <a href="#s8">§8</a> 的「新建一个病例」。</p>
+    <div class="note warn"><strong>测试不受这个开关影响。</strong><code>tests/conftest.py</code> 里的 <code>SCENARIO_DIR</code> 硬编码指向
+      <code>scenarios/</code>，所以 <code>pytest</code> 永远跑内置 6 例——这是故意的：验收证据不能跟着日常配置漂移。</div>
+    <div class="note ok"><b>一句话</b>：内置库负责「证明系统能满足验收标准」，生成库负责「用真实/批量数据扩充覆盖」。
+      两者<strong>物理隔离、各自成库</strong>，默认读哪一套由 <code>.env</code> 一行决定。</div>
+  </section>
+
+  <footer>Patient Agent 使用手册 · 与 <code>USER.md</code> 内容一致 · 用浏览器打开本文件即可离线阅读</footer>
+  </main>
+</div>
+
+<button class="toTop" id="toTop" title="回到顶部">↑</button>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- 主题切换（记住选择） ---------- */
+  var root = document.documentElement, tbtn = document.getElementById("theme");
+  function apply(t){ root.setAttribute("data-theme", t); tbtn.textContent = t === "dark" ? "☀️" : "🌙";
+    try{ localStorage.setItem("pa-theme", t); }catch(e){} }
+  var saved = null; try{ saved = localStorage.getItem("pa-theme"); }catch(e){}
+  apply(saved || (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+  tbtn.addEventListener("click", function(){ apply(root.getAttribute("data-theme") === "dark" ? "light" : "dark"); });
+
+  /* ---------- 代码高亮（单趟正则，安全） ---------- */
+  var RE = /(^\s*#.*$)|(\/\/[^\n]*)|(&lt;!--[\s\S]*?--&gt;)|("(?:[^"\\\n]|\\.)*")/gm;
+  document.querySelectorAll("pre code").forEach(function(el){
+    el.innerHTML = el.innerHTML.replace(RE, function(m, c1, c2, c3, c4){
+      if (c1 || c2 || c3) return '<span class="tok-cm">' + m + "</span>";
+      if (c4) return '<span class="tok-st">' + m + "</span>";
+      return m;
+    });
+  });
+
+  /* ---------- 复制按钮 ---------- */
+  document.querySelectorAll(".copy").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var code = btn.closest(".code").querySelector("code");
+      var text = code.textContent;
+      function done(){ btn.textContent = "已复制"; btn.classList.add("done");
+        setTimeout(function(){ btn.textContent = "复制"; btn.classList.remove("done"); }, 1400); }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, fallback);
+      } else { fallback(); }
+      function fallback(){
+        var ta = document.createElement("textarea"); ta.value = text;
+        ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta);
+        ta.select(); try{ document.execCommand("copy"); done(); }catch(e){}
+        document.body.removeChild(ta);
+      }
+    });
+  });
+
+  /* ---------- 阅读进度 ---------- */
+  var bar = document.getElementById("progress"), toTop = document.getElementById("toTop");
+  function onScroll(){
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    var p = max > 0 ? (h.scrollTop || document.body.scrollTop) / max * 100 : 0;
+    bar.style.width = p + "%";
+    toTop.style.display = (h.scrollTop || document.body.scrollTop) > 500 ? "block" : "none";
+  }
+  document.addEventListener("scroll", onScroll, {passive:true});
+  window.addEventListener("resize", onScroll);
+  onScroll();
+  toTop.addEventListener("click", function(){ window.scrollTo({top:0, behavior:"smooth"}); });
+
+  /* ---------- 侧边栏高亮当前章节 ---------- */
+  var links = Array.prototype.slice.call(document.querySelectorAll(".sidebar a"));
+  var secs = links.map(function(a){ return document.querySelector(a.getAttribute("href")); });
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (!en.isIntersecting) return;
+      var id = "#" + en.target.id;
+      links.forEach(function(a){ a.classList.toggle("active", a.getAttribute("href") === id); });
+    });
+  }, {rootMargin: "-70px 0px -75% 0px", threshold: 0});
+  secs.forEach(function(s){ if (s) obs.observe(s); });
+
+  /* ---------- 搜索过滤 ---------- */
+  var q = document.getElementById("q"), cnt = document.getElementById("cnt");
+  var sections = Array.prototype.slice.call(document.querySelectorAll("main section.sec"));
+  sections.forEach(function(s){ s.setAttribute("data-text", s.textContent.toLowerCase()); });
+  function filter(){
+    var term = (q.value || "").trim().toLowerCase();
+    if (!term){ sections.forEach(function(s){ s.classList.remove("hidden"); });
+      links.forEach(function(a){ a.style.display = ""; }); cnt.textContent = ""; return; }
+    var n = 0;
+    sections.forEach(function(s){
+      var hit = s.getAttribute("data-text").indexOf(term) !== -1;
+      s.classList.toggle("hidden", !hit); if (hit) n++;
+    });
+    links.forEach(function(a){
+      var t = document.querySelector(a.getAttribute("href"));
+      a.style.display = (t && t.classList.contains("sec") && t.classList.contains("hidden")) ? "none" : "";
+    });
+    cnt.textContent = n + " 节命中";
+  }
+  q.addEventListener("input", filter);
+  q.addEventListener("keydown", function(e){ if (e.key === "Escape"){ q.value = ""; filter(); } });
+})();
+</script>
+</body>
+</html>

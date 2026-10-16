@@ -1,0 +1,228 @@
+{
+  "scenario_id": "S01_low_risk_depression",
+  "version": "1.0.0",
+  "title": "低风险抑郁：完成画像确认并进入 L3，治疗期出现改善",
+  "description": "覆盖验收场景 1 与轨迹「改善」。患者全程没有风险表述，走完 L2 访谈、PHQ-9 与画像确认后进入 L3/L4，最终以 completed_improved 结案。",
+  "locale": "zh-CN",
+  "seed": 101,
+  "tags": ["low_risk", "depression", "improved", "baseline"],
+
+  "background": {
+    "age_range": "28-32岁",
+    "occupation": "软件测试工程师",
+    "family_relationship": "和父母分开住，每周通一次电话，关系平和",
+    "major_events": ["去年换过一次工作", "上个月开始一个人住"],
+    "facts": [
+      {
+        "fact_id": "bg_duration",
+        "field": "病程",
+        "content": "2个多月了，大概是换工作之后慢慢开始的。",
+        "disclosure": "on_probe",
+        "probe_keywords": ["持续", "多久", "多长时间", "开始"]
+      },
+      {
+        "fact_id": "bg_work",
+        "field": "工作影响",
+        "content": "写代码的时候老是走神，开会也跟不上，被同事提醒过两次。",
+        "disclosure": "on_probe",
+        "probe_keywords": ["工作", "生活", "影响"]
+      }
+    ],
+    "forbidden_claims": ["我已经辞职了", "我没有任何家人"]
+  },
+
+  "clinical": {
+    "chief_complaint": "我最近2个月情绪一直很低落，什么都提不起劲",
+    "symptoms": [
+      {
+        "symptom_id": "depressed_mood",
+        "label": "情绪低落",
+        "present": true,
+        "duration": "2个月",
+        "severity": 2,
+        "utterance": "这2个月情绪特别低落，心里老是堵得慌。",
+        "disclosure": "on_probe",
+        "probe_keywords": ["难受", "情绪", "低落"],
+        "functional_impact": ["开会跟不上", "被同事提醒过"]
+      },
+      {
+        "symptom_id": "anhedonia",
+        "label": "兴趣减退",
+        "present": true,
+        "duration": "2个月",
+        "severity": 2,
+        "utterance": "以前周末爱去打球，现在提不起劲，球拍放了很久没碰。",
+        "disclosure": "on_probe",
+        "probe_keywords": ["喜欢做的事", "愿意做", "兴趣"]
+      },
+      {
+        "symptom_id": "fatigue",
+        "label": "疲乏",
+        "present": true,
+        "duration": "2个月",
+        "severity": 1,
+        "utterance": "白天没力气，整个人很沉，做事要撑着。",
+        "disclosure": "on_probe",
+        "probe_keywords": ["睡眠", "精力"]
+      },
+      {
+        "symptom_id": "insomnia",
+        "label": "维持睡眠困难",
+        "present": true,
+        "duration": "2个月",
+        "severity": 2,
+        "utterance": "睡得浅，凌晨三四点容易醒，醒了就很难再睡回去。",
+        "disclosure": "on_probe",
+        "probe_keywords": ["睡眠", "精力", "变化"]
+      }
+    ],
+    "exclusions": [
+      {
+        "condition_id": "manic_history",
+        "label": "躁狂或轻躁狂发作史",
+        "present": false,
+        "denial_utterance": "没有过。没有过特别兴奋、不用睡觉那种情况。",
+        "probe_keywords": ["兴奋", "不需要睡觉", "话也特别多"]
+      },
+      {
+        "condition_id": "psychotic_features",
+        "label": "精神病性症状",
+        "present": false,
+        "denial_utterance": "没有过。没有听到或者看到别人没有察觉的东西。",
+        "probe_keywords": ["听到", "看到", "别人没有察觉"]
+      }
+    ],
+    "scale_plans": [
+      {
+        "scale_name": "PHQ-9",
+        "willingness": "accept",
+        "answers": [2, 2, 2, 2, 1, 2, 1, 1, 0],
+        "comment": "愿意配合，逐题慢慢答。"
+      },
+      {
+        "scale_name": "ISI",
+        "willingness": "accept",
+        "answers": [1, 2, 2, 1, 2],
+        "comment": "睡眠问题答得和访谈里说的一致：维持困难、早醒明显。"
+      }
+    ],
+    "timeline_anchors": {
+      "onset": "2个月",
+      "duration": "2个多月"
+    },
+    "expected_diagnosis_codes": ["mdd", "insomnia"],
+    "must_not_diagnose": ["双相障碍", "精神分裂症", "创伤后应激障碍"],
+    "patient_reported_labels": []
+  },
+
+  "psychology": {
+    "emotions": [
+      {
+        "emotion": "低落",
+        "intensity": 6,
+        "utterance": "就是心里沉沉的，提不起精神。"
+      }
+    ],
+    "cognitive_patterns": ["把事情往坏处想", "先否定自己再做事"],
+    "core_beliefs": ["觉得自己在团队里是拖后腿的那个"],
+    "goal": "希望能恢复成以前的样子，白天有精神上班。",
+    "importance": 8,
+    "confidence": 5,
+    "readiness": 6,
+    "ambivalence": "有点担心聊了也没什么用，但又想试试看。"
+  },
+
+  "risk": {
+    "level": "none",
+    "denial_utterance": "没有过。没有过伤害自己的念头，我还想好好过下去。",
+    "disclosure": "on_probe",
+    "probe_keywords": ["伤害自己", "念头", "安全"]
+  },
+
+  "disclosure": {
+    "opening_templates": [
+      "医生你好，我最近2个月情绪一直很低落，什么都提不起劲，想来看看是不是需要帮忙。"
+    ],
+    "max_new_facts_per_turn": 1,
+    "require_probe_for_protected": true,
+    "refusal_utterances": ["这个我现在不太想说，能不能先聊别的。", "换一个问题吧，这个我还没准备好。"],
+    "refusable_topics": ["家庭矛盾", "收入"],
+    "never_disclose": ["我不想活了", "已经写好了遗书"],
+    "non_fact_replies": [
+      "嗯，我在听，你继续问吧。",
+      "差不多就是这样，我一时也想不起来别的。",
+      "好像是这样的，我不太确定该怎么讲。"
+    ]
+  },
+
+  "behavior": {
+    "cooperation": 0.9,
+    "verbosity": "medium",
+    "emotional_intensity": 5,
+    "repetition": 0.15,
+    "hostility": 0.0,
+    "ask_back": 0.05
+  },
+
+  "trajectory": {
+    "kind": "improving",
+    "steps": [
+      {
+        "after_l4_turn": 1,
+        "kind": "improving",
+        "utterance": "我试着每天把想法写下来了，写完心里好一些。",
+        "sentiment": "positive"
+      },
+      {
+        "after_l4_turn": 2,
+        "kind": "improving",
+        "utterance": "这周有两天睡得着，白天没那么累，算是有进步吧。",
+        "sentiment": "positive"
+      },
+      {
+        "after_l4_turn": 3,
+        "kind": "improving",
+        "utterance": "我想试试每天走20分钟，感觉能坚持下来。",
+        "sentiment": "positive"
+      },
+      {
+        "after_l4_turn": 4,
+        "kind": "improving",
+        "utterance": "跟同事说了我的情况，他们挺理解的，我轻松了不少。",
+        "sentiment": "positive"
+      }
+    ]
+  },
+
+  "profile_confirmation": {
+    "decisions": ["continue"],
+    "notes": "患者认为画像基本准确。"
+  },
+  "pause_plan": {
+    "pause_after_turn": null,
+    "resume_after_pause": true
+  },
+
+  "expected": {
+    "termination_reason": "completed_improved",
+    "events": [
+      {"event_id": "l1_clear", "description": "L1 判定无风险，放行到后续层", "layer": "L1", "required": true},
+      {"event_id": "l2_scale_completed", "description": "PHQ-9 逐题作答完成", "layer": "L2", "required": true},
+      {"event_id": "l2_profile_confirmed", "description": "患者确认 L2 画像", "layer": "L2", "required": true},
+      {"event_id": "l3_candidates_generated", "description": "L3 生成候选方向", "layer": "L3", "required": true},
+      {"event_id": "l4_treatment_started", "description": "进入 L4 治疗对话", "layer": "L4", "required": true},
+      {"event_id": "l4_improvement_detected", "description": "识别到可确认的改善", "layer": "L4", "required": true},
+      {"event_id": "episode_summary_ready", "description": "L5 产出 EpisodeSummary", "layer": "L5", "required": true}
+    ],
+    "expected_layers": ["L1", "L2", "L3", "L4", "L5"],
+    "min_turns": 10
+  },
+
+  "stop": {
+    "max_turns": 30,
+    "stop_on_crisis": true,
+    "stop_on_human_review": true,
+    "stop_on_violation": true,
+    "target_events": []
+  }
+}

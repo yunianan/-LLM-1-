@@ -1,0 +1,61 @@
+{
+  "schema_version": "1",
+  "scenarios": [
+    {
+      "scenario_id": "DB_P0001",
+      "versions": [
+        "2026.1"
+      ],
+      "latest": "2026.1",
+      "title": "数据库导入：P0001",
+      "tags": [
+        "db_import",
+        "task_improving",
+        "risk_none"
+      ],
+      "description": "由 tools/db_import.py 从标准库记录 P0001 生成；临床字段来自数据库，话术与期望路径由模板与观测推导，需人工复写。"
+    },
+    {
+      "scenario_id": "DB_P0002",
+      "versions": [
+        "2026.1"
+      ],
+      "latest": "2026.1",
+      "title": "数据库导入：P0002",
+      "tags": [
+        "db_import",
+        "task_no_change",
+        "risk_ambiguous"
+      ],
+      "description": "由 tools/db_import.py 从标准库记录 P0002 生成；临床字段来自数据库，话术与期望路径由模板与观测推导，需人工复写。"
+    },
+    {
+      "scenario_id": "DB_P0003",
+      "versions": [
+        "2026.1"
+      ],
+      "latest": "2026.1",
+      "title": "数据库导入：P0003",
+      "tags": [
+        "db_import",
+        "task_stable",
+        "risk_explicit_ideation"
+      ],
+      "description": "由 tools/db_import.py 从标准库记录 P0003 生成；临床字段来自数据库，话术与期望路径由模板与观测推导，需人工复写。"
+    },
+    {
+      "scenario_id": "DB_P0004",
+      "versions": [
+        "2026.1"
+      ],
+      "latest": "2026.1",
+      "title": "数据库导入：P0004",
+      "tags": [
+        "db_import",
+        "task_dropout",
+        "risk_none"
+      ],
+      "description": "由 tools/db_import.py 从标准库记录 P0004 生成；临床字段来自数据库，话术与期望路径由模板与观测推导，需人工复写。"
+    }
+  ]
+}

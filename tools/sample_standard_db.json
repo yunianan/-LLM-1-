@@ -1,0 +1,86 @@
+{
+  "dataset": "sample_standard_db",
+  "dataset_version": "2026.1",
+  "note": "演示用的「标准化数据库导出」样例。真实场景里这份 JSON 换成 SQLite 表或 CSV 导出即可；字段名只要能在 --map 里对上就行。symptoms 的取值是 0-3 的严重度，0 表示该症状被问过但不存在。",
+  "records": [
+    {
+      "record_id": "P0001",
+      "age_range": "28-32岁",
+      "occupation": "软件测试",
+      "family_relationship": "独居，父母在外地",
+      "chief_complaint": "最近状态不太好，想来请你们帮我看看。",
+      "onset": "3个月",
+      "risk_screen": "none",
+      "symptoms": {
+        "depressed_mood": 2,
+        "anhedonia": 2,
+        "insomnia": 2,
+        "fatigue": 1,
+        "worthlessness": 1,
+        "concentration_difficulty": 1
+      },
+      "denied_conditions": ["manic_history", "psychotic_features"],
+      "treatment_response": "improving",
+      "expected_diagnosis_codes": ["mdd"],
+      "must_not_diagnose": ["双相障碍", "精神分裂症"]
+    },
+    {
+      "record_id": "P0002",
+      "age_range": "38-42岁",
+      "occupation": "小学老师",
+      "family_relationship": "和配偶、孩子同住，家里主要靠她操心",
+      "chief_complaint": "心里一直紧，想来请你们看看是不是焦虑。",
+      "onset": "半年",
+      "risk_screen": "ambiguous",
+      "symptoms": {
+        "anxiety": 3,
+        "insomnia": 2,
+        "fatigue": 2,
+        "concentration_difficulty": 1,
+        "irritability": 2,
+        "depressed_mood": 1
+      },
+      "denied_conditions": ["manic_history", "psychotic_features", "substance"],
+      "treatment_response": "no_change",
+      "expected_diagnosis_codes": ["gad"],
+      "must_not_diagnose": ["双相障碍"]
+    },
+    {
+      "record_id": "P0003",
+      "age_range": "18-22岁",
+      "occupation": "在校学生",
+      "family_relationship": "住校，和室友关系一般",
+      "chief_complaint": "最近老觉得活着没意思。",
+      "onset": "1个月",
+      "risk_screen": "explicit_ideation",
+      "symptoms": {
+        "depressed_mood": 3,
+        "insomnia": 2
+      },
+      "denied_conditions": [],
+      "treatment_response": "stable",
+      "expected_diagnosis_codes": [],
+      "must_not_diagnose": []
+    },
+    {
+      "record_id": "P0004",
+      "age_range": "33-37岁",
+      "occupation": "销售",
+      "family_relationship": "已婚，和配偶同住",
+      "chief_complaint": "睡不好，情绪也一直低落，最近特别累。",
+      "onset": "4个月",
+      "risk_screen": "none",
+      "symptoms": {
+        "depressed_mood": 2,
+        "insomnia": 3,
+        "fatigue": 2,
+        "irritability": 1,
+        "worthlessness": 1
+      },
+      "denied_conditions": ["manic_history", "psychotic_features"],
+      "treatment_response": "dropout",
+      "expected_diagnosis_codes": ["mdd", "insomnia"],
+      "must_not_diagnose": ["双相障碍"]
+    }
+  ]
+}

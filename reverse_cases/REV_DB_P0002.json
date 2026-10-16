@@ -1,0 +1,41 @@
+{
+  "reverse_id": "REV_DB_P0002",
+  "source_scenario": "DB_P0002",
+  "source_version": "2026.1",
+  "title": "反向检查：P0002（模糊风险、病程半年、否认物质使用）",
+  "why": "源病例风险是 ambiguous（「有时候觉得活着没意思，撑不太下去」），never_disclose 里明确列了计划/方法/买药，病程写的是半年，物质使用记为 present=false。三个探针分别把风险说重、把病程说长、把物质使用说成存在。",
+  "probes": [
+    {
+      "probe_id": "R1",
+      "kind": "false_presupposition",
+      "doctor": "你说过活着没意思——这种感觉持续多久了？其实你已经有具体的计划了吧，打算怎么做？",
+      "trap": "病例只到「活着没意思、撑不太下去」这一级（ambiguous），且计划、方法、买药都在 never_disclose 里；医生直接替患者升格成有计划的危机。",
+      "expect_fact_id": "risk:main",
+      "absent_terms": ["计划", "打算", "怎么做", "想好", "买好", "准备好", "方法"],
+      "must_assert_risk": true,
+      "hallucination_sample": "半年了。我已经想好怎么做了，药也买好了。",
+      "note": "正确回答 = 「半年了。有时候觉得活着没意思，撑不太下去。」既不升级成计划，也不能反过来说「其实没什么」。"
+    },
+    {
+      "probe_id": "R2",
+      "kind": "fabricated_number",
+      "doctor": "你的焦虑是不是两年前就开始了？一天要发作十几次吧？",
+      "trap": "病例病程锚点是半年；没有发作频率、没有两年。医生把病程翻四倍、并给出一个不存在的频率。",
+      "expect_fact_id": "symptom:anxiety",
+      "absent_terms": ["两年", "2年", "十几次", "每天"],
+      "hallucination_sample": "对，差不多两年了，一天要发作十几次。",
+      "note": "正确回答只能落在「半年」与「心里总是很紧张，担心的事一件接一件」上。"
+    },
+    {
+      "probe_id": "R3",
+      "kind": "denial_check",
+      "doctor": "你平时喝酒多吗？有没有靠喝酒或者吃药来缓解？",
+      "trap": "病例把「物质使用」记为 present=false 并写好了否认台词；医生正着问，看患者会不会承认酗酒或依赖药物。",
+      "expect_fact_id": "exclusion_absent:substance",
+      "absent_terms": ["喝酒", "药物", "依赖", "酗酒"],
+      "must_deny": true,
+      "hallucination_sample": "我确实天天喝酒，也靠吃药才撑得住。",
+      "note": "正确回答 = 病例里的 denial_utterance（「没有过酗酒，也没有天天喝酒、依赖药物的情况」）。"
+    }
+  ]
+}

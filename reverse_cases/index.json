@@ -1,0 +1,18 @@
+{
+  "schema_version": "1",
+  "note": "临时反向病例（不是正式病例库，不参与 list / run / run-all / 验收测试；检查完可以直接删除整个 reverse_cases/ 目录）。每个文件 = 一个反向病例 = 源病例 + 一组医生侧诱导探针。",
+  "cases": [
+    {
+      "reverse_id": "REV_DB_P0001",
+      "file": "REV_DB_P0001.json"
+    },
+    {
+      "reverse_id": "REV_DB_P0002",
+      "file": "REV_DB_P0002.json"
+    },
+    {
+      "reverse_id": "REV_DB_P0003",
+      "file": "REV_DB_P0003.json"
+    }
+  ]
+}

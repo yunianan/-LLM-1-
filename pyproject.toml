@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "patient-agent"
+version = "0.1.0"
+description = "心理诊疗系统 Patient Agent：开发/测试环境下的模拟患者与自动多轮测试（PA1-PA7）"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["pydantic>=2.5"]
+
+[project.optional-dependencies]
+test = ["pytest>=7.4"]
+
+[project.scripts]
+patient-agent = "patient_agent.cli:main"
+
+[tool.setuptools]
+packages = ["patient_agent", "patient_agent.client", "patient_agent.llm"]
+
+# 说明：pytest 配置统一放在 pytest.ini，避免两处参数打架。
