@@ -1,4 +1,4 @@
-"""Offline candidate-only metrics against reviewed labels; no model calls."""
+"""Offline staged L3 metrics against dataset reference labels; no model calls."""
 import argparse
 import json
 import math

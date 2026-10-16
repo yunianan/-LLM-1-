@@ -231,4 +231,5 @@ diagnosis_output.json
 
 # Reproducible local MentalBench narrative/profile exports.
 /artifacts/datasets/mentalbench_l2_format/
+/artifacts/datasets/mentalbench_split_v2/
 

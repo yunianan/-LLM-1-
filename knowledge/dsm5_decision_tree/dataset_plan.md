@@ -2,6 +2,8 @@
 
 日期：2026-10-14。阶段：来源和处理工具已确定；正式专家病例导入数为 0。
 
+2026-10-16 补充：MentalBench 合成病例已另行准备整个 L3 的 KB/DEV/EVAL v2，见 [划分与评测规范](../../docs/mentalbench-split-v2.md)。该数据与本文件的专家编写病例来源不同，不能把其 24,750 条记录计作正式专家病例；两类来源和评测结果分别报告。
+
 ## 选择依据
 
 主要病例来源选 **John W. Barnhill 主编的 DSM-5 Clinical Cases（2014 原版）**。其与项目的 DSM-5 标准一致，包含案例叙述和作者诊断/讨论。APA 期刊书评记载该书有 103 个案例：[书评](https://psychiatryonline.org/doi/10.1176/appi.ajp.2014.14020214)、[原书入口](https://psychiatryonline.org/doi/book/10.1176/appi.books.9781585624836)。
